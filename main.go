@@ -4,75 +4,105 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
+	"github.com/suriz/tft-dps-simulator/systems"
+	"github.com/suriz/tft-dps-simulator/utils"
 )
 
-func main() {
-    // Get the path to your data files
-    dataDir := "./data/data_files" // Or use a configurable path
-    filePath := filepath.Join(dataDir, "en_us_14.1b.json")
-    
-	fmt.Println("------------Loading Set Data---------------")
-    // Load TFT set data with specified mutator
-    setData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
-    if err != nil {
-        fmt.Printf("Error loading set data: %v\n", err)
-        os.Exit(1)
-    }
-    
-    fmt.Printf("Successfully loaded TFT set: %s\n", setData.SetData[0].Name)
-    fmt.Printf("Found %d champions in the set\n", len(setData.SetData[0].Champions))
-	fmt.Printf("Found %d traits in the set\n", len(setData.SetData[0].Traits))
-	fmt.Printf("Found %d items in the set\n", len(setData.SetData[0].Items))
-	fmt.Printf("Found %d augments in the set\n", len(setData.SetData[0].Augments))
-	fmt.Println("------------Finished Loading Set Data---------------")
-
-	
-    
-    // Create ECS world
-    world := ecs.NewWorld()
-    
-    // Create champion factory
-    championBuilder := factory.NewChampionBuilder(world)
-    
-    // Create a team of champions for simulation
-    teamEntities := make([]ecs.Entity, 0)
-    
-    // Add some champions to the team (example: first 5 champions at 2 stars)
-    for i, champData := range setData.SetData[0].Champions {
-        if i >= 5 {
-            break
-        }
-        
-        // Create champion entity at 2 stars
-        entity := championBuilder.CreateChampion(champData, 2)
-        teamEntities = append(teamEntities, entity)
-        
-        // Get Identity component to print info
-        idComponent, _ := world.GetComponent(entity, reflect.TypeOf(components.ChampionInfo{}))
-        id := idComponent.(components.ChampionInfo)
-        
-        // Get Health component to print info
-        healthComponent, _ := world.GetComponent(entity, reflect.TypeOf(components.Health{}))
-        health := healthComponent.(components.Health)
-        
-        fmt.Printf("Created champion: %s (★%d) - HP: %.0f\n", 
-            id.Name, id.StarLevel, health.Max)
-    }
-    
-    fmt.Printf("Created %d champion entities\n", len(teamEntities))
-	// printing the team entities
-	for _, entity := range teamEntities {
-		idComponent, _ := world.GetComponent(entity, reflect.TypeOf(components.ChampionInfo{}))
-		id := idComponent.(components.ChampionInfo)	
-		fmt.Printf("Entity ID: %d, Champion Name: %s\n", entity, id.Name)
+// Helper function to handle AddComponent errors
+func addComponentOrLog(world *ecs.World, entity ecs.Entity, component interface{}) {
+	err := world.AddComponent(entity, component)
+	if err != nil {
+		// Decide how to handle: log, panic, etc.
+		fmt.Printf("Error adding component %T to entity %d: %v\n", component, entity, err)
 	}
-    
-    // Now we can run simulations with these entities
-    // TODO: Add simulation logic
+}
+
+func main() {
+	// --- Data Loading ---
+	dataDir := "./data/data_files"
+	filePath := filepath.Join(dataDir, "en_us_14.1b.json")
+	fmt.Println("------------Loading Set Data---------------")
+	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
+	if err != nil {
+		fmt.Printf("Error loading set data: %v\n", err)
+		os.Exit(1)
+	}
+	data.InitializeChampions(tftData)
+	utils.PrintTftDataLoaded(tftData)
+
+	// --- ECS Setup ---
+	world := ecs.NewWorld()
+	championFactory := factory.NewChampionFactory(world)
+
+	// --- Create Initial Entities (Example) ---
+	// This part remains conceptually similar, but uses the helper
+	fmt.Println("\n------------Creating Initial Entities---------------")
+	voidspawn, err := championFactory.CreateAllyChampion("Voidspawn", 1)
+	if err != nil {
+		fmt.Printf("Error creating Voidspawn: %v\n", err)
+		return
+	}
+	// Add Team component using the helper
+	addComponentOrLog(world, voidspawn, components.NewTeam(0))
+
+	brand, err := championFactory.CreateAllyChampion("Brand", 1)
+	if err != nil {
+		fmt.Printf("Error creating Brand: %v\n", err)
+		return
+	}
+	addComponentOrLog(world, brand, components.NewTeam(0))
+
+	// Print Team 0 champions
+	utils.PrintTeamStats(world)
+
+	// --- Simulation Setup ---
+	fmt.Println("\n------------Setting up Simulation---------------")
+	// Add position using the helper
+	addComponentOrLog(world, voidspawn, components.NewPosition(1, 1))
+
+	// Create Target Dummy manually
+	targetDummy, err := championFactory.CreateEnemyChampion("Training Dummy", 1)
+	if err != nil {
+		fmt.Printf("Error creating Traning Dummy: %v\n", err)
+		return
+	}
+	addComponentOrLog(world, targetDummy, components.NewHealth(10000, 0, 0))
+	addComponentOrLog(world, targetDummy, components.NewPosition(5, 1))
+	// Update Attack component as enemy will not attack for MVP1
+	addComponentOrLog(world, targetDummy, components.NewAttack(0, 0, 0, 0, 0))
+
+	fmt.Println("Created Voidspawn and Enemy Dummy")
+
+	// --- Instantiate Systems ---
+	autoAttackSystem := systems.NewAutoAttackSystem(world)
+
+	// --- Run Simulation (remains the same logic) ---
+	fmt.Println("\nStarting Auto Attack Simulation (30s)...")
+	const maxTimeSeconds = 30.0
+	const timeStepSeconds = 0.1
+	simulationTime := 0.0
+	for simulationTime < maxTimeSeconds {
+		autoAttackSystem.Update(timeStepSeconds)
+		simulationTime += timeStepSeconds
+	}
+	fmt.Printf("\nSimulation Ended (Reached %.1fs)...\n", simulationTime)
+
+	// --- Final Status ---
+	fmt.Println("\n------------Final Stats---------------")
+	// Assuming it has been refactored:
+	utils.PrintChampionStats(world, voidspawn)
+
+	// Use type-safe getters for final status check
+	targetHealth, okHealth := world.GetHealth(targetDummy)
+	targetInfo, okInfo := world.GetChampionInfo(targetDummy)
+	if okHealth && okInfo {
+		fmt.Printf("  Name: %s, Current Health: %.1f / %.1f\n", targetInfo.Name, targetHealth.Current, targetHealth.Max)
+	} else {
+		fmt.Println("  Could not retrieve final dummy stats (missing components?).")
+	}
 }

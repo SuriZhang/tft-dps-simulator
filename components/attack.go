@@ -3,7 +3,7 @@ package components
 // Attack contains champion attack information
 type Attack struct {
     Damage         float64
-    Speed          float64
+    AttackSpeed          float64
     Range          float64
     CritChance     float64
     CritMultiplier float64
@@ -11,10 +11,10 @@ type Attack struct {
 }
 
 // NewAttack creates an Attack component
-func NewAttack(damage, speed, attackRange, critChance, critMulti float64) Attack {
+func NewAttack(damage, attackSpeed, attackRange, critChance, critMulti float64) Attack {
     return Attack{
         Damage:         damage,
-        Speed:          speed,
+        AttackSpeed:          attackSpeed,
         Range:          attackRange,
         CritChance:     critChance,
         CritMultiplier: critMulti,

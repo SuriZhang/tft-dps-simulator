@@ -1,134 +1,155 @@
 package systems
 
 import (
-    "fmt"
-    "math/rand"
-    "reflect"
+	"fmt"
+	"math/rand"
+	"reflect"
 
-    "github.com/suriz/tft-dps-simulator/components"
-    "github.com/suriz/tft-dps-simulator/ecs"
+	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/ecs"
+	"github.com/suriz/tft-dps-simulator/utils"
 )
 
-// AutoAttackSystem handles champion auto attacks
+// AutoAttackSystem handles champion auto attacks based on Team ID.
 type AutoAttackSystem struct {
-    world   *ecs.World
-    // Store current simulation time in seconds
-    currentTime float64
+	world       *ecs.World
+	currentTime float64
 }
 
-// NewAutoAttackSystem creates a new auto attack system
+// NewAutoAttackSystem creates a new auto attack system.
 func NewAutoAttackSystem(world *ecs.World) *AutoAttackSystem {
-    return &AutoAttackSystem{
-        world:   world,
-        currentTime: 0.0,
-    }
+	return &AutoAttackSystem{
+		world:       world,
+		currentTime: 0.0,
+	}
 }
 
-// Update processes all auto attacks for the current timestep
-// deltaTime is the time passed since last update in seconds
+// Update processes auto attacks for the current timestep.
 func (s *AutoAttackSystem) Update(deltaTime float64) {
-    // Update current time
-    s.currentTime += deltaTime
-    
-    // Get all entities with Attack and Health components
-    attackType := reflect.TypeOf(components.Attack{})
-    healthType := reflect.TypeOf(components.Health{})
-    
-    // Find all attackers (units that can attack)
-    attackers := s.world.GetEntitiesWithComponents(attackType, healthType)
-    
-    // Find all possible targets (units that can be attacked)
-    targets := s.world.GetEntitiesWithComponents(healthType)
-    
-    // Stop if no targets available
-    if len(targets) == 0 {
-        return
-    }
-    
-    // Process each attacking entity
-    for _, attacker := range attackers {
-        // Get attack component
-        attackComp, _ := s.world.GetComponent(attacker, attackType)
-        attack := attackComp.(components.Attack)
-        
-        // Check if attack is off cooldown
-        attackCooldown := 1.0 / attack.Speed // Time between attacks in seconds
-        if s.currentTime - attack.LastAttackTime < attackCooldown {
-            continue // Not ready to attack yet
-        }
-        
-        // Find a target (in a real implementation, this would use targeting logic)
-        // For now, just pick the first target
-        if len(targets) == 0 {
-            continue
-        }
-        target := targets[0]
-        
-        // Perform the attack
-        s.performAttack(attacker, target, attack)
-        
-        // Update last attack time
-        attack.LastAttackTime = s.currentTime
-        s.world.AddComponent(attacker, attack)
-    }
+	s.currentTime += deltaTime
+
+	// Define component types needed for GetEntitiesWithComponents (still uses reflect)
+	attackType := reflect.TypeOf(components.Attack{})
+	healthType := reflect.TypeOf(components.Health{})
+	teamType := reflect.TypeOf(components.Team{})
+	posType := reflect.TypeOf(components.Position{})
+
+	// Find all entities that *could* potentially attack
+	potentialAttackers := s.world.GetEntitiesWithComponents(attackType, healthType, teamType, posType)
+
+	// Process each potential attacker
+	for _, attacker := range potentialAttackers {
+		// --- Get Components using Type-Safe Getters ---
+		team, okTeam := s.world.GetTeam(attacker)
+		attack, okAttack := s.world.GetAttack(attacker)
+		health, okHealth := s.world.GetHealth(attacker)
+
+		// Skip if essential components are missing (shouldn't happen with GetEntitiesWithComponents)
+		if !okTeam || !okAttack || !okHealth {
+			fmt.Printf("Warning: Attacker entity %d missing core components (Team/Attack/Health/Position).\n", attacker)
+			continue
+		}
+
+		// --- Rule #4: Only Team 0 (Player) attacks ---
+		if team.ID != 0 {
+			continue // Skip if not on the player team (Team 0)
+		}
+
+		// Skip dead attackers
+		if health.Current <= 0 {
+			continue
+		}
+
+		// Check if attack is off cooldown
+		attackCooldown := 1.0 / attack.AttackSpeed
+		if s.currentTime-attack.LastAttackTime < attackCooldown {
+			continue // Not ready to attack yet
+		}
+
+		// Find the nearest ENEMY target using the utility function
+		// Assumes FindNearestEnemy is also refactored to use type-safe getters
+		target, found := utils.FindNearestEnemy(s.world, attacker, team.ID)
+		if !found {
+			continue // No valid targets found
+		}
+
+		// Perform the attack (pass the pointer to attack component)
+		s.performAttack(attacker, target, attack) // Pass the pointer
+
+		// Update last attack time *after* a successful attack attempt
+		// The 'attack' variable is already a pointer, so we can modify it directly.
+		// No need to call AddComponent again unless performAttack replaces the component pointer.
+		// Assuming performAttack modifies the pointed-to struct:
+		attack.LastAttackTime = s.currentTime
+		// If performAttack *could* replace the component (unlikely), you'd need:
+		// updatedAttack, _ := s.world.GetAttack(attacker)
+		// updatedAttack.LastAttackTime = s.currentTime
+	}
 }
 
-// performAttack handles the logic of an entity attacking another
-func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack components.Attack) {
-    // Get champion info
-    infoComp, hasInfo := s.world.GetComponent(attacker, reflect.TypeOf(components.ChampionInfo{}))
-    attackerName := "Unknown"
-    if hasInfo {
-        info := infoComp.(components.ChampionInfo)
-        attackerName = info.Name
-    }
-    
-    // Get target info
-    targetInfoComp, hasTargetInfo := s.world.GetComponent(target, reflect.TypeOf(components.ChampionInfo{}))
-    targetName := "Unknown"
-    if hasTargetInfo {
-        targetInfo := targetInfoComp.(components.ChampionInfo)
-        targetName = targetInfo.Name
-    }
-    
-    // Get target health
-    targetHealthComp, hasHealth := s.world.GetComponent(target, reflect.TypeOf(components.Health{}))
-    if !hasHealth {
-        return
-    }
-    targetHealth := targetHealthComp.(components.Health)
-    
-    // Calculate damage
-    damage := attack.Damage
-    
-    // Check for critical hit
-    isCrit := rand.Float64() < attack.CritChance
-    if isCrit {
-        damage = damage * attack.CritMultiplier
-    }
-    
-    // Apply armor formula: damage * (100 / (100 + armor))
-    // This gives diminishing returns on armor
-    damageReduction := 100.0 / (100.0 + targetHealth.Armor)
-    finalDamage := damage * damageReduction
-    
-    // Apply damage to target
-    targetHealth.Current -= finalDamage
-    
-    // Update target health
-    s.world.AddComponent(target, targetHealth)
-    
-    // Debug output
-    critText := ""
-    if isCrit {
-        critText = "CRIT! "
-    }
-    
-    fmt.Printf("%s attacks %s for %.1f damage %s(%.1f HP remaining)\n",
-        attackerName, targetName, finalDamage, critText, targetHealth.Current)
-    
-    // Check if target died
-    if targetHealth.Current <= 0 {
-        fmt.Printf("%s has been defeated!\n", targetName)
-    }
+// performAttack handles the logic of an entity attacking another.
+// Now accepts a pointer to the Attack component.
+func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack *components.Attack) error { // Takes *components.Attack
+	// Get attacker info for logging (using type-safe getter)
+	attackerInfo, okInfoAttacker := s.world.GetChampionInfo(attacker)
+	attackerName := fmt.Sprintf("Entity %d", attacker) // Default name
+	if okInfoAttacker {
+		attackerName = attackerInfo.Name
+	}
+
+	// Get target info for logging (using type-safe getter)
+	targetInfo, okInfoTarget := s.world.GetChampionInfo(target)
+	targetName := fmt.Sprintf("Entity %d", target) // Default name
+	if okInfoTarget {
+		targetName = targetInfo.Name
+	}
+
+	// Get target health (using type-safe getter)
+	targetHealth, okHealth := s.world.GetHealth(target)
+	if !okHealth {
+		return fmt.Errorf("Error: Target %s (Entity %d) has no Health component.", targetName, target)
+		 // Cannot apply damage
+	}
+
+	// --- Damage Calculation ---
+	damage := attack.Damage // Access fields directly from the pointer
+
+	// Check for critical hit
+	isCrit := rand.Float64() < attack.CritChance
+	if isCrit {
+		damage = damage * attack.CritMultiplier
+	}
+
+	// Apply armor formula: damage * (100 / (100 + armor))
+	// Ensure targetHealth.Armor is accessed correctly
+	damageReduction := 100.0 / (100.0 + targetHealth.Armor)
+	finalDamage := damage * damageReduction
+
+	// Apply damage to target (modify the struct pointed to by targetHealth)
+	targetHealth.Current -= finalDamage
+
+	// NO need to call AddComponent(target, targetHealth) here,
+	// because targetHealth is a pointer to the component in the world's map.
+	// We modified the data *in place*.
+
+	// --- End Damage Calculation ---
+
+	// Debug output
+	critText := ""
+	if isCrit {
+		critText = "CRIT! "
+	}
+	displayHealth := targetHealth.Current
+	if displayHealth < 0 {
+		displayHealth = 0
+	}
+	fmt.Printf("%s attacks %s for %.1f damage %s(%.1f HP remaining)\n",
+		attackerName, targetName, finalDamage, critText, displayHealth)
+
+	// Check if target died
+	if targetHealth.Current <= 0 {
+		fmt.Printf("%s has been defeated!\n", targetName)
+	}
+	return nil // Indicate successful execution
 }
+

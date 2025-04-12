@@ -1,0 +1,97 @@
+package utils
+
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/data"
+	"github.com/suriz/tft-dps-simulator/ecs"
+)
+
+// PrintChampionStats prints detailed information about a champion entity using type-safe getters.
+func PrintChampionStats(world *ecs.World, entity ecs.Entity) {
+	// Use type-safe getters and check the 'ok' value
+	info, okInfo := world.GetChampionInfo(entity)
+	health, okHealth := world.GetHealth(entity)
+	mana, okMana := world.GetMana(entity)
+	attack, okAttack := world.GetAttack(entity)
+	// Add others as needed: traits, position, team...
+	traits, okTraits := world.GetTraits(entity)
+	position, okPos := world.GetPosition(entity)
+	team, okTeam := world.GetTeam(entity)
+
+	// Check if essential info is present
+	if !okInfo {
+		fmt.Printf("\n=== Entity ID: %d (No ChampionInfo) ===\n", entity)
+		fmt.Println("------------------------------")
+		return
+	}
+
+	fmt.Printf("\n=== Champion: %s (★ %d) ===\n", info.Name, info.StarLevel)
+	fmt.Printf("Entity ID: %d\n", entity)
+
+	// Print components if they exist
+	fmt.Printf("Info Component:\n  %+v\n", *info) // Dereference pointer for printing value
+
+	if okHealth {
+		fmt.Printf("Health Component:\n  %+v\n", *health)
+	} else {
+		fmt.Println("Health Component: <Missing>")
+	}
+
+	if okMana {
+		fmt.Printf("Mana Component:\n  %+v\n", *mana)
+	} else {
+		fmt.Println("Mana Component: <Missing>")
+	}
+
+	if okAttack {
+		fmt.Printf("Attack Component:\n  %+v\n", *attack)
+	} else {
+		fmt.Println("Attack Component: <Missing>")
+	}
+
+	// Print other components if retrieved...
+	if okTraits {
+		fmt.Printf("Traits Component:\n  %+v\n", *traits)
+	} else {
+        fmt.Println("Traits Component: <Missing>")
+    }         
+
+	if okPos {
+		fmt.Printf("Position Component:\n  %+v\n", *position)
+	} else {
+        fmt.Println("Position Component: <Missing>")
+    }
+    
+	if okTeam {
+		fmt.Printf("Team Component:\n  %+v\n", *team)
+	} else{
+        fmt.Println("Team Component: <Missing>")
+    }
+
+	fmt.Printf("------------------------------\n")
+}
+
+func PrintTeamStats(world *ecs.World) {
+	for _, entity := range world.GetEntitiesWithComponents(reflect.TypeOf(components.Team{})) {
+		team, ok := world.GetTeam(entity)
+		if ok && team.ID == 0 {
+			PrintChampionStats(world, entity)
+		}
+	}
+}
+
+func PrintTftDataLoaded(tftData *data.TFTSetData) {
+	if tftData == nil || len(tftData.SetData) == 0 {
+		fmt.Println("No TFT set data loaded.")
+		return
+	}
+	setInfo := tftData.SetData[0] // Assuming only one set is loaded
+	fmt.Printf("Loaded Set: %s\n", setInfo.Mutator)
+	fmt.Printf("  Champions: %d\n", len(setInfo.Champions))
+	fmt.Printf("  Traits: %d\n", len(setInfo.Traits))
+	fmt.Printf("  Items: %d\n", len(setInfo.Items))
+	fmt.Println("-------------------------------------------")
+}

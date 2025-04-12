@@ -2,112 +2,357 @@ package ecs
 
 import (
 	"fmt"
-	"reflect"
+	"reflect" // Stigithub.com/suriz/tft-dps-simulator/components"
+
+	"github.com/suriz/tft-dps-simulator/components"
 )
 
-// World contains all entities and their components
+// World contains all entities and their components, stored in type-specific maps.
 type World struct {
-    // Maps component type to a map of entity->component
-    components map[reflect.Type]map[Entity]interface{}
-    // All active entities
-    entities map[Entity]bool
+	// --- Component Maps ---
+	// Using pointers (*components.Type) allows checking for nil to see if an entity has the component.
+	Health       map[Entity]*components.Health
+	Mana         map[Entity]*components.Mana
+	Attack       map[Entity]*components.Attack
+	Traits       map[Entity]*components.Traits
+	ChampionInfo map[Entity]*components.ChampionInfo
+	Position     map[Entity]*components.Position
+	Team         map[Entity]*components.Team
+	// Add maps for other components defined in your components directory as needed:
+	// Defense      map[Entity]*components.Defense
+	// Spell        map[Entity]*components.Spell
+	// Buffs        map[Entity]*components.Buffs
 }
 
-// NewWorld creates a new empty world
+// NewWorld creates a new empty world, initializing all component maps.
 func NewWorld() *World {
-    return &World{
-        components: make(map[reflect.Type]map[Entity]interface{}),
-        entities:   make(map[Entity]bool),
-    }
+	return &World{
+		// Initialize maps
+		Health:       make(map[Entity]*components.Health),
+		Mana:         make(map[Entity]*components.Mana),
+		Attack:       make(map[Entity]*components.Attack),
+		Traits:       make(map[Entity]*components.Traits),
+		ChampionInfo: make(map[Entity]*components.ChampionInfo),
+		Position:     make(map[Entity]*components.Position),
+		Team:         make(map[Entity]*components.Team),
+		// Initialize other maps here...
+	}
 }
 
-// CreateEntity creates a new entity in the world
+// CreateEntity generates a new unique entity ID using the global NewEntity function.
+// Note: This only reserves the ID; components must be added separately.
 func (w *World) CreateEntity() Entity {
-    e := NewEntity()
-    w.entities[e] = true
-    return e
+	return NewEntity()
 }
 
-// RemoveEntity removes an entity and all its components
+// RemoveEntity removes an entity and all its associated components from the world.
 func (w *World) RemoveEntity(e Entity) {
-    delete(w.entities, e)
-    // Remove all components for this entity
-    for _, componentMap := range w.components {
-        delete(componentMap, e)
-    }
+	// Delete the entity from every component map
+	delete(w.Health, e)
+	delete(w.Mana, e)
+	delete(w.Attack, e)
+	delete(w.Traits, e)
+	delete(w.ChampionInfo, e)
+	delete(w.Position, e)
+	delete(w.Team, e)
+	// Delete from other maps here...
 }
 
-// AddComponent adds a component to an entity
-func (w *World) AddComponent(e Entity, component interface{}) {
-    componentType := reflect.TypeOf(component)
-    
-    // Create map for this component type if it doesn't exist
-    if _, exists := w.components[componentType]; !exists {
-        w.components[componentType] = make(map[Entity]interface{})
-    }
-    
-    // Add component to entity
-    w.components[componentType][e] = component
+// AddComponent adds a component to an entity. It uses a type switch
+// to place the component in the correct map.
+// Returns an error if the component type is not recognized by the World struct.
+func (w *World) AddComponent(e Entity, component interface{}) error {
+	// Ensure component is not nil
+	if component == nil {
+		return fmt.Errorf("cannot add nil component to entity %d", e)
+	}
+
+	switch c := component.(type) {
+	// Handle both value and pointer types for convenience
+	case components.Health:
+		w.Health[e] = &c
+	case *components.Health:
+		w.Health[e] = c
+	case components.Mana:
+		w.Mana[e] = &c
+	case *components.Mana:
+		w.Mana[e] = c
+	case components.Attack:
+		w.Attack[e] = &c
+	case *components.Attack:
+		w.Attack[e] = c
+	case components.Traits:
+		w.Traits[e] = &c
+	case *components.Traits:
+		w.Traits[e] = c
+	case components.ChampionInfo:
+		w.ChampionInfo[e] = &c
+	case *components.ChampionInfo:
+		w.ChampionInfo[e] = c
+	case components.Position:
+		w.Position[e] = &c
+	case *components.Position:
+		w.Position[e] = c
+	case components.Team:
+		w.Team[e] = &c
+	case *components.Team:
+		w.Team[e] = c
+	// Add cases for other component types here...
+	default:
+		// Use reflection to get the type name for the error message
+		return fmt.Errorf("unknown component type: %v", reflect.TypeOf(component))
+	}
+	return nil
 }
 
-// GetComponent returns a component for an entity
+// GetComponent retrieves a component of a specific type for an entity.
+// It returns the component (as interface{}) and true if found, otherwise nil and false.
+// This generic version is kept for flexibility but type-safe getters are preferred.
 func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{}, bool) {
-    if componentMap, exists := w.components[componentType]; exists {
-        if component, hasComponent := componentMap[e]; hasComponent {
-            return component, true
-        }
-    }
-    return nil, false
+	switch componentType {
+	case reflect.TypeOf(components.Health{}):
+		comp, ok := w.Health[e] // Use type-safe getter internally
+		return comp, ok
+	case reflect.TypeOf(components.Mana{}):
+		comp, ok := w.Mana[e]
+		return comp, ok
+	case reflect.TypeOf(components.Attack{}):
+		comp, ok := w.Attack[e]
+		return comp, ok
+	case reflect.TypeOf(components.Traits{}):
+		comp, ok := w.Traits[e]
+		return comp, ok
+	case reflect.TypeOf(components.ChampionInfo{}):
+		comp, ok := w.ChampionInfo[e]
+		return comp, ok
+	case reflect.TypeOf(components.Position{}):
+		comp, ok := w.Position[e]
+		return comp, ok
+	case reflect.TypeOf(components.Team{}):
+		comp, ok := w.Team[e]
+		return comp, ok
+	// Add cases for other component types here...
+	default:
+		return nil, false
+	}
 }
 
-// HasComponent checks if an entity has a specific component
+// HasComponent checks if an entity possesses a component of the specified type.
 func (w *World) HasComponent(e Entity, componentType reflect.Type) bool {
-    if componentMap, exists := w.components[componentType]; exists {
-        _, hasComponent := componentMap[e]
-        return hasComponent
-    }
-    return false
+	_, ok := w.GetComponent(e, componentType) // Leverage existing logic
+	return ok
 }
 
-// GetEntitiesWithComponents returns all entities that have all the specified component types
+// RemoveComponent removes a specific component type from an entity.
+func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
+	switch componentType {
+	case reflect.TypeOf(components.Health{}):
+		delete(w.Health, e)
+	case reflect.TypeOf(components.Mana{}):
+		delete(w.Mana, e)
+	case reflect.TypeOf(components.Attack{}):
+		delete(w.Attack, e)
+	case reflect.TypeOf(components.Traits{}):
+		delete(w.Traits, e)
+	case reflect.TypeOf(components.ChampionInfo{}):
+		delete(w.ChampionInfo, e)
+	case reflect.TypeOf(components.Position{}):
+		delete(w.Position, e)
+	case reflect.TypeOf(components.Team{}):
+		delete(w.Team, e)
+	// Add cases for other component types here...
+	default:
+		fmt.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
+	}
+}
+
+// GetEntitiesWithComponents returns a slice of entities that possess ALL the specified component types.
 func (w *World) GetEntitiesWithComponents(componentTypes ...reflect.Type) []Entity {
-    if len(componentTypes) == 0 {
-        return []Entity{}
-    }
-    
-    // Start with entities from first component type
-    candidateEntities := make(map[Entity]bool)
-    if componentMap, exists := w.components[componentTypes[0]]; exists {
-        for e := range componentMap {
-            candidateEntities[e] = true
-        }
-    }
-    
-    // Filter by remaining component types
-    for _, ct := range componentTypes[1:] {
-        componentMap, exists := w.components[ct]
-        if !exists {
-            return []Entity{} // No entities have this component
-        }
-        
-        // Keep only entities that have this component
-        for e := range candidateEntities {
-            if _, hasComponent := componentMap[e]; !hasComponent {
-                delete(candidateEntities, e)
-            }
-        }
-    }
-    
-    // Convert map keys to slice
-    result := make([]Entity, 0, len(candidateEntities))
-    for e := range candidateEntities {
-        result = append(result, e)
-    }
-    return result
+	if len(componentTypes) == 0 {
+		return []Entity{}
+	}
+
+	// Optimization: Find the component type with the fewest entities first.
+	var smallestMapSize = -1
+	var firstType reflect.Type
+	for _, ct := range componentTypes {
+		currentSize := w.getMapSizeForType(ct)
+		if smallestMapSize == -1 || currentSize < smallestMapSize {
+			smallestMapSize = currentSize
+			firstType = ct
+		}
+	}
+
+	if smallestMapSize == 0 {
+		return []Entity{} // If the smallest map is empty, no entities can have all components.
+	}
+
+	// Initialize candidates with entities from the smallest map
+	initialSet := w.getEntitiesForType(firstType)
+	candidates := make(map[Entity]bool, len(initialSet))
+	for _, e := range initialSet {
+		candidates[e] = true
+	}
+
+	// Filter by the remaining component types
+	for _, ct := range componentTypes {
+		if ct == firstType { // Skip the type we already used
+			continue
+		}
+
+		// Check entities for the current component type
+		currentTypeSet := make(map[Entity]bool)
+		for _, e := range w.getEntitiesForType(ct) {
+			currentTypeSet[e] = true
+		}
+
+		// Filter candidates: keep only those present in currentTypeSet
+		for e := range candidates {
+			if !currentTypeSet[e] {
+				delete(candidates, e) // Remove if entity doesn't have the current component type
+			}
+		}
+
+		// Early exit if no candidates remain
+		if len(candidates) == 0 {
+			return []Entity{}
+		}
+	}
+
+	// Convert the final candidate map keys to a slice
+	result := make([]Entity, 0, len(candidates))
+	for e := range candidates {
+		result = append(result, e)
+	}
+	return result
 }
 
-// String returns a string representation of the world
-func (w *World) String() string {
-    return fmt.Sprintf("World with %d entities", len(w.entities))
+// Helper to get map size for a type
+func (w *World) getMapSizeForType(componentType reflect.Type) int {
+	switch componentType {
+	case reflect.TypeOf(components.Health{}):
+		return len(w.Health)
+	case reflect.TypeOf(components.Mana{}):
+		return len(w.Mana)
+	case reflect.TypeOf(components.Attack{}):
+		return len(w.Attack)
+	case reflect.TypeOf(components.Traits{}):
+		return len(w.Traits)
+	case reflect.TypeOf(components.ChampionInfo{}):
+		return len(w.ChampionInfo)
+	case reflect.TypeOf(components.Position{}):
+		return len(w.Position)
+	case reflect.TypeOf(components.Team{}):
+		return len(w.Team)
+	// Add cases for other component types...
+	default:
+		return 0
+	}
 }
 
+// Helper function for GetEntitiesWithComponents to get entities for a single type
+func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
+	var entities []Entity
+	switch componentType {
+	case reflect.TypeOf(components.Health{}):
+		entities = make([]Entity, 0, len(w.Health))
+		for e := range w.Health {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Mana{}):
+		entities = make([]Entity, 0, len(w.Mana))
+		for e := range w.Mana {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Attack{}):
+		entities = make([]Entity, 0, len(w.Attack))
+		for e := range w.Attack {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Traits{}):
+		entities = make([]Entity, 0, len(w.Traits))
+		for e := range w.Traits {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.ChampionInfo{}):
+		entities = make([]Entity, 0, len(w.ChampionInfo))
+		for e := range w.ChampionInfo {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Position{}):
+		entities = make([]Entity, 0, len(w.Position))
+		for e := range w.Position {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Team{}):
+		entities = make([]Entity, 0, len(w.Team))
+		for e := range w.Team {
+			entities = append(entities, e)
+		}
+	// Add cases for other component types...
+	default:
+		return []Entity{} // Return empty slice for unknown types
+	}
+	return entities
+}
+
+// String returns a string representation of the world (simplified).
+func (w *World) String() (int, error) {
+	// A more detailed String() could list counts per component type
+	// For now, just indicate the next ID to be assigned.
+	return fmt.Println("World using map-per-component structure")
+}
+
+// --- Type-Safe Getters (Recommended) ---
+
+// GetHealth returns the Health component for an entity, type-safe.
+func (w *World) GetHealth(e Entity) (*components.Health, bool) {
+	comp, ok := w.Health[e]
+	return comp, ok
+}
+
+// GetMana returns the Mana component for an entity, type-safe.
+func (w *World) GetMana(e Entity) (*components.Mana, bool) {
+	comp, ok := w.Mana[e]
+	return comp, ok
+}
+
+// GetAttack returns the Attack component for an entity, type-safe.
+func (w *World) GetAttack(e Entity) (*components.Attack, bool) {
+	comp, ok := w.Attack[e]
+	return comp, ok
+}
+
+// GetTraits returns the Traits component for an entity, type-safe.
+func (w *World) GetTraits(e Entity) (*components.Traits, bool) {
+	comp, ok := w.Traits[e]
+	return comp, ok
+}
+
+// GetChampionInfo returns the ChampionInfo component for an entity, type-safe.
+func (w *World) GetChampionInfo(e Entity) (*components.ChampionInfo, bool) {
+	comp, ok := w.ChampionInfo[e]
+	return comp, ok
+}
+
+// GetPosition returns the Position component for an entity, type-safe.
+func (w *World) GetPosition(e Entity) (*components.Position, bool) {
+	comp, ok := w.Position[e]
+	return comp, ok
+}
+
+// GetTeam returns the Team component for an entity, type-safe.
+func (w *World) GetTeam(e Entity) (*components.Team, bool) {
+	comp, ok := w.Team[e]
+	return comp, ok
+}
+
+// GetChampionByName returns the first entity with the specified champion name.
+func (w *World) GetChampionByName(name string) (Entity, bool) {
+	for e, info := range w.ChampionInfo {
+		if info.Name == name {
+			return e, true
+		}
+	}
+	return 0, false // Not found
+}

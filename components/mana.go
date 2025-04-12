@@ -4,7 +4,7 @@ package components
 type Mana struct {
     Max      float64
     Current  float64
-    StartMana float64
+    InitialMana float64
 }
 
 // NewMana creates a Mana component
@@ -12,6 +12,6 @@ func NewMana(max, start float64) Mana {
     return Mana{
         Max:      max,
         Current:  start,
-        StartMana: start,
+        InitialMana: start,
     }
 }
