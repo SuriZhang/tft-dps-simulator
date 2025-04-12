@@ -30,3 +30,12 @@ As TFT sets evolve and mechanics get wilder (think augments, modifiers, stacking
 
 Read about ECS: https://www.richardlord.net/blog/ecs/what-is-an-entity-framework
 
+Done Today:
+- [x] set up project scaffold
+- [x] implemented data parsing logic
+- [x] implemented basic auto attack system
+
+TODO:
+- [ ] clean up main.go, wrap the auto attack testing code to another function or something
+- [ ] traits, augments, items, spell cast
+
