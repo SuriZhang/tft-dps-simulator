@@ -21,3 +21,33 @@ func NewAttack(damage, attackSpeed, attackRange, critChance, critMulti float64) 
         LastAttackTime: 0,
     }
 }
+
+// UpdateDamage updates the attack damage
+func (a *Attack) UpdateDamage(damage float64) {
+	a.Damage = damage
+}
+
+// UpdateAttackSpeed updates the attack speed
+func (a *Attack) UpdateAttackSpeed(attackSpeed float64) {
+	a.AttackSpeed = attackSpeed
+}	
+
+// UpdateRange updates the attack range
+func (a *Attack) UpdateRange(rangeVal float64) {
+	a.Range = rangeVal
+}
+
+// UpdateCritChance updates the critical chance	
+func (a *Attack) UpdateCritChance(critChance float64) {
+	a.CritChance = critChance
+}
+
+// UpdateCritMultiplier updates the critical damage multiplier
+func (a *Attack) UpdateCritMultiplier(critMulti float64) {
+	a.CritMultiplier = critMulti
+}
+
+// UpdateLastAttackTime updates the last attack time
+func (a *Attack) UpdateLastAttackTime(lastAttackTime float64) {
+	a.LastAttackTime = lastAttackTime
+}

@@ -64,6 +64,20 @@ func main() {
 	fmt.Println("\n------------Setting up Simulation---------------")
 	// Add position using the helper
 	addComponentOrLog(world, voidspawn, components.NewPosition(1, 1))
+	
+	health, ok := world.GetHealth(voidspawn)
+	if ok {
+		health.UpdateCurrentHealth(1000)
+		health.UpdateMaxHealth(1000)
+	} else {
+		fmt.Println("voidspawn Health component not found.")
+	}
+	attack, ok := world.GetAttack(voidspawn)
+	if ok {
+		attack.UpdateDamage(100)
+	} else {
+		fmt.Println("voidspawn Attack component not found.")
+	}
 
 	// Create Target Dummy manually
 	targetDummy, err := championFactory.CreateEnemyChampion("Training Dummy", 1)
@@ -76,6 +90,8 @@ func main() {
 	// Update Attack component as enemy will not attack for MVP1
 	addComponentOrLog(world, targetDummy, components.NewAttack(0, 0, 0, 0, 0))
 
+	utils.PrintChampionStats(world, targetDummy)
+
 	fmt.Println("Created Voidspawn and Enemy Dummy")
 
 	// --- Instantiate Systems ---
@@ -84,7 +100,7 @@ func main() {
 	// --- Run Simulation (remains the same logic) ---
 	fmt.Println("\nStarting Auto Attack Simulation (30s)...")
 	const maxTimeSeconds = 30.0
-	const timeStepSeconds = 0.1
+	const timeStepSeconds = 1.0
 	simulationTime := 0.0
 	for simulationTime < maxTimeSeconds {
 		autoAttackSystem.Update(timeStepSeconds)

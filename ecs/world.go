@@ -296,13 +296,6 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	return entities
 }
 
-// String returns a string representation of the world (simplified).
-func (w *World) String() (int, error) {
-	// A more detailed String() could list counts per component type
-	// For now, just indicate the next ID to be assigned.
-	return fmt.Println("World using map-per-component structure")
-}
-
 // --- Type-Safe Getters (Recommended) ---
 
 // GetHealth returns the Health component for an entity, type-safe.
