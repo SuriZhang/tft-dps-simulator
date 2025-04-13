@@ -79,5 +79,5 @@ DONE Today:
 
 TODO:
 - [ ] implement StatCalculationSystem to calcluate bonus component stats and update final stats
-- [ ] maybe refactor item related code from championfactory to itemfactory.
+- [x] maybe refactor item related code from championfactory to itemfactory.
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something

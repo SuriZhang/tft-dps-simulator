@@ -13,6 +13,7 @@ import (
 	// "github.com/suriz/tft-dps-simulator/systems"
 	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 	"github.com/suriz/tft-dps-simulator/utils"
+	"github.com/suriz/tft-dps-simulator/managers"
 )
 
 // Helper function to handle AddComponent errors
@@ -56,6 +57,7 @@ func main() {
 	// --- ECS Setup ---
 	world := ecs.NewWorld()
 	championFactory := factory.NewChampionFactory(world)
+	equipmentManager := managers.NewEquipmentManager(world)
 
 	// --- Create Initial Entities (Example) ---
 	// This part remains conceptually similar, but uses the helper
@@ -66,9 +68,9 @@ func main() {
 		return
 	}
 	
-	championFactory.AddItemToChampion(voidspawn, "TFT_Item_BFSword")
-	championFactory.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
-	err = championFactory.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
+	equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BFSword")
+	equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
+	err = equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
 	if err != nil {
 		fmt.Printf("Error adding item to Voidspawn: %v\n", err)
 	}
