@@ -103,6 +103,16 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 		}
 	}
 
+	// create empty inventory
+	err = cf.world.AddComponent(entity, components.NewEquipment())
+	if err != nil {
+		return 0, fmt.Errorf("failed to add Inventory component to %s: %w", championData.Name, err)
+	}
+
+	err = cf.world.AddComponent(entity, components.NewPosition(0, 0))
+	if err != nil {
+		return 0, fmt.Errorf("failed to add Position component to %s: %w", championData.Name, err)
+	}
 	// Add other essential components here (Position, Team are usually added later/externally)
 
 	// If we reached here, all essential components were added successfully
@@ -130,17 +140,11 @@ func (cf *ChampionFactory) CreateChampionByName(name string, starLevel int, team
 		return 0, fmt.Errorf("failed to add Team component to %s: %w", championData.Name, err)
 	}
 
-	// create empty inventory
-	err = cf.world.AddComponent(entity, components.NewEquipment())
-	if err != nil {
-		return 0, fmt.Errorf("failed to add Inventory component to %s: %w", championData.Name, err)
-	}
-
 	return entity, nil
 }
 
-// CreateAllyChampion creates a champion entity for the player team (team ID 0).
-func (cf *ChampionFactory) CreateAllyChampion(name string, starLevel int) (ecs.Entity, error) {
+// CreatePlayerChampion creates a champion entity for the player team (team ID 0).
+func (cf *ChampionFactory) CreatePlayerChampion(name string, starLevel int) (ecs.Entity, error) {
 	return cf.CreateChampionByName(name, starLevel, 0)
 }
 
@@ -169,8 +173,12 @@ func (cf *ChampionFactory) AddItemToChampion(champion ecs.Entity, itemApiName st
 	}
 
 	// Attempt to add the item to the equipment
-	if !equipment.AddItem(item) {
+	if !equipment.HasItemSlots(item) {
 		return fmt.Errorf("no space to add item %s to champion %s", item.ApiName, championInfo.Name)
+	}
+
+	if equipment.IsDuplicateUniqueItem(item.ApiName) {
+		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championInfo.Name)
 	}
 
 	// Calculate the item stats and apply them to the champion, update ItemEffect component
@@ -178,7 +186,6 @@ func (cf *ChampionFactory) AddItemToChampion(champion ecs.Entity, itemApiName st
 	if err != nil {
 		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championInfo.Name, err)
 	}
-	log.Printf("Successfully added item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name)
 
 	return nil
 }
@@ -217,7 +224,7 @@ func (cf *ChampionFactory) RemoveItemFromChampion(champion ecs.Entity, itemApiNa
 func (cf *ChampionFactory) calculateAndUpdateItemEffects(champion ecs.Entity) error {
 	championInfo, ok := cf.world.GetChampionInfo(champion)
 	if !ok {
-		return fmt.Errorf("champion %d has no ChampionInfo component", champion)	
+		return fmt.Errorf("champion %d has no ChampionInfo component", champion)
 	}
 
 	equipment, ok := cf.world.GetEquipment(champion)
@@ -225,6 +232,13 @@ func (cf *ChampionFactory) calculateAndUpdateItemEffects(champion ecs.Entity) er
 		// This shouldn't happen if called after ensuring equipment exists, but good practice to check.
 		return fmt.Errorf("cannot caculate item effects: champion %s has no Equipment component", championInfo.Name)
 	}
+
+	if len(equipment.Items) == 0 {
+		log.Printf("Champion %s has no items equipped, skipping item effect calculation.", championInfo.Name)
+		return nil
+	}
+
+	log.Printf("Champion %s has %d items equipped.", championInfo.Name, len(equipment.Items))
 
 	// Get or create the ItemEffect component
 	itemEffect, ok := cf.world.GetItemEffect(champion)
@@ -248,6 +262,8 @@ func (cf *ChampionFactory) calculateAndUpdateItemEffects(champion ecs.Entity) er
 			continue
 		}
 
+		log.Printf("Processing item %s for champion %s", item.ApiName, championInfo.Name)
+
 		// Add stats from this item to the aggregate
 		for statName, value := range item.Effects {
 			switch statName {
@@ -267,19 +283,19 @@ func (cf *ChampionFactory) calculateAndUpdateItemEffects(champion ecs.Entity) er
 				itemEffect.AddBonusMR(value)
 				log.Printf("Adding %f bonus magic resist to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AD":
-				itemEffect.AddBonusPercentAD(value) 
+				itemEffect.AddBonusPercentAD(value)
 				log.Printf("Adding %f bonus percent AD to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AP":
 				itemEffect.AddBonusAP(value)
 				log.Printf("Adding %f bonus AP to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AS":
-				itemEffect.AddBonusPercentAttackSpeed(value/100)
+				itemEffect.AddBonusPercentAttackSpeed(value / 100)
 				log.Printf("Adding %f bonus percent attack speed to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
 			case "CritChance":
-				itemEffect.AddBonusCritChance(value/100)
+				itemEffect.AddBonusCritChance(value / 100)
 				log.Printf("Adding %f bonus crit chance to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
-            case "BonusDamage":
-                itemEffect.AddBonusDamageAmp(value)
+			case "BonusDamage":
+				itemEffect.AddBonusDamageAmp(value)
 				log.Printf("Adding %f bonus damage amp to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			// Add cases for other stats as needed...
 			default:
@@ -288,6 +304,7 @@ func (cf *ChampionFactory) calculateAndUpdateItemEffects(champion ecs.Entity) er
 			}
 			// Add other stats as needed...
 		}
+		log.Printf("Successfully added item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name)
 	}
 
 	// Optional: Add/Remove marker components based on items (for future systems)

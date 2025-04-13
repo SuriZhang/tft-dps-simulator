@@ -9,8 +9,9 @@ import (
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
+
 	// "github.com/suriz/tft-dps-simulator/systems"
-	"github.com/suriz/tft-dps-simulator/systems/items"
+	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 	"github.com/suriz/tft-dps-simulator/utils"
 )
 
@@ -59,13 +60,18 @@ func main() {
 	// --- Create Initial Entities (Example) ---
 	// This part remains conceptually similar, but uses the helper
 	fmt.Println("\n------------Creating Initial Entities---------------")
-	voidspawn, err := championFactory.CreateAllyChampion("Voidspawn", 1)
+	voidspawn, err := championFactory.CreatePlayerChampion("Voidspawn", 1)
 	if err != nil {
 		fmt.Printf("Error creating Voidspawn: %v\n", err)
 		return
 	}
+	
 	championFactory.AddItemToChampion(voidspawn, "TFT_Item_BFSword")
-	championFactory.AddItemToChampion(voidspawn, "TFT_Item_Deathblade")
+	championFactory.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
+	err = championFactory.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
+	if err != nil {
+		fmt.Printf("Error adding item to Voidspawn: %v\n", err)
+	}
 
 	// apply item effects
 	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)

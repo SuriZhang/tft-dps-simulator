@@ -18,24 +18,41 @@ func NewEquipment() *Equipment {
 }
 
 // CanAddItem checks if there's space for another item.
-func (inv *Equipment) CanAddItem() bool {
-    return len(inv.Items) < inv.MaxSlots
+func (eq *Equipment) CanAddItem() bool {
+    return len(eq.Items) < eq.MaxSlots
 }
 
-// AddItem adds an item if there is space. Returns true if successful, false otherwise.
-func (inv *Equipment) AddItem(item *data.Item) bool {
-    if inv.CanAddItem() {
-        inv.Items = append(inv.Items, item)
+// HasItemSlots adds an item if there is space. Returns true if successful, false otherwise.
+func (eq *Equipment) HasItemSlots(item *data.Item) bool {
+    if eq.CanAddItem() {
+        eq.Items = append(eq.Items, item)
         return true
-    }
+    } 
     return false
 }
 
+// IsUniqueItem checks if user is attempting to add another unique item of the same type.
+func (eq *Equipment) IsDuplicateUniqueItem(itemApiName string) bool {
+    // Check if the item is unique
+    item := data.GetItemByApiName(itemApiName)
+    if item == nil {
+        return false // Item not found
+    }
+    if item.Unique {
+        for _, equippedItem := range eq.Items {
+            if equippedItem.ApiName == itemApiName {
+                return true // Duplicate unique item found
+            }
+        }
+    }
+    return false // No duplicates found
+}
+
 // RemoveItem removes an item by its API name. Returns true if successful, false if not found.
-func (inv *Equipment) RemoveItem(itemApiName string) bool { 
-	for i, item := range inv.Items {
+func (eq *Equipment) RemoveItem(itemApiName string) bool { 
+	for i, item := range eq.Items {
 		if item.ApiName == itemApiName {
-			inv.Items = append(inv.Items[:i], inv.Items[i+1:]...)
+			eq.Items = append(eq.Items[:i], eq.Items[i+1:]...)
 			return true
 		}
 	}
