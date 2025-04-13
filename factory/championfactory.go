@@ -181,6 +181,7 @@ func (cf *ChampionFactory) AddItemToChampion(champion ecs.Entity, itemApiName st
 		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championInfo.Name)
 	}
 
+	log.Printf("Adding item '%s' to champion %s and updating item effects.", itemApiName, championInfo.Name)
 	// Calculate the item stats and apply them to the champion, update ItemEffect component
 	err := cf.calculateAndUpdateItemEffects(champion)
 	if err != nil {
@@ -209,12 +210,12 @@ func (cf *ChampionFactory) RemoveItemFromChampion(champion ecs.Entity, itemApiNa
 		return fmt.Errorf("item %s not found in champion %s's equipment", itemApiName, championInfo.Name)
 	}
 
+	log.Printf("Removing item '%s' from champion %s and updating item effects.", itemApiName, championInfo.Name)
 	// Remove item effects from champion stats, update ItemEffect component
 	err := cf.calculateAndUpdateItemEffects(champion)
 	if err != nil {
 		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championInfo.Name, err)
 	}
-	log.Printf("Successfully removed item '%s' from champion %s and updated item effects.", itemApiName, championInfo.Name)
 
 	return nil
 }
@@ -304,7 +305,7 @@ func (cf *ChampionFactory) calculateAndUpdateItemEffects(champion ecs.Entity) er
 			}
 			// Add other stats as needed...
 		}
-		log.Printf("Successfully added item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name)
+		log.Printf("Successfully processed item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name)
 	}
 
 	// Optional: Add/Remove marker components based on items (for future systems)
