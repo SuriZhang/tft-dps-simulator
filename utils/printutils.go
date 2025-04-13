@@ -92,6 +92,34 @@ func PrintTftDataLoaded(tftData *data.TFTSetData) {
 	fmt.Printf("Loaded Set: %s\n", setInfo.Mutator)
 	fmt.Printf("  Champions: %d\n", len(setInfo.Champions))
 	fmt.Printf("  Traits: %d\n", len(setInfo.Traits))
-	fmt.Printf("  Items: %d\n", len(setInfo.Items))
+	fmt.Printf("  Items: %d\n", len(setInfo.SetItems))
+	fmt.Printf("  Augments: %d\n", len(setInfo.SetAugments))
+	fmt.Println("-------------------------------------------")
+}
+
+func PrintAugmentStats(augment *data.Item) {
+	if augment == nil {
+		fmt.Println("No augment data available.")
+		return
+	}
+	fmt.Printf("Augment: %s\n", augment.Name)
+	fmt.Printf("  Description: %s\n", augment.Desc)
+	fmt.Printf("  AssociatedTraits: %s\n", augment.AssociatedTraits)
+	fmt.Println("-------------------------------------------")
+}
+
+func PrintItemStats(item *data.Item) {
+	if item == nil {
+		fmt.Println("No item data available.")
+		return
+	}
+	fmt.Printf("Item: %s\n", item.Name)
+	fmt.Printf("  Description: %s\n", item.Desc)
+	fmt.Printf("  AssociatedTraits: %s\n", item.AssociatedTraits)
+	fmt.Printf("  Composition: %+v\n", item.Composition)
+	// print effects
+	for _, effect := range item.Effects {
+		fmt.Printf("  Effect: %+v\n", effect)
+	}
 	fmt.Println("-------------------------------------------")
 }

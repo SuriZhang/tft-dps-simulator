@@ -1,0 +1,63 @@
+package data
+
+import (
+	"fmt"
+	// "strings" // Import if case-insensitive lookup is needed
+)
+
+// Global variable to store items for quick lookup by API Name
+var SetActiveItems map[string]*Item
+
+var allItemsAndAugments map[string]*Item // Package private, key is API name
+
+// GetItemByApiName returns an item by its API name or nil if not found
+func GetItemByApiName(apiName string) *Item {
+    // Case insensitive lookup could be added with strings.ToLower if needed
+    item, exists := SetActiveItems[apiName]
+    if exists {
+        return item
+    }
+    return nil
+}
+
+// InitializeItems loads item data into the global map for quick access.
+// It assumes the relevant set data (containing items) is at index 0 after loading.
+func InitializeSetActiveItems(setData *TFTSetData, filePath string) error {
+    allItemsData, err := LoadItemDataFromFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error loading item data: %v", err)
+	}
+
+	setActiveItemNames := setData.SetData[0].SetItems
+
+	SetActiveItems = make(map[string]*Item)
+	// Create a map for faster lookup of all items by API name
+	allItemsAndAugments = make(map[string]*Item, len(allItemsData))
+	for i := range allItemsData {
+		// Store pointer to the item in the map
+		allItemsAndAugments[allItemsData[i].ApiName] = &allItemsData[i]
+	}
+
+	// Iterate through the API names of the items active in the set
+	for _, apiName := range setActiveItemNames {
+		// Look up the item in the pre-built map
+		if item, found := allItemsAndAugments[apiName]; found {
+			SetActiveItems[apiName] = item // Add the found item pointer to the result map
+		} else {
+			// Handle case where an active item name is not found in the loaded item data
+			fmt.Printf("Warning: Set active item '%s' not found in loaded item data from %s\n", apiName, filePath)
+		}
+	}
+	return nil
+}
+
+// GetItemByName searches by display name (less reliable for uniqueness)
+func GetItemByName(name string) *Item {
+    for _, item := range SetActiveItems {
+        if item.Name == name {
+            return item // Return the first match
+        }
+    }
+    return nil
+}
+

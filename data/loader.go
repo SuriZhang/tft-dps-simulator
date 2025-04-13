@@ -48,3 +48,25 @@ func LoadSetDataFromFile(filePath string, targetMutator string) (*TFTSetData, er
 	// Return the filtered data
 	return &TFTSetData{SetData: filteredSetData}, nil
 }
+
+// LoadItemDataFromFile extracts and returns item data from the JSON file
+func LoadItemDataFromFile(filePath string) ([]Item, error) {
+	// Read the file
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading item file: %w", err)
+	}
+
+	// Define a struct to hold the top-level JSON structure containing "items"
+	var data struct {
+		Items []Item `json:"items"`
+	}
+
+	// Parse the JSON data
+	if err := json.Unmarshal(file, &data); err != nil {
+		return nil, fmt.Errorf("error parsing item JSON: %w", err)
+	}
+
+	// Return the extracted items
+	return data.Items, nil
+}

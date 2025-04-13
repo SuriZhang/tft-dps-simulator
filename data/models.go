@@ -6,12 +6,12 @@ type TFTSetData struct {
 
 type Set struct {
 	Champions []Champion `json:"champions"`
-	Items     []string   `json:"items"`
+	SetItems  []string   `json:"items"`
 	Mutator   string     `json:"mutator"`
 	Name      string     `json:"name"`
 	Number    int        `json:"number"`
 	Traits    []Trait    `json:"traits"`
-	Augments  []string   `json:"augments"`
+	SetAugments  []string   `json:"augments"`
 }
 
 type Champion struct {
@@ -66,4 +66,20 @@ type Effect struct {
 	MinUnits  int                `json:"minUnits"`
 	Style     int                `json:"style"`
 	Variables map[string]float64 `json:"variables"` // Using map to handle dynamic keys
+}
+
+// Item represents a single item (or augment, based on JSON structure) in TFT data.
+type Item struct {
+	ApiName            string             `json:"apiName"`
+	AssociatedTraits   []string           `json:"associatedTraits"`
+	Composition        []string           `json:"composition"` // Often empty for augments
+	Desc               string             `json:"desc"`
+	Effects            map[string]float64 `json:"effects"`
+	From               []string           `json:"from"` // Can be null, list of components
+	Icon               string             `json:"icon"`
+	ID                 *string            `json:"id"` // Use pointer to handle potential null
+	IncompatibleTraits []string           `json:"incompatibleTraits"`
+	Name               string             `json:"name"`
+	Tags               []string           `json:"tags"`
+	Unique             bool               `json:"unique"`
 }
