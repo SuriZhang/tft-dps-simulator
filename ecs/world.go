@@ -18,6 +18,8 @@ type World struct {
 	ChampionInfo map[Entity]*components.ChampionInfo
 	Position     map[Entity]*components.Position
 	Team         map[Entity]*components.Team
+	Item         map[Entity]*components.ItemEffect
+	Equipment    map[Entity]*components.Equipment // Assuming you have an Inventory component
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
 	// Spell        map[Entity]*components.Spell
@@ -35,6 +37,8 @@ func NewWorld() *World {
 		ChampionInfo: make(map[Entity]*components.ChampionInfo),
 		Position:     make(map[Entity]*components.Position),
 		Team:         make(map[Entity]*components.Team),
+		Item:         make(map[Entity]*components.ItemEffect),
+		Equipment:    make(map[Entity]*components.Equipment),
 		// Initialize other maps here...
 	}
 }
@@ -55,6 +59,8 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.ChampionInfo, e)
 	delete(w.Position, e)
 	delete(w.Team, e)
+	delete(w.Item, e)
+	delete(w.Equipment, e)
 	// Delete from other maps here...
 }
 
@@ -97,6 +103,14 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.Team[e] = &c
 	case *components.Team:
 		w.Team[e] = c
+	case components.ItemEffect:
+		w.Item[e] = &c
+	case *components.ItemEffect:
+		w.Item[e] = c
+	case components.Equipment:
+		w.Equipment[e] = &c
+	case *components.Equipment:
+		w.Equipment[e] = c
 	// Add cases for other component types here...
 	default:
 		// Use reflection to get the type name for the error message
@@ -131,6 +145,13 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.Team{}):
 		comp, ok := w.Team[e]
 		return comp, ok
+	case reflect.TypeOf(components.ItemEffect{}):
+		comp, ok := w.Item[e]
+		return comp, ok
+	case reflect.TypeOf(components.Equipment{}):
+		comp, ok := w.Equipment[e]
+		return comp, ok
+
 	// Add cases for other component types here...
 	default:
 		return nil, false
@@ -160,6 +181,10 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.Position, e)
 	case reflect.TypeOf(components.Team{}):
 		delete(w.Team, e)
+	case reflect.TypeOf(components.ItemEffect{}):
+		delete(w.Item, e)
+	case reflect.TypeOf(components.Equipment{}):
+		delete(w.Equipment, e)
 	// Add cases for other component types here...
 	default:
 		fmt.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
@@ -244,6 +269,10 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.Position)
 	case reflect.TypeOf(components.Team{}):
 		return len(w.Team)
+	case reflect.TypeOf(components.ItemEffect{}):
+		return len(w.Item)
+	case reflect.TypeOf(components.Equipment{}):
+		return len(w.Equipment)
 	// Add cases for other component types...
 	default:
 		return 0
@@ -287,6 +316,16 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(components.Team{}):
 		entities = make([]Entity, 0, len(w.Team))
 		for e := range w.Team {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.ItemEffect{}):
+		entities = make([]Entity, 0, len(w.Item))
+		for e := range w.Item {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Equipment{}):
+		entities = make([]Entity, 0, len(w.Equipment))
+		for e := range w.Equipment {
 			entities = append(entities, e)
 		}
 	// Add cases for other component types...
@@ -348,4 +387,16 @@ func (w *World) GetChampionByName(name string) (Entity, bool) {
 		}
 	}
 	return 0, false // Not found
+}
+
+// GetItemEffect returns the ItemEffect component for an entity, type-safe.
+func (w *World) GetItemEffect(e Entity) (*components.ItemEffect, bool) {
+	comp, ok := w.Item[e]
+	return comp, ok
+}
+
+// GetEquipment returns the Equipment component for an entity, type-safe.
+func (w *World) GetEquipment(e Entity) (*components.Equipment, bool) {
+	comp, ok := w.Equipment[e]
+	return comp, ok
 }

@@ -2,34 +2,207 @@ package components
 
 // Health contains champion health information
 type Health struct {
-	Max     float64
-	Current float64
-	Armor   float64
-	MR      float64
+	// --- Base Stats (from champion data * star level) ---
+	BaseMaxHP float64
+	BaseArmor float64
+	BaseMR    float64
+
+	// --- Aggregated Bonus Stats (Sum from Items, Traits, Temp Buffs, etc.) ---
+	// These are modified by systems like ItemSystem, TraitSystems, BuffSystems
+	BonusMaxHP      float64 // Flat HP bonuses
+	BonusPercentHp  float64 // Additive % HP bonuses (e.g., 0.1 + 0.2 = 0.3 for +30%)
+	BonusArmor      float64 // Flat Armor bonuses
+	BonusMR         float64 // Flat MR bonuses
+	BonusDurability float64 // Flat durability bonuses (e.g., from items or traits)
+	// Add BonusPercentArmor/MR if needed by mechanics
+
+	// --- Final Calculated Stats (Calculated by StatCalculationSystem) ---
+	// These are the values used in combat calculations (damage reduction, checking max health)
+	FinalMaxHP      float64
+	FinalArmor      float64
+	FinalMR         float64
+	FinalDurability float64 // This is the durability that can be set, not the current durability
+
+	// --- Current State ---
+	CurrentHP float64
 }
 
-// NewHealth creates a Health component with current health set to max
-func NewHealth(max, armor, mr float64) Health {
-	return Health{
-		Max:     max,
-		Current: max,
-		Armor:   armor,
-		MR:      mr,
+// NewHealth initializes the component with base stats.
+func NewHealth(baseHp, baseArmor, baseMr float64) *Health {
+	return &Health{
+		BaseMaxHP: baseHp,
+		BaseArmor: baseArmor,
+		BaseMR:    baseMr,
+
+		// Initialize bonuses to 0
+		BonusMaxHP:     0,
+		BonusPercentHp: 0,
+		BonusArmor:     0,
+		BonusMR:        0,
+
+		// Initialize final stats to base stats initially
+		FinalMaxHP: baseHp,
+		FinalArmor: baseArmor,
+		FinalMR:    baseMr,
+
+		// Initialize current health
+		CurrentHP: baseHp,
 	}
 }
 
-func (h *Health) UpdateMaxHealth(maxHealth float64) {
-	h.Max = maxHealth
+func (h *Health) SetMaxHealth(maxHealth float64) {
+	h.BaseMaxHP = maxHealth
 }
 
-func (h *Health) UpdateCurrentHealth(currentHealth float64) {
-	h.Current = currentHealth
+func (h *Health) SetCurrentHealth(currentHealth float64) {
+	h.CurrentHP = currentHealth
 }
 
-func (h *Health) UpdateArmor(armor float64) {
-	h.Armor = armor
+// --- Methods to SET FINAL calculated stats (called by StatCalculationSystem) ---
+func (h *Health) SetFinalMaxHealth(value float64) {
+	h.FinalMaxHP = value
 }
 
-func (h *Health) UpdateMR(mr float64) {
-	h.MR = mr
+func (h *Health) SetBaseArmor(armor float64) {
+	h.BaseArmor = armor
+}
+
+func (h *Health) SetFinalArmor(armor float64) {
+	h.FinalArmor = armor
+}
+
+func (h *Health) SetBaseMR(mr float64) {
+	h.BaseMR = mr
+}
+
+func (h *Health) SetFinalMR(mr float64) {
+	h.FinalMR = mr
+}
+
+func (h *Health) SetFinalDurability(durability float64) {
+	h.FinalDurability = durability
+}
+
+// --- Methods to ADD to BONUS fields 
+func (h *Health) AddBonusMaxHealth(amount float64) {
+	h.BonusMaxHP += amount
+}
+func (h *Health) AddBonusPercentHealth(amount float64) {
+	h.BonusPercentHp += amount
+}
+func (h *Health) AddBonusArmor(amount float64) {
+	h.BonusArmor += amount
+}
+func (h *Health) AddBonusMR(amount float64) {
+	h.BonusMR += amount
+}
+func (h *Health) AddBonusDurability(amount float64) {
+	h.BonusDurability += amount
+}
+
+func (h *Health) ResetBonuses() {
+	h.BonusMaxHP = 0
+	h.BonusPercentHp = 0
+	h.BonusArmor = 0
+	h.BonusMR = 0
+	// Reset other bonuses if added
+}
+
+func (h *Health) ResetHealth() {
+	h.CurrentHP = 0
+}
+
+func (h *Health) AddHealth(amount float64) {
+	h.CurrentHP += amount
+	if h.CurrentHP > h.BaseMaxHP {
+		h.CurrentHP = h.BaseMaxHP
+	}
+}
+
+func (h *Health) AddBaseMaxHp(amount float64) float64 {
+	h.BaseMaxHP += amount
+	if h.CurrentHP > h.BaseMaxHP {
+		h.CurrentHP = h.BaseMaxHP
+	}
+	return h.BaseMaxHP
+}
+
+func (h *Health) AddFinalMaxHP(amount float64) {
+	h.FinalMaxHP += amount
+	if h.CurrentHP > h.FinalMaxHP {
+		h.CurrentHP = h.FinalMaxHP
+	}
+}
+
+func (h *Health) AddBaseArmor(amount float64) {
+	h.BaseArmor += amount
+}
+
+func (h *Health) AddDurability(amount float64) {
+	h.BonusDurability += amount
+}
+
+// Heal adjusts current HP, respecting the already calculated FinalMaxHP
+func (h *Health) Heal(amount float64) {
+	h.CurrentHP += amount
+	if h.CurrentHP > h.FinalMaxHP { // Use FinalMaxHP here
+		h.CurrentHP = h.FinalMaxHP
+	}
+}
+
+// TakeDamage adjusts current HP. Damage reduction logic would happen before calling this.
+func (h *Health) TakeDamage(amount float64) {
+	h.CurrentHP -= amount
+	if h.CurrentHP < 0 {
+		h.CurrentHP = 0
+	}
+}
+
+// ResetCurrentHealth sets CurrentHP to the calculated FinalMaxHP (e.g., at combat start)
+func (h *Health) ResetCurrentHealth() {
+	h.CurrentHP = h.FinalMaxHP // Use FinalMaxHP
+}
+
+func (h *Health) IsAlive() bool {
+	return h.CurrentHP > 0
+}
+
+func (h *Health) IsDead() bool {
+	return h.CurrentHP <= 0
+}
+
+func (h *Health) GetCurrentHealth() float64 {
+	return h.CurrentHP
+}
+
+func (h *Health) GetBaseMaxHp() float64 {
+	return h.BaseMaxHP
+}
+
+func (h *Health) GetBaseArmor() float64 {
+	return h.BaseArmor
+}
+
+func (h *Health) GetBaseMR() float64 {
+	return h.BaseMR
+}
+
+func (h *Health) GetFinalArmor() float64 {
+	return h.FinalArmor
+}
+
+func (h *Health) GetFinalMR() float64 {
+	return h.FinalMR
+}
+
+func (h *Health) GetFinalMaxHP() float64 {
+	return h.FinalMaxHP
+}
+
+func (h *Health) GetBonusDurability() float64 {
+	return h.BonusDurability
+}
+
+func (h *Health) GetFinalDurability() float64 {
+	return h.FinalDurability
 }

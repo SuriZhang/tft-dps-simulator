@@ -47,7 +47,7 @@ func PrintChampionStats(world *ecs.World, entity ecs.Entity) {
 	}
 
 	if okAttack {
-		fmt.Printf("Attack Component:\n  %+v\n", *attack)
+		fmt.Printf("Attack Component:\n %#v\n", *attack)
 	} else {
 		fmt.Println("Attack Component: <Missing>")
 	}
@@ -121,5 +121,18 @@ func PrintItemStats(item *data.Item) {
 	for _, effect := range item.Effects {
 		fmt.Printf("  Effect: %+v\n", effect)
 	}
+	fmt.Println("-------------------------------------------")
+}
+
+func PrintTraitStats(trait *data.Trait) {
+	if trait == nil {
+		fmt.Println("No trait data available.")
+		return
+	}
+	fmt.Printf("Trait: %s\n", trait.ApiName)
+	fmt.Printf("  Description: %s\n", trait.Desc)
+	fmt.Printf("  Name: %s\n", trait.Name)
+	fmt.Printf("  Icon: %s\n", trait.Icon)
+	fmt.Printf("  Effect: %v\n", trait.Effects)
 	fmt.Println("-------------------------------------------")
 }

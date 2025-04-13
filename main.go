@@ -5,11 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/suriz/tft-dps-simulator/components"
+	// "github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
-	"github.com/suriz/tft-dps-simulator/systems"
+	// "github.com/suriz/tft-dps-simulator/systems"
+	"github.com/suriz/tft-dps-simulator/systems/items"
 	"github.com/suriz/tft-dps-simulator/utils"
 )
 
@@ -25,7 +26,8 @@ func addComponentOrLog(world *ecs.World, entity ecs.Entity, component interface{
 func main() {
 	// --- Data Loading ---
 	dataDir := "./data/data_files"
-	filePath := filepath.Join(dataDir, "en_us_14.1b.json")
+	fileName := "en_us_14.1b.json"
+	filePath := filepath.Join(dataDir, fileName)
 	fmt.Println("------------Loading Set Data---------------")
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
 	if err != nil {
@@ -34,6 +36,21 @@ func main() {
 	}
 	data.InitializeChampions(tftData)
 	utils.PrintTftDataLoaded(tftData)
+
+	data.InitializeTraits(tftData)
+
+	fmt.Println("------------Loading Item Data---------------")
+	// items, err := data.LoadItemDataFromFile(filepath.Join(dataDir, fileName))
+	// if err != nil {
+	// 	fmt.Printf("Error loading item data: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	
+	data.InitializeSetActiveAugments(tftData, filePath)
+
+	data.InitializeSetActiveItems(tftData, filePath)
+
+	data.GetItemByApiName("")
 
 	// --- ECS Setup ---
 	world := ecs.NewWorld()
@@ -47,78 +64,82 @@ func main() {
 		fmt.Printf("Error creating Voidspawn: %v\n", err)
 		return
 	}
-	// Add Team component using the helper
-	addComponentOrLog(world, voidspawn, components.NewTeam(0))
+	championFactory.AddItemToChampion(voidspawn, "TFT_Item_BFSword")
+	championFactory.AddItemToChampion(voidspawn, "TFT_Item_Deathblade")
 
-	brand, err := championFactory.CreateAllyChampion("Brand", 1)
-	if err != nil {
-		fmt.Printf("Error creating Brand: %v\n", err)
-		return
-	}
-	addComponentOrLog(world, brand, components.NewTeam(0))
+	// apply item effects
+	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
+	baseStaticItemSystem.ApplyStats()
+
+	// brand, err := championFactory.CreateAllyChampion("Brand", 1)
+	// if err != nil {
+	// 	fmt.Printf("Error creating Brand: %v\n", err)
+	// 	return
+	// }
+	// addComponentOrLog(world, brand, components.NewTeam(0))
 
 	// Print Team 0 champions
 	utils.PrintTeamStats(world)
 
-	// --- Simulation Setup ---
-	fmt.Println("\n------------Setting up Simulation---------------")
-	// Add position using the helper
-	addComponentOrLog(world, voidspawn, components.NewPosition(1, 1))
+	// // --- Simulation Setup ---
+	// fmt.Println("\n------------Setting up Simulation---------------")
+	// // Add position using the helper
+	// addComponentOrLog(world, voidspawn, components.NewPosition(1, 1))
 	
-	health, ok := world.GetHealth(voidspawn)
-	if ok {
-		health.UpdateCurrentHealth(1000)
-		health.UpdateMaxHealth(1000)
-	} else {
-		fmt.Println("voidspawn Health component not found.")
-	}
-	attack, ok := world.GetAttack(voidspawn)
-	if ok {
-		attack.UpdateDamage(100)
-	} else {
-		fmt.Println("voidspawn Attack component not found.")
-	}
+	// health, ok := world.GetHealth(voidspawn)
+	// if ok {
+	// 	health.UpdateCurrentHealth(1000)
+	// 	health.UpdateMaxHealth(1000)
+	// } else {
+	// 	fmt.Println("voidspawn Health component not found.")
+	// }
+	// attack, ok := world.GetAttack(voidspawn)
+	// if ok {
+	// 	attack.UpdateDamage(100)
+	// } else {
+	// 	fmt.Println("voidspawn Attack component not found.")
+	// }
 
-	// Create Target Dummy manually
-	targetDummy, err := championFactory.CreateEnemyChampion("Training Dummy", 1)
-	if err != nil {
-		fmt.Printf("Error creating Traning Dummy: %v\n", err)
-		return
-	}
-	addComponentOrLog(world, targetDummy, components.NewHealth(10000, 0, 0))
-	addComponentOrLog(world, targetDummy, components.NewPosition(5, 1))
-	// Update Attack component as enemy will not attack for MVP1
-	addComponentOrLog(world, targetDummy, components.NewAttack(0, 0, 0, 0, 0))
+	// // Create Target Dummy manually
+	// targetDummy, err := championFactory.CreateEnemyChampion("Training Dummy", 1)
+	// if err != nil {
+	// 	fmt.Printf("Error creating Traning Dummy: %v\n", err)
+	// 	return
+	// }
+	// addComponentOrLog(world, targetDummy, components.NewHealth(10000, 0, 0))
+	// addComponentOrLog(world, targetDummy, components.NewPosition(5, 1))
+	// // Update Attack component as enemy will not attack for MVP1
+	// addComponentOrLog(world, targetDummy, components.NewAttack(0, 0, 0, 0, 0))
 
-	utils.PrintChampionStats(world, targetDummy)
+	// utils.PrintChampionStats(world, targetDummy)
 
-	fmt.Println("Created Voidspawn and Enemy Dummy")
+	// fmt.Println("Created Voidspawn and Enemy Dummy")
 
-	// --- Instantiate Systems ---
-	autoAttackSystem := systems.NewAutoAttackSystem(world)
+	// // --- Instantiate Systems ---
+	// autoAttackSystem := systems.NewAutoAttackSystem(world)
 
-	// --- Run Simulation (remains the same logic) ---
-	fmt.Println("\nStarting Auto Attack Simulation (30s)...")
-	const maxTimeSeconds = 30.0
-	const timeStepSeconds = 1.0
-	simulationTime := 0.0
-	for simulationTime < maxTimeSeconds {
-		autoAttackSystem.Update(timeStepSeconds)
-		simulationTime += timeStepSeconds
-	}
-	fmt.Printf("\nSimulation Ended (Reached %.1fs)...\n", simulationTime)
+	// // --- Run Simulation (remains the same logic) ---
+	// fmt.Println("\nStarting Auto Attack Simulation (30s)...")
+	// const maxTimeSeconds = 30.0
+	// const timeStepSeconds = 1.0
+	// elapsedTime := 0.0
+	// for elapsedTime < maxTimeSeconds {
+	// 	autoAttackSystem.Update(timeStepSeconds)
+	// 	elapsedTime += timeStepSeconds
+	// }
+	// fmt.Printf("\nSimulation Ended (Reached %.1fs)...\n", elapsedTime)
 
-	// --- Final Status ---
-	fmt.Println("\n------------Final Stats---------------")
-	// Assuming it has been refactored:
-	utils.PrintChampionStats(world, voidspawn)
+	// // --- Final Status ---
+	// fmt.Println("\n------------Final Stats---------------")
+	// // Assuming it has been refactored:
+	// utils.PrintChampionStats(world, voidspawn)
 
-	// Use type-safe getters for final status check
-	targetHealth, okHealth := world.GetHealth(targetDummy)
-	targetInfo, okInfo := world.GetChampionInfo(targetDummy)
-	if okHealth && okInfo {
-		fmt.Printf("  Name: %s, Current Health: %.1f / %.1f\n", targetInfo.Name, targetHealth.Current, targetHealth.Max)
-	} else {
-		fmt.Println("  Could not retrieve final dummy stats (missing components?).")
-	}
+	// // Use type-safe getters for final status check
+	// targetHealth, okHealth := world.GetHealth(targetDummy)
+	// targetInfo, okInfo := world.GetChampionInfo(targetDummy)
+	// if okHealth && okInfo {
+	// 	fmt.Printf("  Name: %s, Current Health: %.1f / %.1f\n", targetInfo.Name, targetHealth.Current, targetHealth.Max)
+	// } else {
+	// 	fmt.Println("  Could not retrieve final dummy stats (missing components?).")
+	// }
 }

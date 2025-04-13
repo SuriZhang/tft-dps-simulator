@@ -53,7 +53,7 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
         }
 
         // Check if entity is alive
-        if targetHealth.Current <= 0 {
+        if targetHealth.CurrentHP <= 0 {
             continue // Dead, skip
         }
 

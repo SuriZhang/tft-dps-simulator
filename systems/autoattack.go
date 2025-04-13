@@ -64,13 +64,13 @@ func (s *AutoAttackSystem) Update(deltaTime float64) {
 		}
 
 		// Skip dead attackers
-		if health.Current <= 0 {
+		if health.CurrentHP <= 0 {
             fmt.Printf("Attacker %d is dead, skipping...\n", attacker)
 			continue
 		}
 
 		// Check if attack is off cooldown
-		attackCooldown := 1.0 / attack.AttackSpeed
+		attackCooldown := 1.0 / attack.GetFinalAttackSpeed()
 		if s.currentTime-attack.LastAttackTime < attackCooldown {
             fmt.Printf("Attacker %s is not ready to attack yet (%.2f seconds remaining).\n", info.Name, attackCooldown-(s.currentTime-attack.LastAttackTime))
 			continue // Not ready to attack yet
@@ -129,23 +129,28 @@ func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack *co
 	}
 
 	// --- Damage Calculation ---
-	damage := attack.Damage // Access fields directly from the pointer
+	damage := attack.GetFinalAD() 
 
-	// Check for critical hit
-	isCrit := rand.Float64() < attack.CritChance
-	if isCrit {
-		damage = damage * attack.CritMultiplier
+	damageAmp := attack.GetFinalDamageAmp()
+	if damageAmp != 0 {	
+		damage = damage * (1 + damageAmp/100.0) // Apply damage amplification
 	}
 
-	// Apply armor formula: damage * (100 / (100 + armor))
+	// Check for critical hit
+	isCrit := rand.Float64() < attack.GetFinalCritChance()
+	if isCrit {
+		damage = damage * attack.GetFinalCritMultiplier()
+	}
+
+	// Apply armor formula: damage * (100 / (100 + armor))* (1 - durability)
 	// Ensure targetHealth.Armor is accessed correctly
-	damageReduction := 100.0 / (100.0 + targetHealth.Armor)
+	damageReduction := (100.0 / (100.0 + targetHealth.GetFinalArmor())) * (1.0 - targetHealth.GetFinalDurability()) 
 	finalDamage := damage * damageReduction
 
     fmt.Printf("Damage before reduction: %.1f, after reduction: %.1f\n", damage, finalDamage)
 
 	// Apply damage to target (modify the struct pointed to by targetHealth)
-	targetHealth.Current -= finalDamage
+	targetHealth.CurrentHP -= finalDamage
 
 	// --- End Damage Calculation ---
 
@@ -154,7 +159,7 @@ func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack *co
 	if isCrit {
 		critText = "***CRIT! "
 	}
-	displayHealth := targetHealth.Current
+	displayHealth := targetHealth.CurrentHP
 	if displayHealth < 0 {
 		displayHealth = 0
 	}
@@ -162,7 +167,7 @@ func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack *co
 		attackerName, targetName, finalDamage, critText, displayHealth)
 
 	// Check if target died
-	if targetHealth.Current <= 0 {
+	if targetHealth.CurrentHP <= 0 {
 		fmt.Printf("%s has been defeated!\n", targetName)
 	}
 	return nil // Indicate successful execution
