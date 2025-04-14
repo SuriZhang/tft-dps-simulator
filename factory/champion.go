@@ -119,13 +119,13 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 	return entity, nil
 }
 
-// CreateChampionByName creates a champion entity by searching for it by name.
+// CreateChampionByApiName creates a champion entity by searching for it by name.
 // It now propagates errors from CreateChampion.
-func (cf *ChampionFactory) CreateChampionByName(name string, starLevel int, team int) (ecs.Entity, error) {
+func (cf *ChampionFactory) CreateChampionByApiName(apiName string, starLevel int, team int) (ecs.Entity, error) {
 	// Find champion data by name using the function from the data package
-	championData := data.GetChampionByName(name)
+	championData := data.GetChampionByApiName(apiName)
 	if championData == nil {
-		return 0, fmt.Errorf("champion data for '%s' not found", name)
+		return 0, fmt.Errorf("champion data for '%s' not found", apiName)
 	}
 
 	// Create entity using the found data, passing any error up
@@ -144,11 +144,11 @@ func (cf *ChampionFactory) CreateChampionByName(name string, starLevel int, team
 }
 
 // CreatePlayerChampion creates a champion entity for the player team (team ID 0).
-func (cf *ChampionFactory) CreatePlayerChampion(name string, starLevel int) (ecs.Entity, error) {
-	return cf.CreateChampionByName(name, starLevel, 0)
+func (cf *ChampionFactory) CreatePlayerChampion(apiName string, starLevel int) (ecs.Entity, error) {
+	return cf.CreateChampionByApiName(apiName, starLevel, 0)
 }
 
 // CreateEnemyChampion creates a champion entity for the enemy team (team ID 1).
-func (cf *ChampionFactory) CreateEnemyChampion(name string, starLevel int) (ecs.Entity, error) {
-	return cf.CreateChampionByName(name, starLevel, 1)
+func (cf *ChampionFactory) CreateEnemyChampion(apiName string, starLevel int) (ecs.Entity, error) {
+	return cf.CreateChampionByApiName(apiName, starLevel, 1)
 }

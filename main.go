@@ -65,17 +65,22 @@ func main() {
 	// --- Create Initial Entities (Example) ---
 	// This part remains conceptually similar, but uses the helper
 	fmt.Println("\n------------Creating Initial Entities---------------")
-	voidspawn, err := championFactory.CreatePlayerChampion("Voidspawn", 1)
+	kindred, err := championFactory.CreatePlayerChampion("TFT14_Kindred", 1)
 	if err != nil {
-		fmt.Printf("Error creating Voidspawn: %v\n", err)
+		fmt.Printf("Error creating champion: %v\n", err)
 		return
 	}
 
-	equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BFSword")
-	equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
-	err = equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
+	addComponentOrLog(world, kindred, components.CanAbilityCritFromTraits{})
+
+	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
 	if err != nil {
-		fmt.Printf("Error adding item to Voidspawn: %v\n", err)
+		fmt.Printf("Error adding item to Kindred: %v\n", err)
+	}
+
+	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_Deathblade")
+	if err != nil {
+		fmt.Printf("Error adding item to Kindred: %v\n", err)
 	}
 
 	// 1. RESET all bonus stats for all relevant entities

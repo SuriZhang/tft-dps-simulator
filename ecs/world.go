@@ -21,6 +21,8 @@ type World struct {
 	Team         map[Entity]*components.Team
 	Item         map[Entity]*effects.ItemStaticEffect
 	Equipment    map[Entity]*components.Equipment // Assuming you have an Inventory component
+	CanAbilityCritFromTraits map[Entity]*components.CanAbilityCritFromTraits
+	CanAbilityCritFromItems  map[Entity]*components.CanAbilityCritFromItems
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
 	// Spell        map[Entity]*components.Spell
@@ -40,6 +42,8 @@ func NewWorld() *World {
 		Team:         make(map[Entity]*components.Team),
 		Item:         make(map[Entity]*effects.ItemStaticEffect),
 		Equipment:    make(map[Entity]*components.Equipment),
+		CanAbilityCritFromTraits: make(map[Entity]*components.CanAbilityCritFromTraits),
+		CanAbilityCritFromItems:  make(map[Entity]*components.CanAbilityCritFromItems),
 		// Initialize other maps here...
 	}
 }
@@ -62,6 +66,8 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.Team, e)
 	delete(w.Item, e)
 	delete(w.Equipment, e)
+	delete(w.CanAbilityCritFromTraits, e)
+	delete(w.CanAbilityCritFromItems, e)
 	// Delete from other maps here...
 }
 
@@ -112,6 +118,14 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.Equipment[e] = &c
 	case *components.Equipment:
 		w.Equipment[e] = c
+	case components.CanAbilityCritFromTraits:
+		w.CanAbilityCritFromTraits[e] = &c
+	case *components.CanAbilityCritFromTraits:
+		w.CanAbilityCritFromTraits[e] = c
+	case components.CanAbilityCritFromItems:
+		w.CanAbilityCritFromItems[e] = &c
+	case *components.CanAbilityCritFromItems:
+		w.CanAbilityCritFromItems[e] = c
 	// Add cases for other component types here...
 	default:
 		// Use reflection to get the type name for the error message
@@ -152,7 +166,12 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.Equipment{}):
 		comp, ok := w.Equipment[e]
 		return comp, ok
-
+	case reflect.TypeOf(components.CanAbilityCritFromTraits{}):
+		comp, ok := w.CanAbilityCritFromTraits[e]
+		return comp, ok
+	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
+		comp, ok := w.CanAbilityCritFromItems[e]
+		return comp, ok
 	// Add cases for other component types here...
 	default:
 		return nil, false
@@ -186,6 +205,10 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.Item, e)
 	case reflect.TypeOf(components.Equipment{}):
 		delete(w.Equipment, e)
+	case reflect.TypeOf(components.CanAbilityCritFromTraits{}):
+		delete(w.CanAbilityCritFromTraits, e)
+	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
+		delete(w.CanAbilityCritFromItems, e)
 	// Add cases for other component types here...
 	default:
 		fmt.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
@@ -274,6 +297,10 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.Item)
 	case reflect.TypeOf(components.Equipment{}):
 		return len(w.Equipment)
+	case reflect.TypeOf(components.CanAbilityCritFromTraits{}):
+		return len(w.CanAbilityCritFromTraits)
+	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
+		return len(w.CanAbilityCritFromItems)
 	// Add cases for other component types...
 	default:
 		return 0
@@ -329,6 +356,17 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 		for e := range w.Equipment {
 			entities = append(entities, e)
 		}
+	case reflect.TypeOf(components.CanAbilityCritFromTraits{}):
+		entities = make([]Entity, 0, len(w.CanAbilityCritFromTraits))
+		for e := range w.CanAbilityCritFromTraits {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
+		entities = make([]Entity, 0, len(w.CanAbilityCritFromItems))
+		for e := range w.CanAbilityCritFromItems {	
+			entities = append(entities, e)
+		}
+	
 	// Add cases for other component types...
 	default:
 		return []Entity{} // Return empty slice for unknown types
@@ -399,5 +437,17 @@ func (w *World) GetItemEffect(e Entity) (*effects.ItemStaticEffect, bool) {
 // GetEquipment returns the Equipment component for an entity, type-safe.
 func (w *World) GetEquipment(e Entity) (*components.Equipment, bool) {
 	comp, ok := w.Equipment[e]
+	return comp, ok
+}
+
+// GetCanAbilityCritFromTraits returns the CanAbilityCritFromTraits component for an entity, type-safe.
+func (w *World) GetCanAbilityCritFromTraits(e Entity) (*components.CanAbilityCritFromTraits, bool) {
+	comp, ok := w.CanAbilityCritFromTraits[e]
+	return comp, ok
+}
+
+// GetCanAbilityCritFromItems returns the CanAbilityCritFromItems component for an entity, type-safe.
+func (w *World) GetCanAbilityCritFromItems(e Entity) (*components.CanAbilityCritFromItems, bool) {
+	comp, ok := w.CanAbilityCritFromItems[e]
 	return comp, ok
 }

@@ -104,7 +104,7 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 		_, hasJG = equipment.GetItem("TFT_Item_JeweledGauntlet")
 	}
 
-	// TODO: check the case where a champion wears both IE and JG, it's a rare case but possible
+	// TODO: check the case where a champion wears both IE and JG/ 2IE/ 2JG, it's a rare case but possible
 	critDamageBonusFromItem := 0.0
 	if hasIE || hasJG {
 		traitCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromTraits{})
@@ -112,7 +112,7 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 
 		if canAbilityCritFromTraits {
 			critDamageBonusFromItem = attack.GetBonusCritDamageToGive()
-			log.Printf("Entity %d: Applying IE bonus crit damage (0.10) because abilities can already crit.", entity)
+			log.Printf("Entity %d: Applying bonus crit damage (0.10) because abilities can already crit (from IE or JG).", entity)
 		}
 	}
 
@@ -155,6 +155,4 @@ func (s *StatCalculationSystem) applyHealthConsequences(entity ecs.Entity) {
 		log.Printf("Entity %d: CurrentHP (%.2f) exceeds new FinalMaxHP (%.2f). Clamping.", entity, health.GetCurrentHealth(), health.GetFinalMaxHP())
 		health.SetCurrentHealth(health.GetFinalMaxHP())
 	}
-	// Note: TFT generally doesn't automatically heal champions if their MaxHP increases mid-combat.
-	// Resetting CurrentHP to MaxHP usually happens only at the start of combat.
 }

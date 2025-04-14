@@ -33,7 +33,7 @@ func (s *AbilityCritSystem) Update() {
 		hasInifityEdge := equipment.HasItem("TFT_Item_InfinityEdge")
 		hasJeweledGauntlet := equipment.HasItem("TFT_Item_JeweledGauntlet")
 		if hasInifityEdge || hasJeweledGauntlet {
-			log.Printf("Entity %d: Adding CanAbilityCritFromItems component (AbilityCritSystem).", entity)
+			log.Printf("(AbilityCritSystem) Entity %d: Adding CanAbilityCritFromItems component .", entity)
 			err := s.world.AddComponent(entity, &components.CanAbilityCritFromItems{})
 			if err != nil {
 				log.Printf("ERROR (AbilityCritSystem): Failed to add CanAbilityCritFromItems component to entity %d: %v", entity, err)

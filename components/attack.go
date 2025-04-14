@@ -13,7 +13,7 @@ type Attack struct {
 	BaseCritChance     float64 // Usually 0.25
 	BaseCritMultiplier float64 // Usually 1.4
 	BaseDamageAmp      float64 // Usually 0.0
-	BaseRange              float64 // Range is often less modified, keep simple for now
+	BaseRange          float64 // Range is often less modified, keep simple for now
 
 	// --- Aggregated Bonus Stats (Sum from Items, Traits, Temp Buffs, etc.) ---
 	BonusAD                 float64 // Flat AD bonuses
@@ -32,7 +32,7 @@ type Attack struct {
 	FinalCritChance     float64 // Calculated: BaseCrit + BonusCrit (capped at 1.0)
 	FinalCritMultiplier float64 // Calculated: BaseCritMulti + BonusCritMulti
 	FinalDamageAmp      float64 // Calculated: BaseDamageAmp + BonusDamageAmp (or multiplicative?)
-	FinalRange 		float64 // Calculated: BaseRange + BonusRange 
+	FinalRange          float64 // Calculated: BaseRange + BonusRange
 
 	// --- Current State ---
 	LastAttackTime float64 // For tracking attack cooldown
@@ -44,7 +44,7 @@ func NewAttack(baseAd, baseAs, baseRange, baseCrit, baseCritMulti float64) *Atta
 		// Base Stats
 		BaseAD:             baseAd,
 		BaseAttackSpeed:    baseAs,
-		BaseRange:              baseRange,
+		BaseRange:          baseRange,
 		BaseCritChance:     baseCrit,      // Should likely be initialized to 0.25
 		BaseCritMultiplier: baseCritMulti, // Should likely be initialized to 1.4
 		BaseDamageAmp:      0.0,
@@ -57,7 +57,7 @@ func NewAttack(baseAd, baseAs, baseRange, baseCrit, baseCritMulti float64) *Atta
 		BonusCritMultiplier:     0.0,
 		BonusDamageAmp:          0.0,
 		BonusRange:              0.0,
-		BonusCritDamageToGive: 0.0, // Specific to Infinity Edge and Jeweled Gauntlet
+		BonusCritDamageToGive:   0.0, // Specific to Infinity Edge and Jeweled Gauntlet
 
 		// Final Stats (Initialize to Base initially)
 		FinalAD:             baseAd,
@@ -65,7 +65,7 @@ func NewAttack(baseAd, baseAs, baseRange, baseCrit, baseCritMulti float64) *Atta
 		FinalCritChance:     baseCrit,
 		FinalCritMultiplier: baseCritMulti,
 		FinalDamageAmp:      0.0,
-		FinalRange: baseRange,
+		FinalRange:          baseRange,
 
 		// State
 		LastAttackTime: 0.0,
@@ -109,7 +109,7 @@ func (a *Attack) ResetBonuses() {
 	a.BonusCritMultiplier = 0.0
 	a.BonusDamageAmp = 0.0
 	a.BonusRange = 0.0
-	a.BonusCritDamageToGive = 0.0 
+	a.BonusCritDamageToGive = 0.0
 }
 
 // --- Methods to SET FINAL calculated stats (called by StatCalculationSystem) ---
@@ -219,9 +219,9 @@ func (a *Attack) String() string {
 	sb.WriteString(fmt.Sprintf("  BaseAD: %.2f, BonusAD: %.2f, BonusPercentAD: %.2f, FinalAD: %.2f\n", a.BaseAD, a.BonusAD, a.BonusPercentAD, a.FinalAD))
 	sb.WriteString(fmt.Sprintf("  BaseAS: %.3f, BonusASPercent: %.2f, FinalAS: %.3f\n", a.BaseAttackSpeed, a.BonusPercentAttackSpeed, a.FinalAttackSpeed))
 	sb.WriteString(fmt.Sprintf("  BaseCritChance: %.2f, BonusCritChance: %.2f, FinalCritChance: %.2f\n", a.BaseCritChance, a.BonusCritChance, a.FinalCritChance))
-	sb.WriteString(fmt.Sprintf("  BaseCritMulti: %.2f, BonusCritMulti: %.2f, FinalCritMulti: %.2f\n", a.BaseCritMultiplier, a.BonusCritMultiplier, a.FinalCritMultiplier))
+	sb.WriteString(fmt.Sprintf("  BaseCritMulti: %.2f, BonusCritMulti: %.2f, *BonusCritDamageToGive: %.2f, FinalCritMulti: %.2f\n", a.BaseCritMultiplier, a.BonusCritMultiplier, a.BonusCritDamageToGive, a.FinalCritMultiplier))
 	sb.WriteString(fmt.Sprintf("  BaseDamageAmp: %.2f, BonusDamageAmp: %.2f, FinalDamageAmp: %.2f\n", a.BaseDamageAmp, a.BonusDamageAmp, a.FinalDamageAmp))
-	sb.WriteString(fmt.Sprintf("  Range: %.2f, BonusRange: %.2f, FinalRange: %.2f\n", a.BaseRange, a.BonusRange, a.FinalRange)) 
+	sb.WriteString(fmt.Sprintf("  Range: %.2f, BonusRange: %.2f, FinalRange: %.2f\n", a.BaseRange, a.BonusRange, a.FinalRange))
 	sb.WriteString(fmt.Sprintf("  LastAttackTime: %.2f", a.LastAttackTime))
 
 	return sb.String()
