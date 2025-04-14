@@ -23,6 +23,7 @@ type Attack struct {
 	BonusCritMultiplier     float64 // Additive Crit Multiplier bonuses
 	BonusDamageAmp          float64 // Additive Damage Amp bonuses
 	BonusRange              float64 // Flat Range bonuses (e.g., from items or traits)
+	BonusCritDamageToGive   float64 // Specific to Infinity Edge and Jeweled Gauntlet
 	// Add BonusRange if needed
 
 	// --- Final Calculated Stats (Calculated by StatCalculationSystem) ---
@@ -56,6 +57,7 @@ func NewAttack(baseAd, baseAs, baseRange, baseCrit, baseCritMulti float64) *Atta
 		BonusCritMultiplier:     0.0,
 		BonusDamageAmp:          0.0,
 		BonusRange:              0.0,
+		BonusCritDamageToGive: 0.0, // Specific to Infinity Edge and Jeweled Gauntlet
 
 		// Final Stats (Initialize to Base initially)
 		FinalAD:             baseAd,
@@ -94,7 +96,9 @@ func (a *Attack) AddBonusRange(amount float64) {
 	a.BonusRange += amount
 }
 
-// Add AddBonusRange if needed
+func (a *Attack) AddBonusCritDamageToGive(amount float64) {
+	a.BonusCritDamageToGive += amount
+}
 
 // --- Methods to RESET BONUS fields (called before reapplying bonuses) ---
 func (a *Attack) ResetBonuses() {
@@ -104,7 +108,8 @@ func (a *Attack) ResetBonuses() {
 	a.BonusCritChance = 0.0
 	a.BonusCritMultiplier = 0.0
 	a.BonusDamageAmp = 0.0
-	// Reset BonusRange if added
+	a.BonusRange = 0.0
+	a.BonusCritDamageToGive = 0.0 
 }
 
 // --- Methods to SET FINAL calculated stats (called by StatCalculationSystem) ---
@@ -195,6 +200,11 @@ func (a *Attack) GetBonusPercentAD() float64 {
 func (a *Attack) GetBonusRange() float64 {
 	return a.BonusRange
 }
+
+func (a *Attack) GetBonusCritDamageToGive() float64 {
+	return a.BonusCritDamageToGive
+}
+
 func (a *Attack) GetBaseAttackSpeed() float64 {
 	return a.BaseAttackSpeed
 }

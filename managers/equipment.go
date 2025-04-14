@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/components/effects"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 )
@@ -40,7 +40,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 	}
 
 	// Attempt to add the item to the equipment
-	if !equipment.HasItemSlots(item) {
+	if !equipment.HasItemSlots() {
 		return fmt.Errorf("no space to add item %s to champion %s", item.ApiName, championInfo.Name)
 	}
 
@@ -48,6 +48,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championInfo.Name)
 	}
 
+	equipment.AddItem(item) 
 	log.Printf("Adding item '%s' to champion %s and updating item effects.", itemApiName, championInfo.Name)
 	// Calculate the item stats and apply them to the champion, update ItemEffect component
 	err := em.calculateAndUpdateItemEffects(champion)
@@ -111,7 +112,7 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 	itemEffect, ok := em.world.GetItemEffect(champion)
 	if !ok {
 		// If no ItemEffect component exists, create a new one
-		newItemEffect := components.NewItemEffect()
+		newItemEffect := effects.NewItemStaticEffect()
 		err := em.world.AddComponent(champion, newItemEffect)
 		if err != nil {
 			return fmt.Errorf("failed to add ItemEffect component to champion %s: %w", championInfo.Name, err)
@@ -123,7 +124,7 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 	itemEffect.ResetStats() // Add this method to ItemEffect component
 
 	// Iterate through all items in the equipment and aggregate their stats
-	for _, item := range equipment.Items {
+	for _, item := range equipment.GetAllItems() {
 		if item == nil || item.Effects == nil {
 			log.Printf("Warning: Skipping item with nil data or nil effects in equipment for champion %s", championInfo.Name)
 			continue
@@ -164,6 +165,9 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 			case "BonusDamage":
 				itemEffect.AddBonusDamageAmp(value)
 				log.Printf("Adding %f bonus damage amp to champion %s from item %s", value, championInfo.Name, item.ApiName)
+			case "CritDamageToGive": // specific to IE & JG
+				itemEffect.AddCritDamageToGive(value)
+				log.Printf("Adding %f crit damage to give to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			// Add cases for other stats as needed...
 			default:
 				// Optional: Log or handle unrecognized stat names

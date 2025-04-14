@@ -212,6 +212,27 @@ func (h *Health) GetFinalDurability() float64 {
 	return h.FinalDurability
 }
 
+func (h *Health) GetBonusMaxHP() float64 {
+	return h.BonusMaxHP
+}
+
+func (h *Health) GetBonusPercentHp() float64 {
+	return h.BonusPercentHp
+}
+
+func (h *Health) GetBonusArmor() float64 {
+	return h.BonusArmor
+}
+
+func (h *Health) GetBonusMR() float64 {
+	return h.BonusMR
+}
+
+func (h *Health) GetCurrentHP() float64 {
+	return h.CurrentHP
+}
+
+
 // String returns a multi-line string representation of the Health component.
 func (h *Health) String() string {
 	var sb strings.Builder // Use strings.Builder for efficiency

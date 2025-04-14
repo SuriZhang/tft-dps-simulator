@@ -5,6 +5,7 @@ import (
 	"reflect" // Stigithub.com/suriz/tft-dps-simulator/components"
 
 	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/components/effects"
 )
 
 // World contains all entities and their components, stored in type-specific maps.
@@ -18,7 +19,7 @@ type World struct {
 	ChampionInfo map[Entity]*components.ChampionInfo
 	Position     map[Entity]*components.Position
 	Team         map[Entity]*components.Team
-	Item         map[Entity]*components.ItemEffect
+	Item         map[Entity]*effects.ItemStaticEffect
 	Equipment    map[Entity]*components.Equipment // Assuming you have an Inventory component
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
@@ -37,7 +38,7 @@ func NewWorld() *World {
 		ChampionInfo: make(map[Entity]*components.ChampionInfo),
 		Position:     make(map[Entity]*components.Position),
 		Team:         make(map[Entity]*components.Team),
-		Item:         make(map[Entity]*components.ItemEffect),
+		Item:         make(map[Entity]*effects.ItemStaticEffect),
 		Equipment:    make(map[Entity]*components.Equipment),
 		// Initialize other maps here...
 	}
@@ -103,9 +104,9 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.Team[e] = &c
 	case *components.Team:
 		w.Team[e] = c
-	case components.ItemEffect:
+	case effects.ItemStaticEffect:
 		w.Item[e] = &c
-	case *components.ItemEffect:
+	case *effects.ItemStaticEffect:
 		w.Item[e] = c
 	case components.Equipment:
 		w.Equipment[e] = &c
@@ -145,7 +146,7 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.Team{}):
 		comp, ok := w.Team[e]
 		return comp, ok
-	case reflect.TypeOf(components.ItemEffect{}):
+	case reflect.TypeOf(effects.ItemStaticEffect{}):
 		comp, ok := w.Item[e]
 		return comp, ok
 	case reflect.TypeOf(components.Equipment{}):
@@ -181,7 +182,7 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.Position, e)
 	case reflect.TypeOf(components.Team{}):
 		delete(w.Team, e)
-	case reflect.TypeOf(components.ItemEffect{}):
+	case reflect.TypeOf(effects.ItemStaticEffect{}):
 		delete(w.Item, e)
 	case reflect.TypeOf(components.Equipment{}):
 		delete(w.Equipment, e)
@@ -269,7 +270,7 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.Position)
 	case reflect.TypeOf(components.Team{}):
 		return len(w.Team)
-	case reflect.TypeOf(components.ItemEffect{}):
+	case reflect.TypeOf(effects.ItemStaticEffect{}):
 		return len(w.Item)
 	case reflect.TypeOf(components.Equipment{}):
 		return len(w.Equipment)
@@ -318,7 +319,7 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 		for e := range w.Team {
 			entities = append(entities, e)
 		}
-	case reflect.TypeOf(components.ItemEffect{}):
+	case reflect.TypeOf(effects.ItemStaticEffect{}):
 		entities = make([]Entity, 0, len(w.Item))
 		for e := range w.Item {
 			entities = append(entities, e)
@@ -390,7 +391,7 @@ func (w *World) GetChampionByName(name string) (Entity, bool) {
 }
 
 // GetItemEffect returns the ItemEffect component for an entity, type-safe.
-func (w *World) GetItemEffect(e Entity) (*components.ItemEffect, bool) {
+func (w *World) GetItemEffect(e Entity) (*effects.ItemStaticEffect, bool) {
 	comp, ok := w.Item[e]
 	return comp, ok
 }

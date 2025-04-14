@@ -54,9 +54,22 @@ func (m *Mana) AddBonusInitialMana(amount float64) {
 	}
 }
 
-func (m *Mana) AddFinalInitialMana(amount float64) {
-	m.FinalInitialMana += amount
-	if m.Current > m.Max {
-		m.Current = m.Max
-	}
+func (m *Mana) GetCurrentMana() float64 {
+	return m.Current
 }
+
+func (m *Mana) GetMaxMana() float64 {
+	return m.Max
+}
+
+func (m *Mana) GetBaseInitialMana() float64 {
+	return m.BaseInitialMana
+}
+
+func (m *Mana) GetBonusInitialMana() float64 {
+	return m.BonusInitialMana
+}
+
+func (m *Mana) GetFinalInitialMana() float64 {
+	return m.FinalInitialMana
+}	

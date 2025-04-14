@@ -3,7 +3,7 @@ package itemsys
 import (
 	"reflect"
 
-	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/components/effects"
 	"github.com/suriz/tft-dps-simulator/ecs"
 )
 
@@ -27,7 +27,7 @@ func NewBaseStaticItemSystem(world *ecs.World) *BaseStaticItemSystem {
 // Output: None (modifies components directly).
 func (s *BaseStaticItemSystem) ApplyStats() {
 	// Define the component types needed for this system
-	itemEffectType := reflect.TypeOf(components.ItemEffect{})
+	itemEffectType := reflect.TypeOf(effects.ItemStaticEffect{})
 	entitiesWithItemEffect := s.world.GetEntitiesWithComponents(itemEffectType)
 
 	for _, entity := range entitiesWithItemEffect {
@@ -55,7 +55,7 @@ func (s *BaseStaticItemSystem) Update(dt float64) {
 }
 
 // --- Helper functions (Optional) ---
-func (s *BaseStaticItemSystem) applyHealthBonuses(entity ecs.Entity, itemEffect *components.ItemEffect) {
+func (s *BaseStaticItemSystem) applyHealthBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
     if health, ok := s.world.GetHealth(entity); ok {
         health.AddBonusMaxHealth(itemEffect.GetBonusHealth())
         health.AddBonusPercentHealth(itemEffect.GetBonusPercentHp())
@@ -66,16 +66,19 @@ func (s *BaseStaticItemSystem) applyHealthBonuses(entity ecs.Entity, itemEffect 
 
  }
  
-func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect *components.ItemEffect) { 
+func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) { 
     if attack, ok := s.world.GetAttack(entity); ok {
         attack.AddBonusPercentAD(itemEffect.GetBonusPercentAD())
         attack.AddBonusDamageAmp(itemEffect.GetDamageAmp())
         attack.AddBonusPercentAttackSpeed(itemEffect.GetBonusPercentAttackSpeed())
         attack.AddBonusCritChance(itemEffect.GetBonusCritChance())
+
+        // Sepecific to Infinity Edge & Jeweled Gauntlet
+        attack.AddBonusCritDamageToGive(itemEffect.GetCritDamageToGive())
     }
 }
 
-func (s *BaseStaticItemSystem) applyManaBonuses(entity ecs.Entity, itemEffect *components.ItemEffect) {
+func (s *BaseStaticItemSystem) applyManaBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
     if mana, ok := s.world.GetMana(entity); ok {
         mana.AddBonusInitialMana(itemEffect.GetBonusInitialMana())
     }

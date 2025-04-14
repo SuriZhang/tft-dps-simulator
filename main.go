@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 
-	// "github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
 
-	// "github.com/suriz/tft-dps-simulator/systems"
+	"github.com/suriz/tft-dps-simulator/managers"
+	"github.com/suriz/tft-dps-simulator/systems"
 	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 	"github.com/suriz/tft-dps-simulator/utils"
-	"github.com/suriz/tft-dps-simulator/managers"
 )
 
 // Helper function to handle AddComponent errors
@@ -47,7 +48,7 @@ func main() {
 	// 	fmt.Printf("Error loading item data: %v\n", err)
 	// 	os.Exit(1)
 	// }
-	
+
 	data.InitializeSetActiveAugments(tftData, filePath)
 
 	data.InitializeSetActiveItems(tftData, filePath)
@@ -58,7 +59,9 @@ func main() {
 	world := ecs.NewWorld()
 	championFactory := factory.NewChampionFactory(world)
 	equipmentManager := managers.NewEquipmentManager(world)
-
+	statCalculationSystem := systems.NewStatCalculationSystem(world)
+	abilityCritSystem := itemsys.NewAbilityCritSystem(world)
+	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
 	// --- Create Initial Entities (Example) ---
 	// This part remains conceptually similar, but uses the helper
 	fmt.Println("\n------------Creating Initial Entities---------------")
@@ -67,7 +70,7 @@ func main() {
 		fmt.Printf("Error creating Voidspawn: %v\n", err)
 		return
 	}
-	
+
 	equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BFSword")
 	equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
 	err = equipmentManager.AddItemToChampion(voidspawn, "TFT_Item_BlueBuff")
@@ -75,9 +78,30 @@ func main() {
 		fmt.Printf("Error adding item to Voidspawn: %v\n", err)
 	}
 
+	// 1. RESET all bonus stats for all relevant entities
+	//    (This could be its own small system or done explicitly here)
+	healthType := reflect.TypeOf(components.Health{})
+	attackType := reflect.TypeOf(components.Attack{})
+	manaType := reflect.TypeOf(components.Mana{})
+	entitiesToReset := world.GetEntitiesWithComponents(healthType, attackType, manaType) // Or query individually
+	for _, entity := range entitiesToReset {
+		if health, ok := world.GetHealth(entity); ok {
+			health.ResetBonuses()
+		}
+		if attack, ok := world.GetAttack(entity); ok {
+			attack.ResetBonuses()
+		}
+		if mana, ok := world.GetMana(entity); ok {
+			mana.ResetBonuses()
+		}
+	}
+
+	// process Inifity Edge and Jeweled Gauntlet
+	abilityCritSystem.Update()
 	// apply item effects
-	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
 	baseStaticItemSystem.ApplyStats()
+
+	statCalculationSystem.Update()
 
 	// brand, err := championFactory.CreateAllyChampion("Brand", 1)
 	// if err != nil {
@@ -90,10 +114,11 @@ func main() {
 	utils.PrintTeamStats(world)
 
 	// // --- Simulation Setup ---
-	// fmt.Println("\n------------Setting up Simulation---------------")
+	fmt.Println("\n------------Setting up Simulation---------------")
+
 	// // Add position using the helper
 	// addComponentOrLog(world, voidspawn, components.NewPosition(1, 1))
-	
+
 	// health, ok := world.GetHealth(voidspawn)
 	// if ok {
 	// 	health.UpdateCurrentHealth(1000)
