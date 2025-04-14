@@ -81,3 +81,16 @@ TODO:
 - [ ] implement StatCalculationSystem to calcluate bonus component stats and update final stats
 - [x] maybe refactor item related code from championfactory to itemfactory.
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something
+
+## 20250414
+Goal: implement IE & JG
+
+IE & JG's effect are the same, unique to all other items.
+
+DONE Today:
+- [x] implement StatCalculationSystem to calcluate bonus component stats and update final stats
+- [x] implement logic for handling IE & JG
+
+TODO:
+- [ ] think about the edge case when a champion wears more than 1 IE and/or JG at the same time
+- [ ] clean up main.go, wrap the auto attack testing code to another function or something
