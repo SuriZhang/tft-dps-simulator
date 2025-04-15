@@ -48,10 +48,13 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championInfo.Name)
 	}
 
-	equipment.AddItem(item) 
+	err := equipment.AddItem(item) 
+	if err != nil {
+		return fmt.Errorf("failed to add item %s to champion %s: %w", item.ApiName, championInfo.Name, err)
+	}
 	log.Printf("Adding item '%s' to champion %s and updating item effects.", itemApiName, championInfo.Name)
 	// Calculate the item stats and apply them to the champion, update ItemEffect component
-	err := em.calculateAndUpdateItemEffects(champion)
+	err = em.calculateAndUpdateItemEffects(champion)
 	if err != nil {
 		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championInfo.Name, err)
 	}

@@ -8,17 +8,17 @@ import (
 
 const MaxItems = 3
 
-// Equipment holds the items equipped by an entity.
+// Equipment holds the items equipped by an entity using a slice.
 type Equipment struct {
-    // Use a map where the key is the item's ApiName and the value is the item data.
-    Items    map[string]*data.Item
+    Items    []*data.Item // Slice to hold items, allows duplicates
     MaxSlots int
 }
 
 // NewEquipment creates a new Equipment component.
 func NewEquipment() *Equipment {
     return &Equipment{
-        Items:    make(map[string]*data.Item, MaxItems),
+        // Initialize slice with 0 length but capacity for MaxItems
+        Items:    make([]*data.Item, 0, MaxItems),
         MaxSlots: MaxItems,
     }
 }
@@ -28,64 +28,88 @@ func (eq *Equipment) HasItemSlots() bool {
     return len(eq.Items) < eq.MaxSlots
 }
 
-// AddItem adds an item to the equipment map.
-// Assumes checks for space and uniqueness have already been done.
-// Returns true if added, false otherwise (e.g., if item is nil).
+// AddItem adds an item to the equipment slice.
+// Assumes checks for space and uniqueness (if applicable) have already been done.
+// Returns an error if the item is nil.
 func (eq *Equipment) AddItem(item *data.Item) error {
     if item == nil {
-        return fmt.Errorf("cannot add a nil item") 
+        return fmt.Errorf("cannot add a nil item")
     }
 
-    eq.Items[item.ApiName] = item
+    eq.Items = append(eq.Items, item)
     return nil
 }
 
 // HasItem checks if an item with the given ApiName is already equipped.
 func (eq *Equipment) HasItem(itemApiName string) bool {
-    _, exists := eq.Items[itemApiName]
-    return exists
+    for _, equippedItem := range eq.Items {
+        if equippedItem != nil && equippedItem.ApiName == itemApiName {
+            return true
+        }
+    }
+    return false
 }
 
 // IsDuplicateUniqueItem checks if the user is attempting to add a unique item
 // that is already present.
-// Note: This logic is slightly simplified because HasItem now exists.
 func (eq *Equipment) IsDuplicateUniqueItem(itemApiName string) bool {
-    // Check if the item to be added is unique
-    itemToAdd := data.GetItemByApiName(itemApiName)
+    itemToAdd := data.GetItemByApiName(itemApiName) // Check the item definition
     if itemToAdd == nil || !itemToAdd.Unique {
         return false // Item not found or not unique, so no duplicate *unique* issue
     }
 
-    // Check if an item with the same ApiName already exists in the map
+    // Check if an item with the same ApiName already exists in the slice
     return eq.HasItem(itemApiName)
 }
 
-// RemoveItem removes an item by its API name. Returns true if successful, false if not found.
+// RemoveItem removes the *first* occurrence of an item by its API name.
+// Returns true if successful, false if not found.
 func (eq *Equipment) RemoveItem(itemApiName string) bool {
-    if !eq.HasItem(itemApiName) {
+    removeIndex := -1
+    for i, equippedItem := range eq.Items {
+        if equippedItem != nil && equippedItem.ApiName == itemApiName {
+            removeIndex = i
+            break // Found the first occurrence
+        }
+    }
+
+    if removeIndex == -1 {
         return false // Item not found
     }
-    delete(eq.Items, itemApiName) // Remove the item from the map
+
+    // Remove element by slicing (preserves order if needed, efficient for small slices)
+    // See: https://github.com/golang/go/wiki/SliceTricks#delete
+    eq.Items = append(eq.Items[:removeIndex], eq.Items[removeIndex+1:]...)
     return true
 }
 
-// GetItem retrieves an item by its API name. Returns the item and true if found, nil and false otherwise.
+// GetItem retrieves the *first* occurrence of an item by its API name.
+// Returns the item and true if found, nil and false otherwise.
 func (eq *Equipment) GetItem(itemApiName string) (*data.Item, bool) {
-    item, exists := eq.Items[itemApiName]
-    return item, exists
+    for _, equippedItem := range eq.Items {
+        if equippedItem != nil && equippedItem.ApiName == itemApiName {
+            return equippedItem, true // Return first match
+        }
+    }
+    return nil, false
 }
 
 // GetAllItems returns a slice containing all equipped items.
-// Useful for systems that need to iterate over all items.
+// Returns a copy to prevent external modification of the internal slice.
 func (eq *Equipment) GetAllItems() []*data.Item {
-    itemsSlice := make([]*data.Item, 0, len(eq.Items))
-    for _, item := range eq.Items {
-        itemsSlice = append(itemsSlice, item)
-    }
-    return itemsSlice
+    // Return a copy to be safe
+    itemsCopy := make([]*data.Item, len(eq.Items))
+    copy(itemsCopy, eq.Items)
+    return itemsCopy
 }
 
-// IsFull checks if the equipment slots are full.
-func (eq *Equipment) IsFull() bool {
-    return len(eq.Items) >= eq.MaxSlots
+// GetItemCount returns the number of instances of an item with the given ApiName.
+func (eq *Equipment) GetItemCount(itemApiName string) int {
+    count := 0
+    for _, equippedItem := range eq.Items {
+        if equippedItem != nil && equippedItem.ApiName == itemApiName {
+            count++
+        }
+    }
+    return count
 }

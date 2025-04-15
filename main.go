@@ -71,14 +71,17 @@ func main() {
 		return
 	}
 
-	addComponentOrLog(world, kindred, components.CanAbilityCritFromTraits{})
+	// addComponentOrLog(world, kindred, components.CanAbilityCritFromTraits{})
 
 	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
 	if err != nil {
 		fmt.Printf("Error adding item to Kindred: %v\n", err)
 	}
-
-	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_Deathblade")
+	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
+	if err != nil {
+		fmt.Printf("Error adding item to Kindred: %v\n", err)
+	}
+	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
 	if err != nil {
 		fmt.Printf("Error adding item to Kindred: %v\n", err)
 	}

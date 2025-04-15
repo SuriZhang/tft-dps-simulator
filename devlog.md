@@ -94,3 +94,4 @@ DONE Today:
 TODO:
 - [ ] think about the edge case when a champion wears more than 1 IE and/or JG at the same time
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something
+- [ ] write tests

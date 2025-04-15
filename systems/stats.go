@@ -84,41 +84,56 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 	calculatedAS := attack.GetBaseAttackSpeed() * (1 + attack.GetBonusPercentAttackSpeed())
 	attack.SetFinalAttackSpeed(calculatedAS)
 
-	// Crit Chance: Base + Bonus (Capped at 1.0)
-	calculatedCritChance := attack.GetBaseCritChance() + attack.GetBonusCritChance()
-	calculatedBonusCritDamange := 0.0
-	if calculatedCritChance > 1.0 {
-		attack.SetFinalCritChance(1.0)
-		calculatedBonusCritDamange = (calculatedCritChance - 1.0) / 2
-		log.Printf("Entity %d: Crit chance capped at 1.0 (was %.2f), extra crit chance(%.2f) is contributed to crit damange at 50%%.", entity, calculatedCritChance, calculatedBonusCritDamange)
-	}
-	attack.SetFinalCritChance(calculatedCritChance)
+	// Crit Chance: Base + Bonus (Capped at 1.0), convert excess to Crit Damage
+    calculatedCritChance := attack.GetBaseCritChance() + attack.GetBonusCritChance()
+    excessCritDamageBonus := 0.0
+    if calculatedCritChance > 1.0 {
+        excessCritDamageBonus = (calculatedCritChance - 1.0) / 2.0 // 50% conversion rate
+        log.Printf("Entity %d: Crit chance %.2f exceeds 1.0. Adding %.2f bonus crit damage from excess.", entity, calculatedCritChance, excessCritDamageBonus)
+        calculatedCritChance = 1.0 // Cap final crit chance
+    }
+    attack.SetFinalCritChance(calculatedCritChance)
 
-	// --- IE/JG Bonus Crit Damage Logic ---
-	equipment, okEq := s.world.GetEquipment(entity)
+    // --- IE / JG Conditional Bonus Crit Damage---
+	// handle logic for: "If the holder's abilities can already critically strike, gain 10% Critical Strike Damage instead."
+    equipment, okEq := s.world.GetEquipment(entity)
+    numIE := 0
+    numJG := 0
+    if okEq {
+        // Replace the loop:
+        numIE = equipment.GetItemCount("TFT_Item_InfinityEdge")
+        numJG = equipment.GetItemCount("TFT_Item_JeweledGauntlet")
+    }
+    totalCritItems := numIE + numJG
 
-	hasIE := false
-	hasJG := false
-	if okEq {
-		_, hasIE = equipment.GetItem("TFT_Item_InfinityEdge")
-		_, hasJG = equipment.GetItem("TFT_Item_JeweledGauntlet")
-	}
+    // Check for trait source of ability crit
+    traitCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromTraits{})
+    _, hasTraitCritMarker := s.world.GetComponent(entity, traitCritMarkerType)
 
-	// TODO: check the case where a champion wears both IE and JG/ 2IE/ 2JG, it's a rare case but possible
-	critDamageBonusFromItem := 0.0
-	if hasIE || hasJG {
-		traitCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromTraits{})
-		_, canAbilityCritFromTraits := s.world.GetComponent(entity, traitCritMarkerType)
+    // Determine how many IE/JG grant the bonus damage
+    numBonusGrantingItems := 0
+    if hasTraitCritMarker {
+        // If crit comes from trait, ALL IE/JG grant the bonus damage
+        numBonusGrantingItems = totalCritItems
+    } else {
+        // If no trait crit, the first IE/JG enables the flag (via AbilityCritSystem),
+        // and any subsequent ones grant the bonus damage.
+        if totalCritItems > 1 {
+            numBonusGrantingItems = totalCritItems - 1
+        }
+        // If totalCritItems is 0 or 1, and no trait source, no items grant the bonus damage.
+    }
 
-		if canAbilityCritFromTraits {
-			critDamageBonusFromItem = attack.GetBonusCritDamageToGive()
-			log.Printf("Entity %d: Applying bonus crit damage (0.10) because abilities can already crit (from IE or JG).", entity)
-		}
-	}
+    // Calculate the bonus crit damage from the "instead" effect, because GetBonusCritDamageToGive() is cumulated from all IE/JE items, we'll need to remove the first one if it is not contributing to the bonus damage.
+    conditionalCritDamageBonus := float64(numBonusGrantingItems) / float64(totalCritItems) * attack.GetBonusCritDamageToGive() 
 
-	// Crit Multiplier: Base + Bonus
-	calculatedCritMultiplier := attack.GetBaseCritMultiplier() + attack.GetBonusCritMultiplier() + critDamageBonusFromItem + calculatedBonusCritDamange
-	attack.SetFinalCritMultiplier(calculatedCritMultiplier)
+    if conditionalCritDamageBonus > 0 {
+        log.Printf("Entity %d: Applying +%.2f Crit Damage from %d IE/JG instance(s) due to 'already crit' condition.", entity, conditionalCritDamageBonus, numBonusGrantingItems)
+    }
+
+    // Crit Multiplier: Base + Bonus (from ItemEffect/Traits) + Conditional Bonus + Excess CritChance Bonus
+    calculatedCritMultiplier := attack.GetBaseCritMultiplier() + attack.GetBonusCritMultiplier() + conditionalCritDamageBonus + excessCritDamageBonus
+    attack.SetFinalCritMultiplier(calculatedCritMultiplier)
 
 	// Damage Amp: Base + Bonus (Assuming additive for now)
 	calculatedDamageAmp := attack.GetBaseDamageAmp() + attack.GetBonusDamageAmp()
