@@ -2,7 +2,6 @@ package systems
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
@@ -27,78 +26,80 @@ func NewAutoAttackSystem(world *ecs.World) *AutoAttackSystem {
 // Update processes auto attacks for the current timestep.
 func (s *AutoAttackSystem) Update(deltaTime float64) {
 	s.currentTime += deltaTime
-    fmt.Printf("Current time: %.2f\n", s.currentTime)
+	// fmt.Printf("Current time: %.2f\n", s.currentTime) 
 
-	// Define component types needed for GetEntitiesWithComponents (still uses reflect)
+	// Define component types needed (using reflect for now)
 	attackType := reflect.TypeOf(components.Attack{})
-	healthType := reflect.TypeOf(components.Health{})
 	teamType := reflect.TypeOf(components.Team{})
 	posType := reflect.TypeOf(components.Position{})
+	healthType := reflect.TypeOf(components.Health{}) // Needed to check if attacker is alive
 
-	// Find all entities that *could* potentially attack
-	potentialAttackers := s.world.GetEntitiesWithComponents(attackType, healthType, teamType, posType)
-    
-    // Filter for entities specifically on Team 0 (Player)
-    // This is a bit redundant since we check again in the loop, but keeps the logic clear.
-    var playerAttackers []ecs.Entity
-    for _, entity := range potentialAttackers {
-        team, ok := s.world.GetTeam(entity)
-        // Check if the entity has a Team component and if its ID is 0
-        if ok && team.ID == 0 {
-            playerAttackers = append(playerAttackers, entity)
-        }
-    }
+	// Get all entities that can potentially attack (have Attack, Team, Position, Health)
+	potentialAttackers := s.world.GetEntitiesWithComponents(attackType, teamType, posType, healthType)
 
 	// Process each potential attacker
-	for _, attacker := range playerAttackers {
-		// --- Get Components using Type-Safe Getters ---
+	for _, attacker := range potentialAttackers {
+		// --- Get Attacker Components ---
+		attack, okAtk := s.world.GetAttack(attacker)
 		team, okTeam := s.world.GetTeam(attacker)
-		attack, okAttack := s.world.GetAttack(attacker)
-		health, okHealth := s.world.GetHealth(attacker)
-        info, okInfo := s.world.GetChampionInfo(attacker)
+		pos, okPos := s.world.GetPosition(attacker)
+		health, okHealth := s.world.GetHealth(attacker) // Get health component
 
-		// Skip if essential components are missing (shouldn't happen with GetEntitiesWithComponents)
-		if !okTeam || !okAttack || !okHealth || !okInfo {
-			fmt.Printf("Warning: Attacker entity %d missing core components (Team/Attack/Health/ChampionInfo).\n", attacker)
+		// Basic validation: Ensure components exist and attacker is alive and belongs to the player team (Team 0)
+		if !okAtk || !okTeam || !okPos || !okHealth || health.CurrentHP <= 0 || team.ID != 0 {
+			continue // Skip if missing components, dead, or not on player team
+		}
+
+		// Check if attacker can attack (Attack Speed > 0)
+		if attack.GetFinalAttackSpeed() <= 0 {
+			fmt.Printf("Attacker %d has 0 AS, skipping.\n", attacker) // Optional log
 			continue
 		}
 
-		// Skip dead attackers
-		if health.CurrentHP <= 0 {
-            fmt.Printf("Attacker %d is dead, skipping...\n", attacker)
-			continue
+		// --- Targeting ---
+		// Find the nearest enemy (Team 1)
+		target, foundTarget := utils.FindNearestEnemy(s.world, attacker, team.ID) // Pass attacker's team ID
+
+		if !foundTarget {
+			fmt.Printf("Attacker %d found no target.\n", attacker) // Optional log
+			continue // No target found for this attacker, move to the next
 		}
 
-		// Check if attack is off cooldown
-		attackCooldown := 1.0 / attack.GetFinalAttackSpeed()
-		if s.currentTime-attack.LastAttackTime < attackCooldown {
-            fmt.Printf("Attacker %s is not ready to attack yet (%.2f seconds remaining).\n", info.Name, attackCooldown-(s.currentTime-attack.LastAttackTime))
-			continue // Not ready to attack yet
+		// --- Range Check ---
+		targetPos, okTargetPos := s.world.GetPosition(target)
+		if !okTargetPos {
+			fmt.Printf("Attacker %d found target %d with no position.\n", attacker, target) // Optional log
+			continue // Target has no position, cannot calculate range
 		}
 
-		// Find the nearest ENEMY target using the utility function
-		// Assumes FindNearestEnemy is also refactored to use type-safe getters
-		target, found := utils.FindNearestEnemy(s.world, attacker, team.ID)
-        targetInfo, _ := s.world.GetChampionInfo(target)
-        fmt.Printf("Attacker %s found target %s\n", info.Name, targetInfo.Name)
+		dx := targetPos.X - pos.X
+		dy := targetPos.Y - pos.Y
+		distSq := dx*dx + dy*dy
+		attackRange := attack.GetFinalRange()
+		rangeSq := attackRange * attackRange
 
-		if !found {
-            fmt.Printf("Attacker %s found no valid target.\n", info.Name)
-			continue 
+		if distSq > rangeSq {
+			fmt.Printf("Attacker %d target %d is out of range (DistSq: %.2f, RangeSq: %.2f).\n", attacker, target, distSq, rangeSq) // Optional log
+			continue // Target found, but out of range
 		}
 
-		// Perform the attack (pass the pointer to attack component)
-		err := s.performAttack(attacker, target, attack) // Pass the pointer
-        if err != nil {
-            fmt.Printf("Error performing attack: %v\n", err)
-            continue // Skip to next attacker
-        }
-		// Update last attack time *after* a successful attack attempt
-		// The 'attack' variable is already a pointer, so we can modify it directly.
-		// No need to call AddComponent again unless performAttack replaces the component pointer.
-		// Assuming performAttack modifies the pointed-to struct:
-		attack.LastAttackTime = s.currentTime
-        fmt.Printf("Updated last attack time for entity %d to %.2f\n", attacker, attack.LastAttackTime)
+		// --- Attack Timing ---
+		attackDelay := 1.0 / attack.GetFinalAttackSpeed()
+		timeSinceLastAttack := s.currentTime - attack.GetLastAttackTime()
+
+		// Check if enough time has passed to attack again
+		if timeSinceLastAttack >= attackDelay {
+			// Perform the attack
+			err := s.performAttack(attacker, target, attack)
+			if err != nil {
+				fmt.Printf("Error performing attack from %d to %d: %v\n", attacker, target, err)
+				// Decide how to handle attack errors (e.g., skip, log, panic)
+			} else {
+				// Update last attack time ONLY on successful attack attempt
+				attack.SetLastAttackTime(s.currentTime)
+			}
+		}
+		// --- End Attack Timing ---
 	}
 }
 
@@ -133,14 +134,19 @@ func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack *co
 
 	damageAmp := attack.GetFinalDamageAmp()
 	if damageAmp != 0 {	
-		damage = damage * (1 + damageAmp/100.0) // Apply damage amplification
+		damage = damage * (1 + damageAmp) // Apply damage amplification
 	}
 
 	// Check for critical hit
-	isCrit := rand.Float64() < attack.GetFinalCritChance()
-	if isCrit {
-		damage = damage * attack.GetFinalCritMultiplier()
-	}
+	// isCrit := rand.Float64() < attack.GetFinalCritChance()
+	// if isCrit {
+	// 	damage = damage * attack.GetFinalCritMultiplier()
+	// }
+
+	// Use Expected Value for Crit Damange calculation
+	expectedCritMultiplier := (1.0 - attack.GetFinalCritChance()) + (attack.GetFinalCritChance() * attack.GetFinalCritMultiplier())
+
+	damage = damage * expectedCritMultiplier
 
 	// Apply armor formula: damage * (100 / (100 + armor))* (1 - durability)
 	// Ensure targetHealth.Armor is accessed correctly
@@ -152,24 +158,44 @@ func (s *AutoAttackSystem) performAttack(attacker, target ecs.Entity, attack *co
 	// Apply damage to target (modify the struct pointed to by targetHealth)
 	targetHealth.CurrentHP -= finalDamage
 
+	// TODO: maybe move the logic to a separate mana system?
+	// --- Mana Gain for Attacker ---
+    attackerMana, okMana := s.world.GetMana(attacker)
+    if okMana {
+        // Standard TFT mana gain per auto-attack
+        manaGain := 10.0
+        attackerMana.AddCurrentMana(manaGain)
+
+        if attackerMana.GetCurrentMana() > attackerMana.GetMaxMana() {
+            attackerMana.SetCurrentMana(attackerMana.GetMaxMana())
+        }
+        fmt.Printf("%s gains %.1f mana (now %.1f / %.1f)\n", attackerName, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
+    } else {
+        fmt.Printf("Warning: Attacker %s has no Mana component, cannot gain mana.\n", attackerName)
+    }
+    // --- End Mana Gain ---
+
 	// --- End Damage Calculation ---
 
 	// Debug output
-	critText := ""
-	if isCrit {
-		critText = "***CRIT! "
-	}
+	// critText := ""
+	// if isCrit {
+	// 	critText = "***CRIT! "
+	// }
 	displayHealth := targetHealth.CurrentHP
 	if displayHealth < 0 {
 		displayHealth = 0
 	}
-	fmt.Printf("%s attacks %s for %.1f damage %s(%.1f HP remaining)\n",
-		attackerName, targetName, finalDamage, critText, displayHealth)
+	fmt.Printf("%s attacks %s for %.1f damage (%.1f HP remaining)\n",
+		attackerName, targetName, finalDamage, displayHealth)
 
 	// Check if target died
 	if targetHealth.CurrentHP <= 0 {
 		fmt.Printf("%s has been defeated!\n", targetName)
 	}
+
+	// TODO: Target also gains mana on being attacked
+
 	return nil // Indicate successful execution
 }
 

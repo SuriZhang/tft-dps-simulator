@@ -10,7 +10,6 @@ import (
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
-
 	"github.com/suriz/tft-dps-simulator/managers"
 	"github.com/suriz/tft-dps-simulator/systems"
 	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
@@ -28,7 +27,7 @@ func addComponentOrLog(world *ecs.World, entity ecs.Entity, component interface{
 
 func main() {
 	// --- Data Loading ---
-	dataDir := "./data/data_files"
+	dataDir := "./assets"
 	fileName := "en_us_14.1b.json"
 	filePath := filepath.Join(dataDir, fileName)
 	fmt.Println("------------Loading Set Data---------------")

@@ -45,8 +45,8 @@ func NewAttack(baseAd, baseAs, baseRange, baseCrit, baseCritMulti float64) *Atta
 		BaseAD:             baseAd,
 		BaseAttackSpeed:    baseAs,
 		BaseRange:          baseRange,
-		BaseCritChance:     baseCrit,      // Should likely be initialized to 0.25
-		BaseCritMultiplier: baseCritMulti, // Should likely be initialized to 1.4
+		BaseCritChance:     baseCrit,      
+		BaseCritMultiplier: baseCritMulti, 
 		BaseDamageAmp:      0.0,
 
 		// Bonus Stats (Initialize to 0)
@@ -133,8 +133,27 @@ func (a *Attack) SetFinalDamageAmp(value float64) {
 func (a *Attack) SetFinalRange(value float64) {
 	a.FinalRange = value
 }
+func (a *Attack) SetBaseAttackSpeed(value float64) {
+	a.BaseAttackSpeed = value
+}
+func (a *Attack) SetBaseRange(value float64) {
+	a.BaseRange = value
+}
 
-// Add SetFinalRange if needed (though Range might be simpler)
+func (a *Attack) SetBaseAD(value float64) {
+	a.BaseAD = value
+}
+func (a *Attack) SetBaseCritChance(value float64) {
+	a.BaseCritChance = value
+}
+func (a *Attack) SetBaseCritMultiplier(value float64) {
+	a.BaseCritMultiplier = value
+}
+
+func (a *Attack) SetBaseDamageAmp(value float64) {
+	a.BaseDamageAmp = value
+}
+
 
 // --- Methods to GET FINAL stats (used by combat systems) ---
 func (a *Attack) GetFinalAD() float64 {

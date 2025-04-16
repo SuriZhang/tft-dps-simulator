@@ -48,9 +48,9 @@ func NewWorld() *World {
 	}
 }
 
-// CreateEntity generates a new unique entity ID using the global NewEntity function.
+// NewEntity generates a new unique entity ID using the global NewEntity function.
 // Note: This only reserves the ID; components must be added separately.
-func (w *World) CreateEntity() Entity {
+func (w *World) NewEntity() Entity {
 	return NewEntity()
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
+	"github.com/suriz/tft-dps-simulator/components/effects"
 )
 
 // ChampionFactory creates champion entities from champion data.
@@ -40,7 +41,7 @@ func StarMultiplier(starLevel int) float64 {
 // It now returns an error if adding any component fails.
 func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel int) (ecs.Entity, error) {
 	// Create entity
-	entity := cf.world.CreateEntity()
+	entity := cf.world.NewEntity()
 	var err error // Variable to hold potential errors
 
 	// Apply star level multiplier
@@ -107,6 +108,12 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 	err = cf.world.AddComponent(entity, components.NewEquipment())
 	if err != nil {
 		return 0, fmt.Errorf("failed to add Inventory component to %s: %w", championData.Name, err)
+	}
+
+	// create empty item effect component
+	err = cf.world.AddComponent(entity, effects.NewItemStaticEffect())
+	if err != nil {
+		return 0, fmt.Errorf("failed to add ItemEffect component to %s: %w", championData.Name, err)
 	}
 
 	err = cf.world.AddComponent(entity, components.NewPosition(0, 0))

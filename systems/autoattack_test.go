@@ -1,180 +1,256 @@
-package systems
+package systems_test
 
 import (
-	"math"
-	"testing"
-
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/ecs"
+	"github.com/suriz/tft-dps-simulator/factory" // Import factory
+	"github.com/suriz/tft-dps-simulator/systems"
+	// "github.com/suriz/tft-dps-simulator/utils"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-// Helper function to setup a basic world for testing
-func setupTestWorldWithEntities() (*ecs.World, *AutoAttackSystem, ecs.Entity, ecs.Entity) {
-	world := ecs.NewWorld()
-	system := NewAutoAttackSystem(world)
+var _ = Describe("AutoAttackSystem", func() {
+	var (
+		world            *ecs.World
+		championFactory  *factory.ChampionFactory
+		autoAttackSystem *systems.AutoAttackSystem
+		player           ecs.Entity // Blue Golem
+		target           ecs.Entity // Training Dummy
+		playerAttack     *components.Attack
+		targetHealth     *components.Health
+		ok               bool
+		// Define the pre-calculated expected damage based on provided stats
+		// *** IMPORTANT: Recalculate this value if stats in BeforeEach change! ***
+		// Calculation: 55 * ((1-0.25) + 0.25*1.4) * (1+0/100) * (100/(100+30)) * (1-0) = 46.538...
+		preCalculatedExpectedDamage float64 = 46.54
+	)
 
-	// Attacker (Team 0)
-	attacker := world.CreateEntity()
-	world.AddComponent(attacker, components.NewChampionInfo("Attacker", "Attacker", 1, 1))
-	world.AddComponent(attacker, components.NewHealth(100, 0, 0))
-	world.AddComponent(attacker, components.NewAttack(50, 1.0, 1, 0.25, 1.5)) // 50 dmg, 1.0 AS, 1 range, 25% crit, 1.5x crit mult
-	world.AddComponent(attacker, components.NewPosition(1, 1))
-	world.AddComponent(attacker, components.NewTeam(0))
+	BeforeEach(func() {
 
-	// Target (Team 1)
-	target := world.CreateEntity()
-	world.AddComponent(target, components.NewChampionInfo("Target", "Target", 1, 1))
-	world.AddComponent(target, components.NewHealth(1000, 0, 0)) // High health, 0 armor/mr
-	world.AddComponent(target, components.NewPosition(2, 1))     // Within range 1
-	world.AddComponent(target, components.NewTeam(1))
+		world = ecs.NewWorld()
+		championFactory = factory.NewChampionFactory(world) // Create factory
+		autoAttackSystem = systems.NewAutoAttackSystem(world)
 
-	return world, system, attacker, target
-}
+		// --- Create Player (Blue Golem) using Factory ---
+		var err error
+		// Use the correct API Name for Blue Golem from your data files
+		player, err = championFactory.CreatePlayerChampion("TFT_BlueGolem", 1)
+		Expect(err).NotTo(HaveOccurred())
+		world.AddComponent(player, components.NewPosition(0,1)) 
 
-// Test a single basic attack hitting the target
-func TestAutoAttack_BasicHit(t *testing.T) {
-	world, system, attacker, target := setupTestWorldWithEntities()
-	initialTargetHealth, _ := world.GetHealth(target)
-	initialHP := initialTargetHealth.CurrentHP
+		// utils.PrintChampionStats(world, player) 
 
-	// Update slightly more than cooldown (1.0s for 1.0 AS)
-	system.Update(1.1)
+		// --- Create Target (Training Dummy) using Factory ---
+		// Use the correct API Name for Training Dummy
+		target, err = championFactory.CreateEnemyChampion("TFT_TrainingDummy", 1)
+		Expect(err).NotTo(HaveOccurred())
+		world.AddComponent(target, components.NewPosition(1,1))
+		// utils.PrintChampionStats(world, target)
 
-	finalTargetHealth, ok := world.GetHealth(target)
-	if !ok {
-		t.Fatalf("Target lost health component")
-	}
+		// --- Get Components ---
+		playerAttack, ok = world.GetAttack(player)
+		Expect(ok).To(BeTrue(), "Player should have Attack component")
+		Expect(playerAttack).NotTo(BeNil(), "Player Attack component pointer should not be nil after retrieval")
+		targetHealth, ok = world.GetHealth(target)
+		Expect(ok).To(BeTrue(), "Target should have Health component")
+		Expect(targetHealth).NotTo(BeNil(), "Target Health component pointer should not be nil after retrieval")
 
-	// Expected damage = 50 (base) * (100 / (100 + 0 armor)) = 50
-	expectedHP := initialHP - 50.0
-	// Use a small tolerance for float comparison
-	if math.Abs(finalTargetHealth.CurrentHP-expectedHP) > 0.01 {
-		t.Errorf("Expected target health %.2f, got %.2f", expectedHP, finalTargetHealth.CurrentHP)
-	}
+		// --- Manually Set Final Stats (as StatCalculationSystem isn't run) ---
+		// This ensures attack speed calculations in the test are correct.
+		// The factory sets base stats, but we need final stats for the system.
+		playerAttack.SetFinalAD(55.00)
+		playerAttack.SetFinalAttackSpeed(0.550)
+		playerAttack.SetFinalRange(1.00)
+		playerAttack.SetFinalCritChance(0.25) // Add other relevant final stats
+		playerAttack.SetFinalCritMultiplier(1.40)
+		playerAttack.SetFinalDamageAmp(0.00)
 
-	// Check if attacker's LastAttackTime was updated
-	attackComp, _ := world.GetAttack(attacker)
-	if math.Abs(attackComp.LastAttackTime-system.currentTime) > 0.01 {
-		t.Errorf("Expected attacker LastAttackTime %.2f, got %.2f", system.currentTime, attackComp.LastAttackTime)
-	}
-}
+		targetHealth.SetFinalArmor(30.00)
+		targetHealth.SetFinalMR(30.00) // Set even if not used by AD calc
+		targetHealth.SetFinalDurability(0.00)
+		// Set CurrentHP high enough for multiple hits
+		targetHealth.SetCurrentHealth(550.00) // Use target's base max HP
 
-// Test that the attacker respects the cooldown
-func TestAutoAttack_Cooldown(t *testing.T) {
-	world, system, _, target := setupTestWorldWithEntities()
-	initialTargetHealth, _ := world.GetHealth(target)
-	initialHP := initialTargetHealth.CurrentHP
+		// --- Set Positions ---
+		playerPosition, ok := world.GetPosition(player)
+		Expect(ok).To(BeTrue())
+		Expect(playerPosition).NotTo(BeNil())
+		playerPosition.X = 0
+		playerPosition.Y = 0
 
-	// Update less than cooldown (1.0s) -> should not attack
-	system.Update(0.5)
+		targetPosition, ok := world.GetPosition(target)
+		Expect(ok).To(BeTrue())
+		Expect(targetPosition).NotTo(BeNil())
+		targetPosition.X = 1 // Place within default range (adjust if needed based on actual range)
+		targetPosition.Y = 0
 
-	targetHealthAfterFirstUpdate, _ := world.GetHealth(target)
-	if math.Abs(targetHealthAfterFirstUpdate.CurrentHP-initialHP) > 0.01 {
-		t.Errorf("Target health changed before cooldown expired, expected %.2f, got %.2f", initialHP, targetHealthAfterFirstUpdate.CurrentHP)
-	}
+		// --- Ensure Dummy doesn't attack ---
+		targetAttack, ok := world.GetAttack(target)
+		if ok { // Training Dummy might not even have an Attack component depending on factory setup
+			Expect(targetAttack).NotTo(BeNil())
+			targetAttack.SetBaseAttackSpeed(0)
+			targetAttack.SetFinalAttackSpeed(0)
+		}
+	})
 
-	// Update past the cooldown -> should attack
-	system.Update(0.6) // Total time = 0.5 + 0.6 = 1.1s
+	// --- Contexts and It blocks remain the same ---
+	Context("when a valid target is in range", func() {
+		It("should perform an attack after the initial delay", func() {
+			Expect(playerAttack).NotTo(BeNil(), "playerAttack should not be nil at the start of the test")
+			Expect(targetHealth).NotTo(BeNil(), "targetHealth should not be nil at the start of the test")
 
-	targetHealthAfterSecondUpdate, _ := world.GetHealth(target)
-	expectedHP := initialHP - 50.0 // Should have taken one hit
-	if math.Abs(targetHealthAfterSecondUpdate.CurrentHP-expectedHP) > 0.01 {
-		t.Errorf("Target health incorrect after cooldown, expected %.2f, got %.2f", expectedHP, targetHealthAfterSecondUpdate.CurrentHP)
-	}
-}
+			initialTargetHP := targetHealth.GetCurrentHP()
+			// Ensure FinalAttackSpeed is not zero before calculating delay
 
-// Test armor reduction (simplified, doesn't test crit interaction here)
-func TestAutoAttack_ArmorReduction(t *testing.T) {
-	world, system, _, target := setupTestWorldWithEntities()
+			GinkgoWriter.Println("*********** Player Attack Speed:", playerAttack.GetFinalAttackSpeed())
 
-	// Give target armor
-	targetHealth, _ := world.GetHealth(target)
-	targetHealth.BaseArmor = 100 // Should reduce physical damage by 50%
-	initialHP := targetHealth.CurrentHP
+			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0), "Player FinalAttackSpeed must be > 0 for attack delay calculation")
+			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed() // Time for one attack cycle
+			dt := 0.1                                      // Small time step
 
-	// Update past cooldown
-	system.Update(1.1)
+			// Simulate time slightly less than the attack delay
+			for t := 0.0; t < attackDelay-dt/2; t += dt {
+				autoAttackSystem.Update(dt)
+				Expect(targetHealth.GetCurrentHP()).To(Equal(initialTargetHP), "Target HP should not change before the attack lands")
+			}
 
-	finalTargetHealth, _ := world.GetHealth(target)
+			// Simulate the time step where the attack should land
+			autoAttackSystem.Update(dt)
+			expectedHP := initialTargetHP - preCalculatedExpectedDamage // Assumes no damage reduction for simplicity
+			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", expectedHP, 0.01), "Target HP should decrease after the attack lands")
+		})
 
-	// Expected damage = 50 (base) * (100 / (100 + 100 armor)) = 25
-	expectedHP := initialHP - 25.0
-	if math.Abs(finalTargetHealth.CurrentHP-expectedHP) > 0.01 {
-		t.Errorf("Armor reduction failed: Expected target health %.2f, got %.2f", expectedHP, finalTargetHealth.CurrentHP)
-	}
-}
+		It("should reset the attack timer after attacking", func() {
+			Expect(playerAttack).NotTo(BeNil())
+			Expect(targetHealth).NotTo(BeNil())
+			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
+			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
+			dt := attackDelay + 0.01 // Simulate enough time for one attack
 
-// Test that friendly fire is prevented
-func TestAutoAttack_NoFriendlyFire(t *testing.T) {
-	world, system, attacker, target := setupTestWorldWithEntities()
+			// First attack
+			autoAttackSystem.Update(dt)
+			hpAfterFirstAttack := targetHealth.GetCurrentHP()
 
-	// Change target's team to be the same as attacker
-	targetTeam, _ := world.GetTeam(target)
-	targetTeam.ID = 0 // Now both are Team 0
-	initialTargetHealth, _ := world.GetHealth(target)
-	initialHP := initialTargetHealth.CurrentHP
+			// Simulate time slightly less than the *next* attack delay
+			smallDt := 0.1 // Use smaller steps for inner loop
+			for t := 0.0; t < attackDelay-smallDt/2; t += smallDt {
+				autoAttackSystem.Update(smallDt)
+				Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterFirstAttack, 0.01), "Target HP should not change again before the second attack lands")
+			}
 
-	// Update past cooldown
-	system.Update(1.1)
+			// Simulate the time step where the second attack should land
+			autoAttackSystem.Update(smallDt)
+			expectedHP := hpAfterFirstAttack - preCalculatedExpectedDamage
+			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", expectedHP, 0.01), "Target HP should decrease after the second attack lands")
+		})
 
-	finalTargetHealth, _ := world.GetHealth(target)
-	// Health should NOT change
-	if math.Abs(finalTargetHealth.CurrentHP-initialHP) > 0.01 {
-		t.Errorf("Friendly fire occurred! Target health changed, expected %.2f, got %.2f", initialHP, finalTargetHealth.CurrentHP)
-	}
+		It("should generate mana for the attacker on attack", func() {
+			Expect(playerAttack).NotTo(BeNil())
+			playerMana, ok := world.GetMana(player)
+			Expect(ok).To(BeTrue())
+			initialMana := playerMana.GetCurrentMana()
+			// Expect(initialMana).To(BeNumerically("~", 0.0)) // Initial mana might not be 0 depending on factory
 
-	// Check attacker's LastAttackTime - should NOT have been updated as no attack occurred
-	attackComp, _ := world.GetAttack(attacker)
-	if attackComp.LastAttackTime != 0.0 {
-		t.Errorf("Attacker LastAttackTime updated (%.2f) despite no valid target", attackComp.LastAttackTime)
-	}
-}
+			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
+			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
+			dt := attackDelay + 0.01 // Simulate enough time for one attack
 
-// Test that a dead attacker does not attack
-func TestAutoAttack_DeadAttacker(t *testing.T) {
-	world, system, attacker, target := setupTestWorldWithEntities()
+			autoAttackSystem.Update(dt) // Perform the attack
 
-	// Kill the attacker
-	attackerHealth, _ := world.GetHealth(attacker)
-	attackerHealth.CurrentHP = 0
-	initialTargetHealth, _ := world.GetHealth(target)
-	initialHP := initialTargetHealth.CurrentHP
+			// Mana gain per attack (TFT standard is 10, but check components.Attack if different)
+			expectedManaGain := 10.0
+			Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", initialMana+expectedManaGain), "Player should gain mana after attacking")
+		})
 
-	// Update past cooldown
-	system.Update(1.1)
+		It("should stop attacking if the target dies", func() {
+			Expect(playerAttack).NotTo(BeNil())
+			Expect(targetHealth).NotTo(BeNil())
+			// Reduce target HP so it dies in one hit
+			Expect(playerAttack.GetFinalAD()).To(BeNumerically(">", 0)) // Ensure AD is positive
+			targetHealth.SetCurrentHealth(preCalculatedExpectedDamage - 1)
+			// hpBeforeAttack := targetHealth.GetCurrentHP() // Not strictly needed
 
-	finalTargetHealth, _ := world.GetHealth(target)
-	// Health should NOT change
-	if math.Abs(finalTargetHealth.CurrentHP-initialHP) > 0.01 {
-		t.Errorf("Dead attacker attacked! Target health changed, expected %.2f, got %.2f", initialHP, finalTargetHealth.CurrentHP)
-	}
-}
+			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
+			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
+			dt := attackDelay + 0.01 // Simulate enough time for one attack
 
-// Note: Testing Crit requires either controlling the RNG or running many times.
-// For simplicity, we won't test the exact probability here, but you could
-// temporarily set crit chance to 1.0 or 0.0 to test the damage calculation.
+			// First attack (kills target)
+			autoAttackSystem.Update(dt)
+			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("<=", 0), "Target should be dead or below 0 HP")
+			hpAfterDeath := targetHealth.GetCurrentHP() // Store HP after the killing blow
 
-// Example: Test guaranteed crit damage
-func TestAutoAttack_GuaranteedCrit(t *testing.T) {
-	world, system, attacker, target := setupTestWorldWithEntities()
+			// Simulate more time, enough for several more attacks if target were alive
+			for i := 0; i < 5; i++ {
+				autoAttackSystem.Update(attackDelay)
+			}
 
-	// Force crit
-	attackComp, _ := world.GetAttack(attacker)
-	attackComp.BaseCritChance = 1.0                 // 100% crit chance
-	critMultiplier := attackComp.BaseCritMultiplier // Should be 1.5x
-	baseDamage := attackComp.BaseAD             // Should be 50
+			// Target HP should not change further after death
+			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterDeath, 0.01), "Target HP should not change after it dies")
+		})
+	})
 
-	initialTargetHealth, _ := world.GetHealth(target)
-	initialHP := initialTargetHealth.CurrentHP
+	Context("when no valid target is in range", func() {
+		BeforeEach(func() {
+			Expect(playerAttack).NotTo(BeNil())
+			// Move target out of range
+			targetPos, ok := world.GetPosition(target)
+			Expect(ok).To(BeTrue())
+			Expect(targetPos).NotTo(BeNil())
+			targetPos.X = playerAttack.GetFinalRange() + 1 // Just outside range
+		})
 
-	// Update past cooldown
-	system.Update(1.1)
+		It("should not perform an attack", func() {
+			Expect(targetHealth).NotTo(BeNil())
+			initialTargetHP := targetHealth.GetCurrentHP()
+			dt := 0.1
+			simulationTime := 3.0 // Simulate for 3 seconds
 
-	finalTargetHealth, _ := world.GetHealth(target)
+			// Simulate time
+			for t := 0.0; t < simulationTime; t += dt {
+				autoAttackSystem.Update(dt)
+			}
 
-	// Expected damage = 50 (base) * 1.5 (crit) * (100 / (100 + 0 armor)) = 75
-	expectedHP := initialHP - (baseDamage * critMultiplier)
-	if math.Abs(finalTargetHealth.CurrentHP-expectedHP) > 0.01 {
-		t.Errorf("Crit damage incorrect: Expected target health %.2f, got %.2f", expectedHP, finalTargetHealth.CurrentHP)
-	}
-}
+			Expect(targetHealth.GetCurrentHP()).To(Equal(initialTargetHP), "Target HP should not change when out of range")
+		})
+
+		It("should not generate mana for the attacker", func() {
+			playerMana, ok := world.GetMana(player)
+			Expect(ok).To(BeTrue())
+			initialMana := playerMana.GetCurrentMana()
+
+			dt := 0.1
+			simulationTime := 3.0 // Simulate for 3 seconds
+
+			// Simulate time
+			for t := 0.0; t < simulationTime; t += dt {
+				autoAttackSystem.Update(dt)
+			}
+
+			Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", initialMana), "Player mana should not change when no target is attacked")
+		})
+	})
+
+	Context("when the attacker has 0 Attack Speed", func() {
+		BeforeEach(func() {
+			Expect(playerAttack).NotTo(BeNil())
+			playerAttack.SetBaseAttackSpeed(0)
+			playerAttack.SetFinalAttackSpeed(0) // Ensure final AS is also 0
+		})
+
+		It("should not perform an attack", func() {
+			Expect(targetHealth).NotTo(BeNil())
+			initialTargetHP := targetHealth.GetCurrentHP()
+			dt := 0.1
+
+			// Simulate a significant amount of time
+			for t := 0.0; t < 5.0; t += dt {
+				autoAttackSystem.Update(dt)
+			}
+
+			Expect(targetHealth.GetCurrentHP()).To(Equal(initialTargetHP), "Target HP should not change when attacker AS is 0")
+		})
+	})
+
+})

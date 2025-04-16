@@ -11,14 +11,13 @@ import (
 
 // EquipmentManager handles adding/removing items and calculating their effects.
 type EquipmentManager struct {
-    world *ecs.World
+	world *ecs.World
 }
 
 // NewEquipmentManager creates a new EquipmentManager.
 func NewEquipmentManager(world *ecs.World) *EquipmentManager {
-    return &EquipmentManager{world: world}
+	return &EquipmentManager{world: world}
 }
-
 
 // AddItemToChampion adds an item to a champion's equipment if there's space.
 // It now returns an error if the item cannot be added.
@@ -48,7 +47,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championInfo.Name)
 	}
 
-	err := equipment.AddItem(item) 
+	err := equipment.AddItem(item)
 	if err != nil {
 		return fmt.Errorf("failed to add item %s to champion %s: %w", item.ApiName, championInfo.Name, err)
 	}
@@ -102,16 +101,10 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 	equipment, ok := em.world.GetEquipment(champion)
 	if !ok {
 		// This shouldn't happen if called after ensuring equipment exists, but good practice to check.
-		return fmt.Errorf("cannot caculate item effects: champion %s has no Equipment component", championInfo.Name)
+		return fmt.Errorf("cannot calculate item effects: champion %s has no Equipment component", championInfo.Name)
 	}
 
-	if len(equipment.Items) == 0 {
-		return fmt.Errorf("champion %s has no items equipped", championInfo.Name)
-	}
-
-	log.Printf("Champion %s has %d items equipped.", championInfo.Name, len(equipment.Items))
-
-	// Get or create the ItemEffect component
+	// Get or create the ItemEffect component FIRST
 	itemEffect, ok := em.world.GetItemEffect(champion)
 	if !ok {
 		// If no ItemEffect component exists, create a new one
@@ -121,13 +114,26 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 			return fmt.Errorf("failed to add ItemEffect component to champion %s: %w", championInfo.Name, err)
 		}
 		itemEffect = newItemEffect // Use the newly added component
+		log.Printf("Created new ItemEffect component for champion %s.", championInfo.Name)
 	}
 
-	// Reset the aggregated stats before caculating
-	itemEffect.ResetStats() // Add this method to ItemEffect component
+	// Reset the aggregated stats regardless of whether items exist.
+	// This ensures stats are cleared when the last item is removed.
+	itemEffect.ResetStats()
+	log.Printf("Reset ItemEffect stats for champion %s.", championInfo.Name)
+
+	// --- Handle the case where there are no items ---
+	if len(equipment.Items) == 0 {
+		log.Printf("Champion %s has no items equipped. Item effects reset.", championInfo.Name)
+		// No error, just return after resetting stats.
+		return nil 
+	}
+
+	// --- Process items if they exist ---
+	log.Printf("Champion %s has %d items equipped. Calculating effects...", championInfo.Name, len(equipment.Items))
 
 	// Iterate through all items in the equipment and aggregate their stats
-	for _, item := range equipment.GetAllItems() {
+	for _, item := range equipment.GetAllItems() { // Use GetAllItems which returns a copy
 		if item == nil || item.Effects == nil {
 			log.Printf("Warning: Skipping item with nil data or nil effects in equipment for champion %s", championInfo.Name)
 			continue
@@ -140,49 +146,44 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 			switch statName {
 			case "Health":
 				itemEffect.AddBonusHealth(value)
-				log.Printf("Adding %f bonus health to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus health to champion %s from item %s", value, championInfo.Name, item.ApiName) // Reduce log verbosity
 			case "BonusPercentHP":
 				itemEffect.AddBonusPercentHp(value)
-				log.Printf("Adding %f bonus percent HP to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus percent HP to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "Mana":
 				itemEffect.AddBonusInitialMana(value)
-				log.Printf("Adding %f bonus initial mana to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus initial mana to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "Armor":
 				itemEffect.AddBonusArmor(value)
-				log.Printf("Adding %f bonus armor to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus armor to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "MagicResist":
 				itemEffect.AddBonusMR(value)
-				log.Printf("Adding %f bonus magic resist to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus magic resist to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AD":
 				itemEffect.AddBonusPercentAD(value)
-				log.Printf("Adding %f bonus percent AD to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus percent AD to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AP":
 				itemEffect.AddBonusAP(value)
-				log.Printf("Adding %f bonus AP to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus AP to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AS":
 				itemEffect.AddBonusPercentAttackSpeed(value / 100)
-				log.Printf("Adding %f bonus percent attack speed to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus percent attack speed to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
 			case "CritChance":
 				itemEffect.AddBonusCritChance(value / 100)
-				log.Printf("Adding %f bonus crit chance to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus crit chance to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
 			case "BonusDamage":
 				itemEffect.AddBonusDamageAmp(value)
-				log.Printf("Adding %f bonus damage amp to champion %s from item %s", value, championInfo.Name, item.ApiName)
+				// log.Printf("Adding %f bonus damage amp to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "CritDamageToGive": // specific to IE & JG
 				itemEffect.AddCritDamageToGive(value)
-				log.Printf("Adding %f crit damage to give to champion %s from item %s", value, championInfo.Name, item.ApiName)
-			// Add cases for other stats as needed...
+				// log.Printf("Adding %f crit damage to give to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			default:
-				// Optional: Log or handle unrecognized stat names
 				log.Printf("Warning: Unrecognized item effect stat '%s' for item %s", statName, item.ApiName)
 			}
-			// Add other stats as needed...
 		}
-		log.Printf("Successfully processed item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name)
+		// log.Printf("Successfully processed item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name) // Reduce log verbosity
 	}
 
-	// Optional: Add/Remove marker components based on items (for future systems)
-	// em.updateItemMarkerComponents(champion, equipment.Items)
-
+	log.Printf("Finished calculating item effects for champion %s.", championInfo.Name)
 	return nil
 }
