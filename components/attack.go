@@ -154,6 +154,10 @@ func (a *Attack) SetBaseDamageAmp(value float64) {
 	a.BaseDamageAmp = value
 }
 
+func (a *Attack) SetBonusPercentAttackSpeed(value float64) {
+	a.BonusPercentAttackSpeed = value
+}
+
 
 // --- Methods to GET FINAL stats (used by combat systems) ---
 func (a *Attack) GetFinalAD() float64 {

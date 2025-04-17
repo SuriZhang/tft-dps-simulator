@@ -2,7 +2,7 @@ package ecs
 
 import (
 	"fmt"
-	"reflect" // Stigithub.com/suriz/tft-dps-simulator/components"
+	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/components/effects"
@@ -12,20 +12,23 @@ import (
 type World struct {
 	// --- Component Maps ---
 	// Using pointers (*components.Type) allows checking for nil to see if an entity has the component.
-	Health       map[Entity]*components.Health
-	Mana         map[Entity]*components.Mana
-	Attack       map[Entity]*components.Attack
-	Traits       map[Entity]*components.Traits
-	ChampionInfo map[Entity]*components.ChampionInfo
-	Position     map[Entity]*components.Position
-	Team         map[Entity]*components.Team
-	Item         map[Entity]*effects.ItemStaticEffect
-	Equipment    map[Entity]*components.Equipment // Assuming you have an Inventory component
+	Health                   map[Entity]*components.Health
+	Mana                     map[Entity]*components.Mana
+	Attack                   map[Entity]*components.Attack
+	Traits                   map[Entity]*components.Traits
+	ChampionInfo             map[Entity]*components.ChampionInfo
+	Position                 map[Entity]*components.Position
+	Team                     map[Entity]*components.Team
+	Item                     map[Entity]*effects.ItemStaticEffect
+	Equipment                map[Entity]*components.Equipment 
 	CanAbilityCritFromTraits map[Entity]*components.CanAbilityCritFromTraits
 	CanAbilityCritFromItems  map[Entity]*components.CanAbilityCritFromItems
+	Spell                   map[Entity]*components.Spell
+	// --- Dynamic Item Effect Components ---
+	ArchangelsEffects  map[Entity]*effects.ArchangelsEffect 
+	QuicksilverEffects map[Entity]*effects.QuicksilverEffect
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
-	// Spell        map[Entity]*components.Spell
 	// Buffs        map[Entity]*components.Buffs
 }
 
@@ -33,17 +36,21 @@ type World struct {
 func NewWorld() *World {
 	return &World{
 		// Initialize maps
-		Health:       make(map[Entity]*components.Health),
-		Mana:         make(map[Entity]*components.Mana),
-		Attack:       make(map[Entity]*components.Attack),
-		Traits:       make(map[Entity]*components.Traits),
-		ChampionInfo: make(map[Entity]*components.ChampionInfo),
-		Position:     make(map[Entity]*components.Position),
-		Team:         make(map[Entity]*components.Team),
-		Item:         make(map[Entity]*effects.ItemStaticEffect),
-		Equipment:    make(map[Entity]*components.Equipment),
+		Health:                   make(map[Entity]*components.Health),
+		Mana:                     make(map[Entity]*components.Mana),
+		Attack:                   make(map[Entity]*components.Attack),
+		Traits:                   make(map[Entity]*components.Traits),
+		ChampionInfo:             make(map[Entity]*components.ChampionInfo),
+		Position:                 make(map[Entity]*components.Position),
+		Team:                     make(map[Entity]*components.Team),
+		Item:                     make(map[Entity]*effects.ItemStaticEffect),
+		Equipment:                make(map[Entity]*components.Equipment),
 		CanAbilityCritFromTraits: make(map[Entity]*components.CanAbilityCritFromTraits),
 		CanAbilityCritFromItems:  make(map[Entity]*components.CanAbilityCritFromItems),
+		Spell:                   make(map[Entity]*components.Spell),
+		// --- Dynamic Item Effect Components ---
+		ArchangelsEffects:  make(map[Entity]*effects.ArchangelsEffect),
+		QuicksilverEffects: make(map[Entity]*effects.QuicksilverEffect),
 		// Initialize other maps here...
 	}
 }
@@ -68,6 +75,10 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.Equipment, e)
 	delete(w.CanAbilityCritFromTraits, e)
 	delete(w.CanAbilityCritFromItems, e)
+	delete(w.Spell, e)
+	// --- Dynamic Item Effect Components ---
+	delete(w.ArchangelsEffects, e)  
+	delete(w.QuicksilverEffects, e) 
 	// Delete from other maps here...
 }
 
@@ -126,6 +137,19 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.CanAbilityCritFromItems[e] = &c
 	case *components.CanAbilityCritFromItems:
 		w.CanAbilityCritFromItems[e] = c
+	case components.Spell:
+		w.Spell[e] = &c
+	case *components.Spell:
+		w.Spell[e] = c
+	// --- Dynamic Item Effect Components ---
+	case effects.ArchangelsEffect:
+		w.ArchangelsEffects[e] = &c
+	case *effects.ArchangelsEffect:
+		w.ArchangelsEffects[e] = c
+	case effects.QuicksilverEffect:
+		w.QuicksilverEffects[e] = &c
+	case *effects.QuicksilverEffect:
+		w.QuicksilverEffects[e] = c
 	// Add cases for other component types here...
 	default:
 		// Use reflection to get the type name for the error message
@@ -172,6 +196,16 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
 		comp, ok := w.CanAbilityCritFromItems[e]
 		return comp, ok
+	case reflect.TypeOf(components.Spell{}):
+		comp, ok := w.Spell[e]
+		return comp, ok
+	// --- Dynamic Item Effect Components ---
+	case reflect.TypeOf(effects.ArchangelsEffect{}):
+		comp, ok := w.ArchangelsEffects[e]
+		return comp, ok
+	case reflect.TypeOf(effects.QuicksilverEffect{}):
+		comp, ok := w.QuicksilverEffects[e]
+		return comp, ok
 	// Add cases for other component types here...
 	default:
 		return nil, false
@@ -209,6 +243,13 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.CanAbilityCritFromTraits, e)
 	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
 		delete(w.CanAbilityCritFromItems, e)
+	case reflect.TypeOf(components.Spell{}):
+		delete(w.Spell, e)
+	// --- Dynamic Item Effect Components ---
+	case reflect.TypeOf(effects.ArchangelsEffect{}):
+		delete(w.ArchangelsEffects, e)
+	case reflect.TypeOf(effects.QuicksilverEffect{}):
+		delete(w.QuicksilverEffects, e)
 	// Add cases for other component types here...
 	default:
 		fmt.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
@@ -301,6 +342,13 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.CanAbilityCritFromTraits)
 	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
 		return len(w.CanAbilityCritFromItems)
+	case reflect.TypeOf(components.Spell{}):
+		return len(w.Spell)
+	// --- Dynamic Item Effect Components ---
+	case reflect.TypeOf(effects.ArchangelsEffect{}):
+		return len(w.ArchangelsEffects)
+	case reflect.TypeOf(effects.QuicksilverEffect{}):
+		return len(w.QuicksilverEffects)
 	// Add cases for other component types...
 	default:
 		return 0
@@ -363,10 +411,25 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 		}
 	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
 		entities = make([]Entity, 0, len(w.CanAbilityCritFromItems))
-		for e := range w.CanAbilityCritFromItems {	
+		for e := range w.CanAbilityCritFromItems {
 			entities = append(entities, e)
 		}
-	
+	case reflect.TypeOf(components.Spell{}):
+		entities = make([]Entity, 0, len(w.Spell))
+		for e := range w.Spell {
+			entities = append(entities, e)
+		}
+	// --- Dynamic Item Effect Components ---
+	case reflect.TypeOf(effects.ArchangelsEffect{}):
+		entities = make([]Entity, 0, len(w.ArchangelsEffects))
+		for e := range w.ArchangelsEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(effects.QuicksilverEffect{}):
+		entities = make([]Entity, 0, len(w.QuicksilverEffects))
+		for e := range w.QuicksilverEffects {
+			entities = append(entities, e)
+		}
 	// Add cases for other component types...
 	default:
 		return []Entity{} // Return empty slice for unknown types
@@ -449,5 +512,23 @@ func (w *World) GetCanAbilityCritFromTraits(e Entity) (*components.CanAbilityCri
 // GetCanAbilityCritFromItems returns the CanAbilityCritFromItems component for an entity, type-safe.
 func (w *World) GetCanAbilityCritFromItems(e Entity) (*components.CanAbilityCritFromItems, bool) {
 	comp, ok := w.CanAbilityCritFromItems[e]
+	return comp, ok
+}
+
+// GetSpell returns the Spell component for an entity, type-safe.
+func (w *World) GetSpell(e Entity) (*components.Spell, bool) {
+	comp, ok := w.Spell[e]
+	return comp, ok
+}
+
+// GetArchangelsEffect returns the ArchangelsEffect component for an entity, type-safe.
+func (w *World) GetArchangelsEffect(e Entity) (*effects.ArchangelsEffect, bool) {
+	comp, ok := w.ArchangelsEffects[e]
+	return comp, ok
+}
+
+// GetQuicksilverEffect returns the QuicksilverEffect component for an entity, type-safe.
+func (w *World) GetQuicksilverEffect(e Entity) (*effects.QuicksilverEffect, bool) {
+	comp, ok := w.QuicksilverEffects[e]
 	return comp, ok
 }

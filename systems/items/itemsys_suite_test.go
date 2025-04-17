@@ -1,0 +1,47 @@
+package itemsys_test // Use the _test package convention
+
+import (
+	"path/filepath"
+	"testing"
+	"fmt"
+	"os"
+	
+	"github.com/suriz/tft-dps-simulator/data"
+
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+)
+
+// TestItemsys is the entry point for the Ginkgo test suite for the itemsys package.
+func TestItemsys(t *testing.T) {
+    gomega.RegisterFailHandler(ginkgo.Fail)
+    ginkgo.RunSpecs(t, "Item System Suite")
+}
+
+// Optional: Add BeforeSuite and AfterSuite blocks here if needed
+// for setup/teardown that runs once for the entire itemsys test suite.
+
+var _ = ginkgo.BeforeSuite(func() {
+    // Load item data once for the entire manager suite
+    // Adjust the path to your actual item data file
+	dataDir := "../../assets"
+	fileName := "en_us_14.1b.json"
+	filePath := filepath.Join(dataDir, fileName)
+	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
+	if err != nil {
+		fmt.Printf("Error loading set data: %v\n", err)
+		os.Exit(1)
+	}
+	data.InitializeChampions(tftData)
+
+	data.InitializeTraits(tftData)
+    data.InitializeSetActiveAugments(tftData, filePath)
+
+	data.InitializeSetActiveItems(tftData, filePath)
+
+    gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to load item data")
+})
+
+var _ = ginkgo.AfterSuite(func() {
+    // Suite teardown
+})

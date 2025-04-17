@@ -83,6 +83,14 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 		return 0, fmt.Errorf("failed to add Mana component to %s: %w", championData.Name, err)
 	}
 
+	// Add Spell component
+	// TODO: fix later, use dummy values for now, as we don't have spell data yet
+	spellComp := components.NewSpell(0, manaComp.GetMaxMana(), 1)
+	err = cf.world.AddComponent(entity, spellComp)
+	if err != nil {
+		return 0, fmt.Errorf("failed to add Spell component to %s: %w", championData.Name, err)
+	}
+
 	// ChampionInfo
 	infoComp := components.NewChampionInfo(
 		championData.ApiName,

@@ -3,6 +3,7 @@ package managers
 import (
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components/effects"
 	"github.com/suriz/tft-dps-simulator/data"
@@ -20,7 +21,7 @@ func NewEquipmentManager(world *ecs.World) *EquipmentManager {
 }
 
 // AddItemToChampion adds an item to a champion's equipment if there's space.
-// It now returns an error if the item cannot be added.
+// It also adds specific effect components for dynamic items.
 func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName string) error {
 	// Get the item data by API name
 	item := data.GetItemByApiName(itemApiName)
@@ -30,160 +31,224 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {
-		return fmt.Errorf("champion %d has no ChampionInfo component", champion)
+		// It's often better to ensure ChampionInfo exists before calling this
+		log.Printf("Warning: Champion %d has no ChampionInfo component when adding item %s", champion, itemApiName)
+		// Decide if this should be a hard error or just a log
+		// return fmt.Errorf("champion %d has no ChampionInfo component", champion)
 	}
+	championName := fmt.Sprintf("Entity %d", champion)
+	if championInfo != nil {
+		championName = championInfo.Name
+	}
+
 	// Get the Equipment component
 	equipment, ok := em.world.GetEquipment(champion)
 	if !ok {
 		return fmt.Errorf("champion %s has no Equipment component", championInfo.Name)
 	}
 
-	// Attempt to add the item to the equipment
+	// Attempt to add the item to the equipment component's list
 	if !equipment.HasItemSlots() {
-		return fmt.Errorf("no space to add item %s to champion %s", item.ApiName, championInfo.Name)
+		return fmt.Errorf("no space to add item %s to champion %s", item.ApiName, championName)
 	}
 
+	// Check for unique constraint *before* adding
 	if equipment.IsDuplicateUniqueItem(item.ApiName) {
-		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championInfo.Name)
+		return fmt.Errorf("item %s is unique and already equipped on champion %s", item.ApiName, championName)
 	}
 
-	err := equipment.AddItem(item)
+	// Add the item to the component
+	err := equipment.AddItem(item) // This adds the *data.Item pointer
 	if err != nil {
-		return fmt.Errorf("failed to add item %s to champion %s: %w", item.ApiName, championInfo.Name, err)
+		return fmt.Errorf("failed to add item %s to champion %s: %w", item.ApiName, championName, err)
 	}
-	log.Printf("Adding item '%s' to champion %s and updating item effects.", itemApiName, championInfo.Name)
+	log.Printf("Adding item '%s' to champion %s and updating item effects.", itemApiName, championName)
+
+	// --- Add Specific Effect Components for Dynamic Items ---
+	switch itemApiName {
+	case data.TFT_Item_ArchangelsStaff:
+        if _, exists := em.world.GetArchangelsEffect(champion); !exists {
+            // Fetch values from item data
+            interval := item.Effects["IntervalSeconds"] // Default to 0 if not found
+            apPerStack := item.Effects["APPerInterval"]   // Default to 0 if not found
+
+            // Call the updated constructor with fetched values
+            archangelsEffect := effects.NewArchangelsEffect(interval, apPerStack)
+            err := em.world.AddComponent(champion, archangelsEffect)
+            if err != nil {
+                log.Printf("Warning: Failed to add ArchangelsEffect component for champion %s: %v", championName, err)
+            } else {
+                log.Printf("Added ArchangelsEffect component to champion %s (Interval: %.1f, AP/Stack: %.1f)",
+                    championName, interval, apPerStack)
+            }
+        }
+	case data.TFT_Item_Quicksilver:
+		if _, exists := em.world.GetQuicksilverEffect(champion); !exists {
+			// Fetch values from item data
+			duration := item.Effects["SpellShieldDuration"] // Default to 0 if not found
+			procAS := item.Effects["ProcAttackSpeed"]       // Default to 0 if not found
+			procInterval := item.Effects["ProcInterval"]    // Default to 0 if not found
+
+			quicksilverEffect := effects.NewQuicksilverEffect(duration, procAS, procInterval)
+			err := em.world.AddComponent(champion, quicksilverEffect)
+			if err != nil {
+				log.Printf("Warning: Failed to add QuicksilverEffect component for champion %s: %v", championName, err)
+			} else {
+				log.Printf("Added QuicksilverEffect component to champion %s (Duration: %.1f, ProcAS: %.2f, Interval: %.1f)",
+					championName, duration, procAS, procInterval)
+				// TODO: Add IsImmuneToCC marker component if implemented
+				// em.world.AddComponent(champion, effects.IsImmuneToCC{})
+			}
+		}
+		// Add cases for other dynamic items that need specific components
+	}
+
 	// Calculate the item stats and apply them to the champion, update ItemEffect component
 	err = em.calculateAndUpdateItemEffects(champion)
 	if err != nil {
-		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championInfo.Name, err)
+		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championName, err)
 	}
 
 	return nil
 }
 
 // RemoveItemFromChampion removes an item from a champion's equipment by its API name.
-// It now returns an error if the item cannot be removed.
+// It also removes associated effect components for specific dynamic items.
 func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiName string) error {
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {
-		return fmt.Errorf("champion %d has no ChampionInfo component", champion)
+		log.Printf("Warning: Champion %d has no ChampionInfo component when removing item %s", champion, itemApiName)
+	}
+	championName := fmt.Sprintf("Entity %d", champion) // Default name
+	if championInfo != nil {
+		championName = championInfo.Name
 	}
 
 	// Get the Equipment component
 	equipment, ok := em.world.GetEquipment(champion)
 	if !ok {
-		return fmt.Errorf("champion %s has no Equipment component", championInfo.Name)
+		return fmt.Errorf("champion %s has no Equipment component, cannot remove item", championName)
 	}
 
-	// Attempt to remove the item from the equipment
-	if !equipment.RemoveItem(itemApiName) {
-		return fmt.Errorf("item %s not found in champion %s's equipment", itemApiName, championInfo.Name)
+	// Attempt to remove the item from the equipment component's list
+	if !equipment.RemoveItem(itemApiName) { // This removes by API name
+		return fmt.Errorf("item %s not found in champion %s's equipment", itemApiName, championName)
+	}
+	log.Printf("Removed item '%s' from champion %s's equipment component.", itemApiName, championName)
+
+	// --- Remove Specific Effect Components for Dynamic Items ---
+	switch itemApiName {
+	case data.TFT_Item_ArchangelsStaff:
+		if _, exists := em.world.GetArchangelsEffect(champion); exists {
+			em.world.RemoveComponent(champion, reflect.TypeOf(effects.ArchangelsEffect{}))
+			log.Printf("Removed ArchangelsEffect component from champion %s", championName)
+		}
+	case data.TFT_Item_Quicksilver:
+		if _, exists := em.world.GetQuicksilverEffect(champion); exists {
+			em.world.RemoveComponent(champion, reflect.TypeOf(effects.QuicksilverEffect{}))
+			log.Printf("Removed QuicksilverEffect component from champion %s", championName)
+			// TODO: Remove IsImmuneToCC marker component if implemented
+			// em.world.RemoveComponent(champion, reflect.TypeOf(effects.IsImmuneToCC{}))
+		}
+		// Add cases for other dynamic items
 	}
 
-	log.Printf("Removing item '%s' from champion %s and updating item effects...", itemApiName, championInfo.Name)
-	// Remove item effects from champion stats, update ItemEffect component
-	err := em.calculateAndUpdateItemEffects(champion)
+	// --- Update Static Item Effects ---
+	log.Printf("Updating static item effects for champion %s after removing %s.", championName, itemApiName)
+	err := em.calculateAndUpdateItemEffects(champion) // Recalculate remaining static passive stats
 	if err != nil {
-		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championInfo.Name, err)
+		log.Printf("Error updating static item effects for champion %s after removing %s: %v", championName, itemApiName, err)
+		// return fmt.Errorf("failed to calculate item effects for champion %s: %w", championName, err) // Decide if this should be fatal
 	}
 
 	return nil
 }
 
 // calculateAndUpdateItemEffects calculates the total passive stats from equipped items
-// and updates the champion's ItemEffect component.
+// and updates the champion's ItemStaticEffect component.
 func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) error {
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {
 		return fmt.Errorf("champion %d has no ChampionInfo component", champion)
 	}
+	championName := championInfo.Name
 
 	equipment, ok := em.world.GetEquipment(champion)
 	if !ok {
 		// This shouldn't happen if called after ensuring equipment exists, but good practice to check.
-		return fmt.Errorf("cannot calculate item effects: champion %s has no Equipment component", championInfo.Name)
+		return fmt.Errorf("cannot calculate item effects: champion %s has no Equipment component", championName)
 	}
 
-	// Get or create the ItemEffect component FIRST
+	// Get or create the ItemStaticEffect component FIRST
 	itemEffect, ok := em.world.GetItemEffect(champion)
 	if !ok {
-		// If no ItemEffect component exists, create a new one
+		// If no ItemStaticEffect component exists, create a new one
 		newItemEffect := effects.NewItemStaticEffect()
 		err := em.world.AddComponent(champion, newItemEffect)
 		if err != nil {
-			return fmt.Errorf("failed to add ItemEffect component to champion %s: %w", championInfo.Name, err)
+			return fmt.Errorf("failed to add ItemStaticEffect component to champion %s: %w", championName, err)
 		}
 		itemEffect = newItemEffect // Use the newly added component
-		log.Printf("Created new ItemEffect component for champion %s.", championInfo.Name)
+		log.Printf("Created new ItemStaticEffect component for champion %s.", championName)
 	}
 
 	// Reset the aggregated stats regardless of whether items exist.
 	// This ensures stats are cleared when the last item is removed.
 	itemEffect.ResetStats()
-	log.Printf("Reset ItemEffect stats for champion %s.", championInfo.Name)
+	log.Printf("Reset ItemStaticEffect stats for champion %s.", championName)
 
 	// --- Handle the case where there are no items ---
 	if len(equipment.Items) == 0 {
-		log.Printf("Champion %s has no items equipped. Item effects reset.", championInfo.Name)
+		log.Printf("Champion %s has no items equipped. Item effects reset.", championName)
 		// No error, just return after resetting stats.
-		return nil 
+		return nil
 	}
 
 	// --- Process items if they exist ---
-	log.Printf("Champion %s has %d items equipped. Calculating effects...", championInfo.Name, len(equipment.Items))
+	log.Printf("Champion %s has %d items equipped. Calculating effects...", championName, len(equipment.Items))
 
 	// Iterate through all items in the equipment and aggregate their stats
-	for _, item := range equipment.GetAllItems() { // Use GetAllItems which returns a copy
+	for _, item := range equipment.GetAllItems() { // Use GetAllItems which returns *data.Item pointers
 		if item == nil || item.Effects == nil {
-			log.Printf("Warning: Skipping item with nil data or nil effects in equipment for champion %s", championInfo.Name)
+			log.Printf("Warning: Skipping item with nil data or nil effects in equipment for champion %s", championName)
 			continue
 		}
 
-		log.Printf("Processing item %s for champion %s", item.ApiName, championInfo.Name)
+		log.Printf("Processing static effects for item %s for champion %s", item.ApiName, championName)
 
 		// Add stats from this item to the aggregate
 		for statName, value := range item.Effects {
+			// Only process static stats here. Dynamic effects are handled by their systems.
 			switch statName {
 			case "Health":
 				itemEffect.AddBonusHealth(value)
-				// log.Printf("Adding %f bonus health to champion %s from item %s", value, championInfo.Name, item.ApiName) // Reduce log verbosity
 			case "BonusPercentHP":
 				itemEffect.AddBonusPercentHp(value)
-				// log.Printf("Adding %f bonus percent HP to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "Mana":
 				itemEffect.AddBonusInitialMana(value)
-				// log.Printf("Adding %f bonus initial mana to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "Armor":
 				itemEffect.AddBonusArmor(value)
-				// log.Printf("Adding %f bonus armor to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "MagicResist":
 				itemEffect.AddBonusMR(value)
-				// log.Printf("Adding %f bonus magic resist to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AD":
 				itemEffect.AddBonusPercentAD(value)
-				// log.Printf("Adding %f bonus percent AD to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AP":
 				itemEffect.AddBonusAP(value)
-				// log.Printf("Adding %f bonus AP to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "AS":
 				itemEffect.AddBonusPercentAttackSpeed(value / 100)
-				// log.Printf("Adding %f bonus percent attack speed to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
 			case "CritChance":
 				itemEffect.AddBonusCritChance(value / 100)
-				// log.Printf("Adding %f bonus crit chance to champion %s from item %s", value/100, championInfo.Name, item.ApiName)
 			case "BonusDamage":
 				itemEffect.AddBonusDamageAmp(value)
-				// log.Printf("Adding %f bonus damage amp to champion %s from item %s", value, championInfo.Name, item.ApiName)
 			case "CritDamageToGive": // specific to IE & JG
 				itemEffect.AddCritDamageToGive(value)
-				// log.Printf("Adding %f crit damage to give to champion %s from item %s", value, championInfo.Name, item.ApiName)
+			// Add other known static stats...
 			default:
 				log.Printf("Warning: Unrecognized item effect stat '%s' for item %s", statName, item.ApiName)
 			}
 		}
-		// log.Printf("Successfully processed item '%s' to champion %s and updated item effects.", item.ApiName, championInfo.Name) // Reduce log verbosity
 	}
 
-	log.Printf("Finished calculating item effects for champion %s.", championInfo.Name)
+	log.Printf("Finished calculating static item effects for champion %s.", championName)
 	return nil
 }

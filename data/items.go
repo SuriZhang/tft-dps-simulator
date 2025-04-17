@@ -18,6 +18,21 @@ const (
     DynamicEvent   ItemClassification = "dynamic_event"
     DynamicComplex ItemClassification = "dynamic_complex"
     UnknownItem    ItemClassification = "unknown" // Default or for items not yet classified
+
+    TFT_Item_BFSword              = "TFT_Item_BFSword"
+    TFT_Item_ChainVest            = "TFT_Item_ChainVest"
+    TFT_Item_GiantsBelt           = "TFT_Item_GiantsBelt"
+    TFT_Item_NeedlesslyLargeRod   = "TFT_Item_NeedlesslyLargeRod"
+    TFT_Item_NegatronCloak        = "TFT_Item_NegatronCloak"
+    TFT_Item_RecurveBow           = "TFT_Item_RecurveBow"
+    TFT_Item_SparringGloves       = "TFT_Item_SparringGloves"
+    TFT_Item_Spatula              = "TFT_Item_Spatula"
+    TFT_Item_TearOfTheGoddess     = "TFT_Item_TearOfTheGoddess"
+    TFT_Item_RabadonsDeathcap     = "TFT_Item_RabadonsDeathcap"
+    TFT_Item_Deathblade           = "TFT_Item_Deathblade"
+    TFT_Item_WarmogsArmor         = "TFT_Item_WarmogsArmor"
+    TFT_Item_ArchangelsStaff      = "TFT_Item_ArchangelsStaff"
+    TFT_Item_Quicksilver          = "TFT_Item_Quicksilver"
 )
 
 var itemClassificationMap = map[string]ItemClassification{

@@ -92,6 +92,26 @@ DONE Today:
 - [x] implement logic for handling IE & JG
 
 TODO:
-- [ ] think about the edge case when a champion wears more than 1 IE and/or JG at the same time
+- [x] think about the edge case when a champion wears more than 1 IE and/or JG at the same time
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something
-- [ ] write tests
+- [x] write tests
+
+## 20250415-0416
+Lessons learned from debugging IE/JG edge cases:  
+To prevent minor errors being ignored and causing me more problem in the future, I'll need to write tests.
+
+DONE Today:
+- [x] fixed IE & JG logic when a champion wears more than 1 item that can cause their ability to crit.
+- [x] added tests!!
+- [x] clean up main.go, wrap the logic and simulation config to `/simulation` directory
+
+TODO:
+- [ ] implement QickSilver and Archagel's Staff
+
+## 20250417
+DONE Today: 
+- [x] implemented QuickSilver and Archangels Staff, along with all DynamicTime item system.
+- [x] Added Spell components, currently not completed, but stores Archagel's bonus AP. will add more details when it comes to implementing the champion Ability/Spell
+
+TODO:
+- [ ] implement logic when two component items are added, they form a composition item according to the formula
