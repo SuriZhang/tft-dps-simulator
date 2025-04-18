@@ -20,7 +20,7 @@ var _ = Describe("EquipmentManager", func() {
 		deathblade       *data.Item
 		inifityEdge      *data.Item
 		tear             *data.Item
-		bluebuff 	 *data.Item
+		bluebuff         *data.Item
 	)
 
 	BeforeEach(func() {
@@ -115,13 +115,13 @@ var _ = Describe("EquipmentManager", func() {
 			})
 
 			It("should return an error", func() {
-				err := equipmentManager.AddItemToChampion(champion, bluebuff.ApiName) 
+				err := equipmentManager.AddItemToChampion(champion, bluebuff.ApiName)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("is unique and already equipped"))
 
 				eq, ok := world.GetEquipment(champion)
 				Expect(ok).To(BeTrue())
-				Expect(eq.Items).To(HaveLen(1)) 
+				Expect(eq.Items).To(HaveLen(1))
 			})
 		})
 

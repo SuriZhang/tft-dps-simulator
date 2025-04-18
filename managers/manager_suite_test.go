@@ -14,13 +14,13 @@ import (
 )
 
 func TestManagers(t *testing.T) {
-    gomega.RegisterFailHandler(ginkgo.Fail)
-    ginkgo.RunSpecs(t, "Managers Suite")
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Managers Suite")
 }
 
 var _ = ginkgo.BeforeSuite(func() {
-    // Load item data once for the entire manager suite
-    // Adjust the path to your actual item data file
+	// Load item data once for the entire manager suite
+	// Adjust the path to your actual item data file
 	dataDir := "../assets"
 	fileName := "en_us_14.1b.json"
 	filePath := filepath.Join(dataDir, fileName)
@@ -32,9 +32,9 @@ var _ = ginkgo.BeforeSuite(func() {
 	data.InitializeChampions(tftData)
 
 	data.InitializeTraits(tftData)
-    data.InitializeSetActiveAugments(tftData, filePath)
+	data.InitializeSetActiveAugments(tftData, filePath)
 
 	data.InitializeSetActiveItems(tftData, filePath)
 
-    gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to load item data")
+	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to load item data")
 })

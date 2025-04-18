@@ -2,33 +2,33 @@ package components
 
 // Spell holds data related to a champion's ability/spell.
 type Spell struct {
-    // Base stats (potentially loaded from champion data)
-    BaseAP float64
-    ManaCost         float64
-    Cooldown         float64 // Base cooldown
+	// Base stats (potentially loaded from champion data)
+	BaseAP   float64
+	ManaCost float64
+	Cooldown float64 // Base cooldown
 
-    // Bonus stats accumulated from items, traits, etc.
-    BonusAP float64
-    // Add other potential bonus spell stats (e.g., BonusSpellCritChance, BonusSpellCritDamage) if needed
+	// Bonus stats accumulated from items, traits, etc.
+	BonusAP float64
+	// Add other potential bonus spell stats (e.g., BonusSpellCritChance, BonusSpellCritDamage) if needed
 
-    // Final calculated stats used by systems
-    FinalAP float64
+	// Final calculated stats used by systems
+	FinalAP float64
 
-    // State
-    CurrentCooldown float64
-    // CanCast bool // Could be managed by SpellSystem
+	// State
+	CurrentCooldown float64
+	// CanCast bool // Could be managed by SpellSystem
 }
 
 // NewSpell creates a Spell component, potentially initializing from base stats.
 func NewSpell(baseAP, manaCost, cooldown float64) *Spell {
-    return &Spell{
-        BaseAP:  baseAP,
-        ManaCost:          manaCost,
-        Cooldown:          cooldown,
-        BonusAP: 0, // Start with no bonus
-        FinalAP: baseAP, // Initial final value
-        CurrentCooldown:   0,
-    }
+	return &Spell{
+		BaseAP:          baseAP,
+		ManaCost:        manaCost,
+		Cooldown:        cooldown,
+		BonusAP:         0,      // Start with no bonus
+		FinalAP:         baseAP, // Initial final value
+		CurrentCooldown: 0,
+	}
 }
 
 // GetBaseAP returns the base ability power.
@@ -98,3 +98,6 @@ func (s *Spell) AddBonusAP(value float64) {
 	s.BonusAP += value
 }
 
+func (s *Spell) ResetBonuses() {
+	s.BonusAP = 0
+}

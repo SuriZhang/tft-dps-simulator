@@ -15,9 +15,8 @@ type BaseStaticItemSystem struct {
 }
 
 func NewBaseStaticItemSystem(world *ecs.World) *BaseStaticItemSystem {
-    return &BaseStaticItemSystem{world: world}
+	return &BaseStaticItemSystem{world: world}
 }
-
 
 // ApplyStats reads the ItemEffect component for relevant entities
 // and modifies their base stat components (Health, Attack, Mana, etc.)
@@ -35,7 +34,7 @@ func (s *BaseStaticItemSystem) ApplyStats() {
 
 		s.applyHealthBonuses(entity, itemEffect)
 		s.applyAttackBonuses(entity, itemEffect)
-        s.applyManaBonuses(entity, itemEffect)
+		s.applyManaBonuses(entity, itemEffect)
 
 		// Apply to Defense (when Defense component exists)
 		// ...
@@ -56,30 +55,30 @@ func (s *BaseStaticItemSystem) Update(dt float64) {
 
 // --- Helper functions (Optional) ---
 func (s *BaseStaticItemSystem) applyHealthBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
-    if health, ok := s.world.GetHealth(entity); ok {
-        health.AddBonusMaxHealth(itemEffect.GetBonusHealth())
-        health.AddBonusPercentHealth(itemEffect.GetBonusPercentHp())
-        health.AddBonusArmor(itemEffect.GetBonusArmor())
-        health.AddBonusMR(itemEffect.GetBonusMR())
-        health.AddBonusDurability(itemEffect.GetDurability())
-    }
+	if health, ok := s.world.GetHealth(entity); ok {
+		health.AddBonusMaxHealth(itemEffect.GetBonusHealth())
+		health.AddBonusPercentHealth(itemEffect.GetBonusPercentHp())
+		health.AddBonusArmor(itemEffect.GetBonusArmor())
+		health.AddBonusMR(itemEffect.GetBonusMR())
+		health.AddBonusDurability(itemEffect.GetDurability())
+	}
 
- }
- 
-func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) { 
-    if attack, ok := s.world.GetAttack(entity); ok {
-        attack.AddBonusPercentAD(itemEffect.GetBonusPercentAD())
-        attack.AddBonusDamageAmp(itemEffect.GetDamageAmp())
-        attack.AddBonusPercentAttackSpeed(itemEffect.GetBonusPercentAttackSpeed())
-        attack.AddBonusCritChance(itemEffect.GetBonusCritChance())
+}
 
-        // Sepecific to Infinity Edge & Jeweled Gauntlet
-        attack.AddBonusCritDamageToGive(itemEffect.GetCritDamageToGive())
-    }
+func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
+	if attack, ok := s.world.GetAttack(entity); ok {
+		attack.AddBonusPercentAD(itemEffect.GetBonusPercentAD())
+		attack.AddBonusDamageAmp(itemEffect.GetDamageAmp())
+		attack.AddBonusPercentAttackSpeed(itemEffect.GetBonusPercentAttackSpeed())
+		attack.AddBonusCritChance(itemEffect.GetBonusCritChance())
+
+		// Sepecific to Infinity Edge & Jeweled Gauntlet
+		attack.AddBonusCritDamageToGive(itemEffect.GetCritDamageToGive())
+	}
 }
 
 func (s *BaseStaticItemSystem) applyManaBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
-    if mana, ok := s.world.GetMana(entity); ok {
-        mana.AddBonusInitialMana(itemEffect.GetBonusInitialMana())
-    }
+	if mana, ok := s.world.GetMana(entity); ok {
+		mana.AddBonusInitialMana(itemEffect.GetBonusInitialMana())
+	}
 }

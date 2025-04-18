@@ -20,12 +20,12 @@ type World struct {
 	Position                 map[Entity]*components.Position
 	Team                     map[Entity]*components.Team
 	Item                     map[Entity]*effects.ItemStaticEffect
-	Equipment                map[Entity]*components.Equipment 
+	Equipment                map[Entity]*components.Equipment
 	CanAbilityCritFromTraits map[Entity]*components.CanAbilityCritFromTraits
 	CanAbilityCritFromItems  map[Entity]*components.CanAbilityCritFromItems
-	Spell                   map[Entity]*components.Spell
+	Spell                    map[Entity]*components.Spell
 	// --- Dynamic Item Effect Components ---
-	ArchangelsEffects  map[Entity]*effects.ArchangelsEffect 
+	ArchangelsEffects  map[Entity]*effects.ArchangelsEffect
 	QuicksilverEffects map[Entity]*effects.QuicksilverEffect
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
@@ -47,7 +47,7 @@ func NewWorld() *World {
 		Equipment:                make(map[Entity]*components.Equipment),
 		CanAbilityCritFromTraits: make(map[Entity]*components.CanAbilityCritFromTraits),
 		CanAbilityCritFromItems:  make(map[Entity]*components.CanAbilityCritFromItems),
-		Spell:                   make(map[Entity]*components.Spell),
+		Spell:                    make(map[Entity]*components.Spell),
 		// --- Dynamic Item Effect Components ---
 		ArchangelsEffects:  make(map[Entity]*effects.ArchangelsEffect),
 		QuicksilverEffects: make(map[Entity]*effects.QuicksilverEffect),
@@ -77,8 +77,8 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.CanAbilityCritFromItems, e)
 	delete(w.Spell, e)
 	// --- Dynamic Item Effect Components ---
-	delete(w.ArchangelsEffects, e)  
-	delete(w.QuicksilverEffects, e) 
+	delete(w.ArchangelsEffects, e)
+	delete(w.QuicksilverEffects, e)
 	// Delete from other maps here...
 }
 

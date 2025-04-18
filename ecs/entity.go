@@ -11,6 +11,5 @@ var nextEntityID uint32 = 0
 
 // NewEntity creates a new entity with a unique ID
 func NewEntity() Entity {
-    return Entity(atomic.AddUint32(&nextEntityID, 1))
+	return Entity(atomic.AddUint32(&nextEntityID, 1))
 }
-

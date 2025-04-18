@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -34,6 +35,16 @@ type Health struct {
 
 // NewHealth initializes the component with base stats.
 func NewHealth(baseHp, baseArmor, baseMr float64) *Health {
+	if baseHp < 0 || math.IsNaN(baseHp) {
+		baseHp = 0
+	}
+	if baseArmor < 0 || math.IsNaN(baseArmor) {
+		baseArmor = 0
+	}
+	if baseMr < 0 || math.IsNaN(baseMr) {
+		baseMr = 0
+	}
+
 	return &Health{
 		BaseMaxHP: baseHp,
 		BaseArmor: baseArmor,
@@ -55,7 +66,7 @@ func NewHealth(baseHp, baseArmor, baseMr float64) *Health {
 	}
 }
 
-func (h *Health) SetMaxHealth(maxHealth float64) {
+func (h *Health) SetBaseMaxHP(maxHealth float64) {
 	h.BaseMaxHP = maxHealth
 }
 
@@ -176,10 +187,6 @@ func (h *Health) IsDead() bool {
 	return h.CurrentHP <= 0
 }
 
-func (h *Health) GetCurrentHealth() float64 {
-	return h.CurrentHP
-}
-
 func (h *Health) GetBaseMaxHp() float64 {
 	return h.BaseMaxHP
 }
@@ -231,7 +238,6 @@ func (h *Health) GetBonusMR() float64 {
 func (h *Health) GetCurrentHP() float64 {
 	return h.CurrentHP
 }
-
 
 // String returns a multi-line string representation of the Health component.
 func (h *Health) String() string {

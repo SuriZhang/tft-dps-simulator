@@ -2,7 +2,7 @@ package components
 
 // Identity contains champion identification information
 type ChampionInfo struct {
-	ApiName  string
+	ApiName   string
 	Name      string
 	Cost      int
 	StarLevel int
@@ -11,7 +11,7 @@ type ChampionInfo struct {
 // NewIdentity creates an Identity component
 func NewChampionInfo(apiName string, name string, cost, starLevel int) ChampionInfo {
 	return ChampionInfo{
-		ApiName:  apiName,
+		ApiName:   apiName,
 		Name:      name,
 		Cost:      cost,
 		StarLevel: starLevel,

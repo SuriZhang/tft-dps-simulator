@@ -3,232 +3,187 @@ package systems_test
 import (
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/ecs"
-	"github.com/suriz/tft-dps-simulator/factory" // Import factory
+	"github.com/suriz/tft-dps-simulator/factory"
 	"github.com/suriz/tft-dps-simulator/systems"
-	// "github.com/suriz/tft-dps-simulator/utils"
+	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
+// --- Test Suite ---
 var _ = Describe("AutoAttackSystem", func() {
 	var (
 		world            *ecs.World
+		eventBus         *MockEventBus // Use the mock event bus
 		championFactory  *factory.ChampionFactory
 		autoAttackSystem *systems.AutoAttackSystem
 		player           ecs.Entity // Blue Golem
 		target           ecs.Entity // Training Dummy
 		playerAttack     *components.Attack
-		targetHealth     *components.Health
+		targetHealth     *components.Health // Still needed to check if target is alive initially
 		ok               bool
-		// Define the pre-calculated expected damage based on provided stats
-		// *** IMPORTANT: Recalculate this value if stats in BeforeEach change! ***
-		// Calculation: 55 * ((1-0.25) + 0.25*1.4) * (1+0/100) * (100/(100+30)) * (1-0) = 46.538...
-		preCalculatedExpectedDamage float64 = 46.54
+		// Base AD for event checking
+		expectedBaseDamage float64 = 55.00
 	)
 
 	BeforeEach(func() {
-
 		world = ecs.NewWorld()
-		championFactory = factory.NewChampionFactory(world) // Create factory
-		autoAttackSystem = systems.NewAutoAttackSystem(world)
+		eventBus = NewMockEventBus() // Initialize mock bus
+		championFactory = factory.NewChampionFactory(world)
+		autoAttackSystem = systems.NewAutoAttackSystem(world, eventBus) // Pass bus to system
 
-		// --- Create Player (Blue Golem) using Factory ---
+		// --- Create Player (Blue Golem) ---
 		var err error
-		// Use the correct API Name for Blue Golem from your data files
 		player, err = championFactory.CreatePlayerChampion("TFT_BlueGolem", 1)
 		Expect(err).NotTo(HaveOccurred())
-		world.AddComponent(player, components.NewPosition(0,1)) 
+		world.AddComponent(player, components.NewPosition(0, 1))
 
-		// utils.PrintChampionStats(world, player) 
-
-		// --- Create Target (Training Dummy) using Factory ---
-		// Use the correct API Name for Training Dummy
+		// --- Create Target (Training Dummy) ---
 		target, err = championFactory.CreateEnemyChampion("TFT_TrainingDummy", 1)
 		Expect(err).NotTo(HaveOccurred())
-		world.AddComponent(target, components.NewPosition(1,1))
-		// utils.PrintChampionStats(world, target)
+		world.AddComponent(target, components.NewPosition(1, 1))
 
 		// --- Get Components ---
 		playerAttack, ok = world.GetAttack(player)
-		Expect(ok).To(BeTrue(), "Player should have Attack component")
-		Expect(playerAttack).NotTo(BeNil(), "Player Attack component pointer should not be nil after retrieval")
-		targetHealth, ok = world.GetHealth(target)
-		Expect(ok).To(BeTrue(), "Target should have Health component")
-		Expect(targetHealth).NotTo(BeNil(), "Target Health component pointer should not be nil after retrieval")
+		Expect(ok).To(BeTrue())
+		Expect(playerAttack).NotTo(BeNil())
+		targetHealth, ok = world.GetHealth(target) // Still get health for setup/checks
+		Expect(ok).To(BeTrue())
+		Expect(targetHealth).NotTo(BeNil())
 
-		// --- Manually Set Final Stats (as StatCalculationSystem isn't run) ---
-		// This ensures attack speed calculations in the test are correct.
-		// The factory sets base stats, but we need final stats for the system.
-		playerAttack.SetFinalAD(55.00)
+		// --- Manually Set Final Stats ---
+		playerAttack.SetFinalAD(expectedBaseDamage) // Use the variable
 		playerAttack.SetFinalAttackSpeed(0.550)
 		playerAttack.SetFinalRange(1.00)
-		playerAttack.SetFinalCritChance(0.25) // Add other relevant final stats
+		playerAttack.SetFinalCritChance(0.25)
 		playerAttack.SetFinalCritMultiplier(1.40)
 		playerAttack.SetFinalDamageAmp(0.00)
 
 		targetHealth.SetFinalArmor(30.00)
-		targetHealth.SetFinalMR(30.00) // Set even if not used by AD calc
+		targetHealth.SetFinalMR(30.00)
 		targetHealth.SetFinalDurability(0.00)
-		// Set CurrentHP high enough for multiple hits
-		targetHealth.SetCurrentHealth(550.00) // Use target's base max HP
+		targetHealth.SetCurrentHealth(550.00) // Ensure target is alive
 
 		// --- Set Positions ---
 		playerPosition, ok := world.GetPosition(player)
 		Expect(ok).To(BeTrue())
 		Expect(playerPosition).NotTo(BeNil())
-		playerPosition.X = 0
-		playerPosition.Y = 0
+		playerPosition.SetPosition(0, 0)
 
 		targetPosition, ok := world.GetPosition(target)
 		Expect(ok).To(BeTrue())
 		Expect(targetPosition).NotTo(BeNil())
-		targetPosition.X = 1 // Place within default range (adjust if needed based on actual range)
-		targetPosition.Y = 0
+		targetPosition.SetPosition(1, 0)
 
 		// --- Ensure Dummy doesn't attack ---
 		targetAttack, ok := world.GetAttack(target)
-		if ok { // Training Dummy might not even have an Attack component depending on factory setup
+		if ok {
 			Expect(targetAttack).NotTo(BeNil())
 			targetAttack.SetBaseAttackSpeed(0)
 			targetAttack.SetFinalAttackSpeed(0)
 		}
 	})
 
-	// --- Contexts and It blocks remain the same ---
 	Context("when a valid target is in range", func() {
-		It("should perform an attack after the initial delay", func() {
-			Expect(playerAttack).NotTo(BeNil(), "playerAttack should not be nil at the start of the test")
-			Expect(targetHealth).NotTo(BeNil(), "targetHealth should not be nil at the start of the test")
-
-			initialTargetHP := targetHealth.GetCurrentHP()
-			// Ensure FinalAttackSpeed is not zero before calculating delay
-
-			GinkgoWriter.Println("*********** Player Attack Speed:", playerAttack.GetFinalAttackSpeed())
-
-			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0), "Player FinalAttackSpeed must be > 0 for attack delay calculation")
-			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed() // Time for one attack cycle
-			dt := 0.1                                      // Small time step
+		It("should enqueue an AttackLandedEvent after the initial delay", func() {
+			Expect(playerAttack).NotTo(BeNil())
+			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
+			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
+			dt := 0.1
 
 			// Simulate time slightly less than the attack delay
 			for t := 0.0; t < attackDelay-dt/2; t += dt {
-				autoAttackSystem.Update(dt)
-				Expect(targetHealth.GetCurrentHP()).To(Equal(initialTargetHP), "Target HP should not change before the attack lands")
+				autoAttackSystem.TriggerAutoAttack(dt)
+				Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No event should be enqueued before the attack time")
 			}
 
 			// Simulate the time step where the attack should land
-			autoAttackSystem.Update(dt)
-			expectedHP := initialTargetHP - preCalculatedExpectedDamage // Assumes no damage reduction for simplicity
-			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", expectedHP, 0.01), "Target HP should decrease after the attack lands")
+			autoAttackSystem.TriggerAutoAttack(dt)
+			// Calculate the simulation time when the event is generated
+			// Time before this update = 18 iterations * 0.1 dt = 1.8
+			// Current time = 1.8 + 0.1 = 1.9
+			expectedEventTime := 1.9
+
+			// Assertions on the event
+			Expect(eventBus.EnqueuedEvents).To(HaveLen(1), "One AttackLandedEvent should be enqueued")
+			event, ok := eventBus.GetLastEvent().(eventsys.AttackLandedEvent)
+			Expect(ok).To(BeTrue(), "Enqueued event should be of type AttackLandedEvent")
+			Expect(event.Source).To(Equal(player), "Event source should be the player")
+			Expect(event.Target).To(Equal(target), "Event target should be the dummy")
+			Expect(event.BaseDamage).To(BeNumerically("~", expectedBaseDamage, 0.01), "Event base damage should match player's final AD")
+			// We could also check event.Timestamp if needed
+			Expect(event.Timestamp).To(BeNumerically("~", expectedEventTime, 0.01), "Event timestamp should match the simulation time when the attack landed")
 		})
 
-		It("should reset the attack timer after attacking", func() {
+		It("should enqueue subsequent attacks based on attack speed", func() {
 			Expect(playerAttack).NotTo(BeNil())
-			Expect(targetHealth).NotTo(BeNil())
 			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
 			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
-			dt := attackDelay + 0.01 // Simulate enough time for one attack
+			dt := 0.1 // Use a small dt for finer control
 
-			// First attack
-			autoAttackSystem.Update(dt)
-			hpAfterFirstAttack := targetHealth.GetCurrentHP()
+			// Simulate until the first attack lands
+			var firstAttackTime float64
+			for t := 0.0; ; t += dt {
+				autoAttackSystem.TriggerAutoAttack(dt)
+				if len(eventBus.EnqueuedEvents) > 0 {
+					firstAttackTime = eventBus.GetLastEvent().(eventsys.AttackLandedEvent).Timestamp
+					break // Exit loop once the first event is enqueued
+				}
+				// Safety break to prevent infinite loops in case of error
+				if t > attackDelay*2 {
+					Fail("First attack event was not generated within expected time")
+				}
+			}
 
-			// Simulate time slightly less than the *next* attack delay
-			smallDt := 0.1 // Use smaller steps for inner loop
-			for t := 0.0; t < attackDelay-smallDt/2; t += smallDt {
-				autoAttackSystem.Update(smallDt)
-				Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterFirstAttack, 0.01), "Target HP should not change again before the second attack lands")
+			Expect(eventBus.EnqueuedEvents).To(HaveLen(1), "Should have 1 event after first attack time")
+			// --- Manually update LastAttackTime ---
+			playerAttack.SetLastAttackTime(firstAttackTime)
+			// --- End Manual Update ---
+			eventBus.ClearEvents() // Clear events after checking the first one and updating time
+
+			// Simulate time slightly less than the *next* attack delay, starting from the first attack time
+			timeToSimulateBeforeSecondAttack := attackDelay - dt/2
+			currentTimeOffset := firstAttackTime // Keep track of simulation time relative to start
+			for t := 0.0; t < timeToSimulateBeforeSecondAttack; t += dt {
+				autoAttackSystem.TriggerAutoAttack(dt)
+				Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No event should be enqueued before the second attack time")
+				currentTimeOffset += dt
 			}
 
 			// Simulate the time step where the second attack should land
-			autoAttackSystem.Update(smallDt)
-			expectedHP := hpAfterFirstAttack - preCalculatedExpectedDamage
-			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", expectedHP, 0.01), "Target HP should decrease after the second attack lands")
-		})
+			autoAttackSystem.TriggerAutoAttack(dt)
+			currentTimeOffset += dt
+			expectedSecondAttackTime := currentTimeOffset
 
-		It("should generate mana for the attacker on attack", func() {
-			Expect(playerAttack).NotTo(BeNil())
-			playerMana, ok := world.GetMana(player)
+			Expect(eventBus.EnqueuedEvents).To(HaveLen(1), "One AttackLandedEvent should be enqueued for the second attack")
+			event, ok := eventBus.GetLastEvent().(eventsys.AttackLandedEvent)
 			Expect(ok).To(BeTrue())
-			initialMana := playerMana.GetCurrentMana()
-			// Expect(initialMana).To(BeNumerically("~", 0.0)) // Initial mana might not be 0 depending on factory
-
-			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
-			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
-			dt := attackDelay + 0.01 // Simulate enough time for one attack
-
-			autoAttackSystem.Update(dt) // Perform the attack
-
-			// Mana gain per attack (TFT standard is 10, but check components.Attack if different)
-			expectedManaGain := 10.0
-			Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", initialMana+expectedManaGain), "Player should gain mana after attacking")
-		})
-
-		It("should stop attacking if the target dies", func() {
-			Expect(playerAttack).NotTo(BeNil())
-			Expect(targetHealth).NotTo(BeNil())
-			// Reduce target HP so it dies in one hit
-			Expect(playerAttack.GetFinalAD()).To(BeNumerically(">", 0)) // Ensure AD is positive
-			targetHealth.SetCurrentHealth(preCalculatedExpectedDamage - 1)
-			// hpBeforeAttack := targetHealth.GetCurrentHP() // Not strictly needed
-
-			Expect(playerAttack.GetFinalAttackSpeed()).To(BeNumerically(">", 0))
-			attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed()
-			dt := attackDelay + 0.01 // Simulate enough time for one attack
-
-			// First attack (kills target)
-			autoAttackSystem.Update(dt)
-			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("<=", 0), "Target should be dead or below 0 HP")
-			hpAfterDeath := targetHealth.GetCurrentHP() // Store HP after the killing blow
-
-			// Simulate more time, enough for several more attacks if target were alive
-			for i := 0; i < 5; i++ {
-				autoAttackSystem.Update(attackDelay)
-			}
-
-			// Target HP should not change further after death
-			Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterDeath, 0.01), "Target HP should not change after it dies")
+			Expect(event.Source).To(Equal(player)) // Check second event details
+			Expect(event.Target).To(Equal(target))
+			Expect(event.BaseDamage).To(BeNumerically("~", expectedBaseDamage, 0.01))
+			Expect(event.Timestamp).To(BeNumerically("~", expectedSecondAttackTime, 0.01), "Second event timestamp should be correct")
 		})
 	})
 
 	Context("when no valid target is in range", func() {
 		BeforeEach(func() {
 			Expect(playerAttack).NotTo(BeNil())
-			// Move target out of range
 			targetPos, ok := world.GetPosition(target)
 			Expect(ok).To(BeTrue())
 			Expect(targetPos).NotTo(BeNil())
-			targetPos.X = playerAttack.GetFinalRange() + 1 // Just outside range
+			targetPos.SetX(playerAttack.GetFinalRange() + 1) // Move out of range
 		})
 
-		It("should not perform an attack", func() {
-			Expect(targetHealth).NotTo(BeNil())
-			initialTargetHP := targetHealth.GetCurrentHP()
+		It("should not enqueue an AttackLandedEvent", func() {
 			dt := 0.1
-			simulationTime := 3.0 // Simulate for 3 seconds
+			simulationTime := 3.0
 
-			// Simulate time
 			for t := 0.0; t < simulationTime; t += dt {
-				autoAttackSystem.Update(dt)
+				autoAttackSystem.TriggerAutoAttack(dt)
 			}
 
-			Expect(targetHealth.GetCurrentHP()).To(Equal(initialTargetHP), "Target HP should not change when out of range")
-		})
-
-		It("should not generate mana for the attacker", func() {
-			playerMana, ok := world.GetMana(player)
-			Expect(ok).To(BeTrue())
-			initialMana := playerMana.GetCurrentMana()
-
-			dt := 0.1
-			simulationTime := 3.0 // Simulate for 3 seconds
-
-			// Simulate time
-			for t := 0.0; t < simulationTime; t += dt {
-				autoAttackSystem.Update(dt)
-			}
-
-			Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", initialMana), "Player mana should not change when no target is attacked")
+			Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No events should be enqueued when target is out of range")
 		})
 	})
 
@@ -236,20 +191,49 @@ var _ = Describe("AutoAttackSystem", func() {
 		BeforeEach(func() {
 			Expect(playerAttack).NotTo(BeNil())
 			playerAttack.SetBaseAttackSpeed(0)
-			playerAttack.SetFinalAttackSpeed(0) // Ensure final AS is also 0
+			playerAttack.SetFinalAttackSpeed(0)
 		})
 
-		It("should not perform an attack", func() {
-			Expect(targetHealth).NotTo(BeNil())
-			initialTargetHP := targetHealth.GetCurrentHP()
+		It("should not enqueue an AttackLandedEvent", func() {
 			dt := 0.1
-
-			// Simulate a significant amount of time
 			for t := 0.0; t < 5.0; t += dt {
-				autoAttackSystem.Update(dt)
+				autoAttackSystem.TriggerAutoAttack(dt)
 			}
+			Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No events should be enqueued when attacker AS is 0")
+		})
+	})
 
-			Expect(targetHealth.GetCurrentHP()).To(Equal(initialTargetHP), "Target HP should not change when attacker AS is 0")
+	Context("when the attacker starts dead", func() {
+		BeforeEach(func() {
+			playerHealth, ok := world.GetHealth(player)
+			Expect(ok).To(BeTrue())
+			playerHealth.SetCurrentHealth(0) // Attacker starts dead
+		})
+
+		It("should not enqueue an AttackLandedEvent", func() {
+			dt := 0.1
+			for t := 0.0; t < 5.0; t += dt {
+				autoAttackSystem.TriggerAutoAttack(dt)
+			}
+			Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No events should be enqueued when attacker starts dead")
+		})
+	})
+
+	Context("when the target starts dead", func() {
+		BeforeEach(func() {
+			Expect(targetHealth).NotTo(BeNil())
+			targetHealth.SetCurrentHealth(0) // Target starts dead
+		})
+
+		It("should not enqueue an AttackLandedEvent", func() {
+			// Note: This relies on FindNearestEnemy filtering out dead targets,
+			// or the system checking target health before enqueueing.
+			// If FindNearestEnemy doesn't filter, the system's internal check should catch it.
+			dt := 0.1
+			for t := 0.0; t < 5.0; t += dt {
+				autoAttackSystem.TriggerAutoAttack(dt)
+			}
+			Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No events should be enqueued when target starts dead")
 		})
 	})
 

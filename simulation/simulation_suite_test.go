@@ -1,4 +1,4 @@
-package itemsys_test // Use the _test package convention
+package simulation_test
 
 import (
 	"fmt"
@@ -12,19 +12,17 @@ import (
 	"github.com/onsi/gomega"
 )
 
-// TestItemsys is the entry point for the Ginkgo test suite for the itemsys package.
-func TestItemsys(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Item System Suite")
+// TestSimulation is the entry point for the Ginkgo test runner in this package.
+func TestSimulation(t *testing.T) {
+    gomega.RegisterFailHandler(ginkgo.Fail) // Connect Ginkgo's Fail function to Go's testing t.Fail
+    ginkgo.RunSpecs(t, "Simulation Suite") // Run all specs in the package
 }
 
-// Optional: Add BeforeSuite and AfterSuite blocks here if needed
-// for setup/teardown that runs once for the entire itemsys test suite.
-
+// Optional: Add BeforeSuite/AfterSuite if needed for package-level setup/teardown
 var _ = ginkgo.BeforeSuite(func() {
 	// Load item data once for the entire manager suite
 	// Adjust the path to your actual item data file
-	dataDir := "../../assets"
+	dataDir := "../assets"
 	fileName := "en_us_14.1b.json"
 	filePath := filepath.Join(dataDir, fileName)
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
@@ -42,6 +40,6 @@ var _ = ginkgo.BeforeSuite(func() {
 	gomega.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to load item data")
 })
 
-var _ = ginkgo.AfterSuite(func() {
-	// Suite teardown
-})
+// var _ = AfterSuite(func() {
+// 	// e.g., Clean up global resources
+// })

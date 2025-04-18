@@ -13,6 +13,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/managers"
 	"github.com/suriz/tft-dps-simulator/simulation"
 	"github.com/suriz/tft-dps-simulator/systems"
+	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 	"github.com/suriz/tft-dps-simulator/utils"
 )
@@ -109,7 +110,7 @@ func main() {
 	// apply item effects
 	baseStaticItemSystem.ApplyStats()
 
-	statCalculationSystem.Update()
+	statCalculationSystem.ApplyStaticBonusStats()
 
 	// brand, err := championFactory.CreateAllyChampion("Brand", 1)
 	// if err != nil {
@@ -139,11 +140,42 @@ func main() {
 
 	// --- Setup Simulation ---
 	config := simulation.DefaultConfig().
-    WithMaxTime(30.0).
-    WithTimeStep(1.0).
-    WithDebugMode(true)
+		WithMaxTime(30.0).
+		WithTimeStep(1.0).
+		WithDebugMode(true)
 
 	sim := simulation.NewSimulationWithConfig(world, config)
+
+	// Create Event Bus
+	eventBus := eventsys.NewSimpleBus()
+
+	// Create Systems
+	autoAttackSystem := systems.NewAutoAttackSystem(world, eventBus)
+	damageSystem := systems.NewDamageSystem(world, eventBus)
+	// ... create other systems ...
+
+	// Register Event Handlers
+	eventBus.RegisterHandler(damageSystem)
+	// ... register other handlers ...
+
+	// Simulation Loop
+	var currentTime float64 = 0.0
+	var deltaTime float64 = 0.1 // Example timestep
+
+	for currentTime < 10.0 { // Example duration
+		// Update systems that generate events or act based on time
+		autoAttackSystem.TriggerAutoAttack(deltaTime)
+		// ... update other systems like spell casting, movement etc. ...
+
+		// Process all queued events
+		eventBus.ProcessAll()
+
+		// Increment time
+		currentTime += deltaTime
+
+		// Check for simulation end conditions (e.g., one team wiped out)
+		// ...
+	}
 
 	// --- Run Simulation ---
 	sim.RunSimulation()

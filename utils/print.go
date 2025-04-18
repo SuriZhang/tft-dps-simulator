@@ -11,70 +11,70 @@ import (
 
 // PrintChampionStats prints detailed information about a champion entity using type-safe getters.
 func PrintChampionStats(world *ecs.World, entity ecs.Entity) {
-    // Use type-safe getters and check the 'ok' value
-    info, okInfo := world.GetChampionInfo(entity)
-    health, okHealth := world.GetHealth(entity)
-    mana, okMana := world.GetMana(entity)
-    attack, okAttack := world.GetAttack(entity)
-    traits, okTraits := world.GetTraits(entity)
-    position, okPos := world.GetPosition(entity)
-    team, okTeam := world.GetTeam(entity)
+	// Use type-safe getters and check the 'ok' value
+	info, okInfo := world.GetChampionInfo(entity)
+	health, okHealth := world.GetHealth(entity)
+	mana, okMana := world.GetMana(entity)
+	attack, okAttack := world.GetAttack(entity)
+	traits, okTraits := world.GetTraits(entity)
+	position, okPos := world.GetPosition(entity)
+	team, okTeam := world.GetTeam(entity)
 
-    // Check if essential info is present
-    if !okInfo {
-        fmt.Printf("\n=== Entity ID: %d (No ChampionInfo) ===\n", entity)
-        fmt.Println("------------------------------")
-        return
-    }
+	// Check if essential info is present
+	if !okInfo {
+		fmt.Printf("\n=== Entity ID: %d (No ChampionInfo) ===\n", entity)
+		fmt.Println("------------------------------")
+		return
+	}
 
-    fmt.Printf("\n=== Champion: %s (★ %d) ===\n", info.Name, info.StarLevel)
-    fmt.Printf("Entity ID: %d\n", entity)
+	fmt.Printf("\n=== Champion: %s (★ %d) ===\n", info.Name, info.StarLevel)
+	fmt.Printf("Entity ID: %d\n", entity)
 
-    // Print components if they exist
-    fmt.Printf("Info Component:\n  %+v\n", *info) // Dereference pointer for printing value
+	// Print components if they exist
+	fmt.Printf("Info Component:\n  %+v\n", *info) // Dereference pointer for printing value
 
-    if okHealth {
-        // Use the String() method implicitly via %v
-        fmt.Printf("Health Component:\n%v\n", health) // String() method already includes newlines
-    } else {
-        fmt.Println("Health Component: <Missing>")
-    }
+	if okHealth {
+		// Use the String() method implicitly via %v
+		fmt.Printf("Health Component:\n%v\n", health) // String() method already includes newlines
+	} else {
+		fmt.Println("Health Component: <Missing>")
+	}
 
-    if okMana {
-        // Use %+v for detailed struct view
-        fmt.Printf("Mana Component:\n  %+v\n", *mana)
-    } else {
-        fmt.Println("Mana Component: <Missing>")
-    }
+	if okMana {
+		// Use %+v for detailed struct view
+		fmt.Printf("Mana Component:\n  %+v\n", *mana)
+	} else {
+		fmt.Println("Mana Component: <Missing>")
+	}
 
-    if okAttack {
-        // Use the String() method implicitly via %v
-        fmt.Printf("Attack Component:\n%v\n", attack) // String() method already includes newlines
-    } else {
-        fmt.Println("Attack Component: <Missing>")
-    }
+	if okAttack {
+		// Use the String() method implicitly via %v
+		fmt.Printf("Attack Component:\n%v\n", attack) // String() method already includes newlines
+	} else {
+		fmt.Println("Attack Component: <Missing>")
+	}
 
-    if okTraits {
-        // Use %+v for detailed struct view
-        fmt.Printf("Traits Component:\n  %+v\n", *traits)
-    } else {
-        fmt.Println("Traits Component: <Missing>")
-    }
+	if okTraits {
+		// Use %+v for detailed struct view
+		fmt.Printf("Traits Component:\n  %+v\n", *traits)
+	} else {
+		fmt.Println("Traits Component: <Missing>")
+	}
 
-    if okPos {
-        // Use %+v for detailed struct view
-        fmt.Printf("Position Component:\n  %+v\n", *position)
-    } else {
-        fmt.Println("Position Component: <Missing>")
-    }
+	if okPos {
+		// Use %+v for detailed struct view
+		fmt.Printf("Position Component:\n  %+v\n", *position)
+	} else {
+		fmt.Println("Position Component: <Missing>")
+	}
 
-    if okTeam {
-        fmt.Printf("Team Component:\n%v\n", team)
-    } else {
-        fmt.Println("Team Component: <Missing>")
-    }
+	if okTeam {
+		fmt.Printf("Team Component:\n%v\n", team)
+	} else {
+		fmt.Println("Team Component: <Missing>")
+	}
 
-    fmt.Printf("------------------------------\n")
+	fmt.Printf("------------------------------\n")
 }
 
 func PrintTeamStats(world *ecs.World) {

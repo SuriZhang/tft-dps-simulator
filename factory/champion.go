@@ -5,9 +5,9 @@ import (
 	"log"
 
 	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/components/effects"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
-	"github.com/suriz/tft-dps-simulator/components/effects"
 )
 
 // ChampionFactory creates champion entities from champion data.

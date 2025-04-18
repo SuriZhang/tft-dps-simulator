@@ -5,13 +5,13 @@ type TFTSetData struct {
 }
 
 type Set struct {
-	Champions []Champion `json:"champions"`
-	SetItems  []string   `json:"items"`
-	Mutator   string     `json:"mutator"`
-	Name      string     `json:"name"`
-	Number    int        `json:"number"`
-	Traits    []Trait    `json:"traits"`
-	SetAugments  []string   `json:"augments"`
+	Champions   []Champion `json:"champions"`
+	SetItems    []string   `json:"items"`
+	Mutator     string     `json:"mutator"`
+	Name        string     `json:"name"`
+	Number      int        `json:"number"`
+	Traits      []Trait    `json:"traits"`
+	SetAugments []string   `json:"augments"`
 }
 
 type Champion struct {

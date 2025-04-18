@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 	"strings"
+	"math"
 )
 
 // Attack contains champion attack information
@@ -40,13 +41,29 @@ type Attack struct {
 
 // NewAttack creates an Attack component
 func NewAttack(baseAd, baseAs, baseRange, baseCrit, baseCritMulti float64) *Attack {
+	if baseAd < 0 || math.IsNaN(baseAd) {
+		baseAd = 0
+	}
+	if baseAs < 0 || math.IsNaN(baseAs) {
+		baseAs = 0
+	}
+	if baseRange < 0 || math.IsNaN(baseRange) {
+		baseRange = 0
+	}
+	if baseCrit < 0 || math.IsNaN(baseCrit) {
+		baseCrit = 0
+	}
+	if baseCritMulti < 0 || math.IsNaN(baseCritMulti) {
+		baseCritMulti = 0
+	}
+
 	return &Attack{
 		// Base Stats
 		BaseAD:             baseAd,
 		BaseAttackSpeed:    baseAs,
 		BaseRange:          baseRange,
-		BaseCritChance:     baseCrit,      
-		BaseCritMultiplier: baseCritMulti, 
+		BaseCritChance:     baseCrit,
+		BaseCritMultiplier: baseCritMulti,
 		BaseDamageAmp:      0.0,
 
 		// Bonus Stats (Initialize to 0)
@@ -97,10 +114,14 @@ func (a *Attack) AddBonusRange(amount float64) {
 }
 
 func (a *Attack) AddBonusCritDamageToGive(amount float64) {
+	if math.IsNaN(amount) {
+		fmt.Printf("AddBonusCritDamageToGive: amount is NaN, setting to 0.0\n")
+		amount = 0.0
+	}
 	a.BonusCritDamageToGive += amount
 }
 
-// --- Methods to RESET BONUS fields (called before reapplying bonuses) ---
+// ResetBonuses resets all bonus stats to 0.0
 func (a *Attack) ResetBonuses() {
 	a.BonusAD = 0.0
 	a.BonusPercentAD = 0.0
@@ -124,6 +145,10 @@ func (a *Attack) SetFinalCritChance(value float64) {
 	a.FinalCritChance = value
 }
 func (a *Attack) SetFinalCritMultiplier(value float64) {
+	if math.IsNaN(value)  {
+		fmt.Printf("SetFinalCritMultiplier: value is NaN, setting to 0.0\n")
+		value = 0.0
+	}
 	a.FinalCritMultiplier = value
 }
 func (a *Attack) SetFinalDamageAmp(value float64) {
@@ -157,7 +182,6 @@ func (a *Attack) SetBaseDamageAmp(value float64) {
 func (a *Attack) SetBonusPercentAttackSpeed(value float64) {
 	a.BonusPercentAttackSpeed = value
 }
-
 
 // --- Methods to GET FINAL stats (used by combat systems) ---
 func (a *Attack) GetFinalAD() float64 {
@@ -225,6 +249,10 @@ func (a *Attack) GetBonusRange() float64 {
 }
 
 func (a *Attack) GetBonusCritDamageToGive() float64 {
+	if math.IsNaN(a.BonusCritDamageToGive) {
+		fmt.Printf("GetBonusCritDamageToGive: BonusCritDamageToGive is NaN, setting to 0.0\n")
+		return 0.0
+	}
 	return a.BonusCritDamageToGive
 }
 

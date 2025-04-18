@@ -1,5 +1,9 @@
 package effects
 
+import (
+	"math"
+)
+
 // ItemStaticEffect holds the aggregated passive stat bonuses from all items.
 type ItemStaticEffect struct {
 	bonusHealth             float64
@@ -8,11 +12,11 @@ type ItemStaticEffect struct {
 	bonusArmor              float64
 	bonusMR                 float64
 	bonusPercentAD          float64 // Represented as a percentage
-	bonusDamgeAmp                float64 // Represented as a percentage, e.g., 0.1 for +10%
+	bonusDamgeAmp           float64 // Represented as a percentage, e.g., 0.1 for +10%
 	bonusAP                 float64
 	bonusPercentAttackSpeed float64 // Represented as a multiplier bonus, e.g., 0.1 for +10%
 	bonusCritChance         float64
-	bonusCritDamage              float64 // Represented as a multiplier bonus, e.g., 0.1 for +10%
+	bonusCritDamage         float64 // Represented as a multiplier bonus, e.g., 0.1 for +10%
 	durability              float64 // percent
 	// Add other stats as needed (MoveSpeed, Range, Omnivamp, etc.)
 	critDamangeToGive float64 // Specific to Infity Edge and Jeweled Gauntlet
@@ -193,5 +197,8 @@ func (ie *ItemStaticEffect) GetDurability() float64 {
 }
 
 func (ie *ItemStaticEffect) GetCritDamageToGive() float64 {
+	if math.IsNaN(ie.critDamangeToGive) {
+		return 0
+	}
 	return ie.critDamangeToGive
 }

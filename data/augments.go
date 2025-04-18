@@ -10,18 +10,18 @@ var SetActiveAugments map[string]*Item
 
 // GetAugmentByApiName returns an item by its API name or nil if not found
 func GetAugmentByApiName(apiName string) *Item {
-    // Case insensitive lookup could be added with strings.ToLower if needed
-    item, exists := SetActiveAugments[apiName]
-    if exists {
-        return item
-    }
-    return nil
+	// Case insensitive lookup could be added with strings.ToLower if needed
+	item, exists := SetActiveAugments[apiName]
+	if exists {
+		return item
+	}
+	return nil
 }
 
 // InitializeItems loads item data into the global map for quick access.
 // It assumes the relevant set data (containing items) is at index 0 after loading.
 func InitializeSetActiveAugments(setData *TFTSetData, filePath string) error {
-    allItemsData, err := LoadItemDataFromFile(filePath)
+	allItemsData, err := LoadItemDataFromFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error loading item data: %v", err)
 	}
@@ -51,11 +51,10 @@ func InitializeSetActiveAugments(setData *TFTSetData, filePath string) error {
 
 // GetAugmentByName searches by display name (less reliable for uniqueness)
 func GetAugmentByName(name string) *Item {
-    for _, item := range SetActiveAugments {
-        if item.Name == name {
-            return item // Return the first match
-        }
-    }
-    return nil
+	for _, item := range SetActiveAugments {
+		if item.Name == name {
+			return item // Return the first match
+		}
+	}
+	return nil
 }
-

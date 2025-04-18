@@ -1,21 +1,32 @@
 package components
 
+import (
+	"math"
+)
+
 // Mana contains champion mana information
 type Mana struct {
 	Max              float64
 	Current          float64
 	BaseInitialMana  float64
-	BonusInitialMana float64 
-	FinalInitialMana float64 
+	BonusInitialMana float64
+	FinalInitialMana float64
 }
 
 // NewMana creates a Mana component
 func NewMana(max, start float64) Mana {
+	if max < 0 || math.IsNaN(max) {
+		max = 0
+	}
+	if start < 0 || math.IsNaN(start) {
+		start = 0
+	}
+
 	return Mana{
 		Max:              max,
 		Current:          start,
 		BaseInitialMana:  start,
-        BonusInitialMana: 0, 
+		BonusInitialMana: 0,
 		FinalInitialMana: start, // when creating a new champion, finalInitialMana is set to the static max mana from data
 	}
 }
@@ -24,16 +35,24 @@ func (m *Mana) SetCurrentMana(currentMana float64) {
 	m.Current = currentMana
 }
 
+func (m *Mana) SetBaseInitialMana(baseMana float64) {
+	m.BaseInitialMana = baseMana
+}
+
 func (m *Mana) SetBonusInitialMana(bonusMana float64) {
-    m.BonusInitialMana = bonusMana
+	m.BonusInitialMana = bonusMana
 }
 
 func (m *Mana) SetFinalInitialMana(finalMana float64) {
-    m.FinalInitialMana = finalMana
+	m.FinalInitialMana = finalMana
+}
+
+func (m *Mana) SetMaxMana(maxMana float64) {
+	m.Max = maxMana
 }
 
 func (m *Mana) ResetBonuses() {
-    m.BonusInitialMana = 0
+	m.BonusInitialMana = 0
 }
 
 func (m *Mana) ResetCurrentMana() {
@@ -72,4 +91,4 @@ func (m *Mana) GetBonusInitialMana() float64 {
 
 func (m *Mana) GetFinalInitialMana() float64 {
 	return m.FinalInitialMana
-}	
+}

@@ -67,21 +67,21 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 	// --- Add Specific Effect Components for Dynamic Items ---
 	switch itemApiName {
 	case data.TFT_Item_ArchangelsStaff:
-        if _, exists := em.world.GetArchangelsEffect(champion); !exists {
-            // Fetch values from item data
-            interval := item.Effects["IntervalSeconds"] // Default to 0 if not found
-            apPerStack := item.Effects["APPerInterval"]   // Default to 0 if not found
+		if _, exists := em.world.GetArchangelsEffect(champion); !exists {
+			// Fetch values from item data
+			interval := item.Effects["IntervalSeconds"] // Default to 0 if not found
+			apPerStack := item.Effects["APPerInterval"] // Default to 0 if not found
 
-            // Call the updated constructor with fetched values
-            archangelsEffect := effects.NewArchangelsEffect(interval, apPerStack)
-            err := em.world.AddComponent(champion, archangelsEffect)
-            if err != nil {
-                log.Printf("Warning: Failed to add ArchangelsEffect component for champion %s: %v", championName, err)
-            } else {
-                log.Printf("Added ArchangelsEffect component to champion %s (Interval: %.1f, AP/Stack: %.1f)",
-                    championName, interval, apPerStack)
-            }
-        }
+			// Call the updated constructor with fetched values
+			archangelsEffect := effects.NewArchangelsEffect(interval, apPerStack)
+			err := em.world.AddComponent(champion, archangelsEffect)
+			if err != nil {
+				log.Printf("Warning: Failed to add ArchangelsEffect component for champion %s: %v", championName, err)
+			} else {
+				log.Printf("Added ArchangelsEffect component to champion %s (Interval: %.1f, AP/Stack: %.1f)",
+					championName, interval, apPerStack)
+			}
+		}
 	case data.TFT_Item_Quicksilver:
 		if _, exists := em.world.GetQuicksilverEffect(champion); !exists {
 			// Fetch values from item data
