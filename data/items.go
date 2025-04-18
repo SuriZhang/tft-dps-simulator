@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"log"
 	// "strings" // Import if case-insensitive lookup is needed
 )
 
@@ -114,7 +115,7 @@ func InitializeSetActiveItems(setData *TFTSetData, filePath string) error {
 			SetActiveItems[apiName] = item // Add the found item pointer to the result map
 		} else {
 			// Handle case where an active item name is not found in the loaded item data
-			fmt.Printf("Warning: Set active item '%s' not found in loaded item data from %s\n", apiName, filePath)
+			log.Printf("Warning: Set active item '%s' not found in loaded item data from %s\n", apiName, filePath)
 		}
 	}
 	return nil

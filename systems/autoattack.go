@@ -1,7 +1,7 @@
 package systems
 
 import (
-	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
@@ -48,19 +48,19 @@ func (s *AutoAttackSystem) TriggerAutoAttack(deltaTime float64) {
 		}
 
 		if attack.GetFinalAttackSpeed() <= 0 {
-			fmt.Printf("Attacker %d has 0 AS, skipping.\n", attacker)
+			log.Printf("Attacker %d has 0 AS, skipping.\n", attacker)
 			continue
 		}
 
 		target, foundTarget := utils.FindNearestEnemy(s.world, attacker, team.ID)
 		if !foundTarget {
-			fmt.Printf("Attacker %d found no target.\n", attacker)
+			log.Printf("Attacker %d found no target.\n", attacker)
 			continue // No target found for this attacker, move to the next
 		}
 
 		targetPos, okTargetPos := s.world.GetPosition(target)
 		if !okTargetPos {
-			fmt.Printf("Attacker %d found target %d with no position.\n", attacker, target)
+			log.Printf("Attacker %d found target %d with no position.\n", attacker, target)
 			continue // Target has no position, cannot calculate range
 		}
 
@@ -71,7 +71,7 @@ func (s *AutoAttackSystem) TriggerAutoAttack(deltaTime float64) {
 		rangeSq := attackRange * attackRange
 
 		if distSq > rangeSq {
-			fmt.Printf("Attacker %d target %d is out of range (DistSq: %.2f, RangeSq: %.2f).\n", attacker, target, distSq, rangeSq)
+			log.Printf("Attacker %d target %d is out of range (DistSq: %.2f, RangeSq: %.2f).\n", attacker, target, distSq, rangeSq)
 			continue // Target found, but out of range
 		}
 

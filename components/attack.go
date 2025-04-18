@@ -2,8 +2,9 @@ package components
 
 import (
 	"fmt"
-	"strings"
+	"log"
 	"math"
+	"strings"
 )
 
 // Attack contains champion attack information
@@ -115,7 +116,7 @@ func (a *Attack) AddBonusRange(amount float64) {
 
 func (a *Attack) AddBonusCritDamageToGive(amount float64) {
 	if math.IsNaN(amount) {
-		fmt.Printf("AddBonusCritDamageToGive: amount is NaN, setting to 0.0\n")
+		log.Printf("AddBonusCritDamageToGive: amount is NaN, setting to 0.0\n")
 		amount = 0.0
 	}
 	a.BonusCritDamageToGive += amount
@@ -146,7 +147,7 @@ func (a *Attack) SetFinalCritChance(value float64) {
 }
 func (a *Attack) SetFinalCritMultiplier(value float64) {
 	if math.IsNaN(value)  {
-		fmt.Printf("SetFinalCritMultiplier: value is NaN, setting to 0.0\n")
+		log.Printf("SetFinalCritMultiplier: value is NaN, setting to 0.0\n")
 		value = 0.0
 	}
 	a.FinalCritMultiplier = value
@@ -250,7 +251,7 @@ func (a *Attack) GetBonusRange() float64 {
 
 func (a *Attack) GetBonusCritDamageToGive() float64 {
 	if math.IsNaN(a.BonusCritDamageToGive) {
-		fmt.Printf("GetBonusCritDamageToGive: BonusCritDamageToGive is NaN, setting to 0.0\n")
+		log.Printf("GetBonusCritDamageToGive: BonusCritDamageToGive is NaN, setting to 0.0\n")
 		return 0.0
 	}
 	return a.BonusCritDamageToGive

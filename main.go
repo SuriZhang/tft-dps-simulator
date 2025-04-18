@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -23,7 +24,7 @@ func addComponentOrLog(world *ecs.World, entity ecs.Entity, component interface{
 	err := world.AddComponent(entity, component)
 	if err != nil {
 		// Decide how to handle: log, panic, etc.
-		fmt.Printf("Error adding component %T to entity %d: %v\n", component, entity, err)
+		log.Printf("Error adding component %T to entity %d: %v\n", component, entity, err)
 	}
 }
 
@@ -35,7 +36,7 @@ func main() {
 	fmt.Println("------------Loading Set Data---------------")
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
 	if err != nil {
-		fmt.Printf("Error loading set data: %v\n", err)
+		log.Printf("Error loading set data: %v\n", err)
 		os.Exit(1)
 	}
 	data.InitializeChampions(tftData)
@@ -46,7 +47,7 @@ func main() {
 	fmt.Println("------------Loading Item Data---------------")
 	// items, err := data.LoadItemDataFromFile(filepath.Join(dataDir, fileName))
 	// if err != nil {
-	// 	fmt.Printf("Error loading item data: %v\n", err)
+	// 	log.Printf("Error loading item data: %v\n", err)
 	// 	os.Exit(1)
 	// }
 
@@ -68,7 +69,7 @@ func main() {
 	fmt.Println("\n------------Creating Initial Entities---------------")
 	kindred, err := championFactory.CreatePlayerChampion("TFT14_Kindred", 1)
 	if err != nil {
-		fmt.Printf("Error creating champion: %v\n", err)
+		log.Printf("Error creating champion: %v\n", err)
 		return
 	}
 
@@ -76,15 +77,15 @@ func main() {
 
 	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
 	if err != nil {
-		fmt.Printf("Error adding item to Kindred: %v\n", err)
+		log.Printf("Error adding item to Kindred: %v\n", err)
 	}
 	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
 	if err != nil {
-		fmt.Printf("Error adding item to Kindred: %v\n", err)
+		log.Printf("Error adding item to Kindred: %v\n", err)
 	}
 	err = equipmentManager.AddItemToChampion(kindred, "TFT_Item_InfinityEdge")
 	if err != nil {
-		fmt.Printf("Error adding item to Kindred: %v\n", err)
+		log.Printf("Error adding item to Kindred: %v\n", err)
 	}
 
 	// 1. RESET all bonus stats for all relevant entities
@@ -114,7 +115,7 @@ func main() {
 
 	// brand, err := championFactory.CreateAllyChampion("Brand", 1)
 	// if err != nil {
-	// 	fmt.Printf("Error creating Brand: %v\n", err)
+	// 	log.Printf("Error creating Brand: %v\n", err)
 	// 	return
 	// }
 	// addComponentOrLog(world, brand, components.NewTeam(0))
@@ -128,7 +129,7 @@ func main() {
 	// // Create Target Dummy manually
 	targetDummy, err := championFactory.CreateEnemyChampion("TFT_TrainingDummy", 1)
 	if err != nil {
-		fmt.Printf("Error creating Traning Dummy: %v\n", err)
+		log.Printf("Error creating Traning Dummy: %v\n", err)
 		return
 	}
 	addComponentOrLog(world, targetDummy, components.NewHealth(10000, 0, 0))

@@ -2,7 +2,7 @@
 package managers_test
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,7 +26,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	filePath := filepath.Join(dataDir, fileName)
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
 	if err != nil {
-		fmt.Printf("Error loading set data: %v\n", err)
+		log.Printf("Error loading set data: %v\n", err)
 		os.Exit(1)
 	}
 	data.InitializeChampions(tftData)

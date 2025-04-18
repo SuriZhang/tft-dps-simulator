@@ -2,6 +2,7 @@ package ecs
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
@@ -252,7 +253,7 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.QuicksilverEffects, e)
 	// Add cases for other component types here...
 	default:
-		fmt.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
+		log.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
 	}
 }
 

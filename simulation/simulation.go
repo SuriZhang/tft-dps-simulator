@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/suriz/tft-dps-simulator/ecs"
@@ -106,7 +107,7 @@ func (s *Simulation) RunSimulation() {
 
 		// Status reporting at intervals if enabled
 		if s.config.DebugMode && s.currentTime >= nextReportTime {
-			fmt.Printf("Simulation time: %.1fs\n", s.currentTime)
+			log.Printf("Simulation time: %.1fs\n", s.currentTime)
 			// Optionally print specific stats here if needed during the run
 			nextReportTime += s.config.ReportingInterval
 		}
@@ -116,7 +117,7 @@ func (s *Simulation) RunSimulation() {
 	}
 
 	elapsed := time.Since(startTime)
-	fmt.Printf("\nSimulation Ended (Reached %.1fs, took %v real time)\n", s.currentTime, elapsed)
+	log.Printf("\nSimulation Ended (Reached %.1fs, took %v real time)\n", s.currentTime, elapsed)
 }
 
 // Step advances the simulation by one time step

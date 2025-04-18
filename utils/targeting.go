@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"log"
 	"math"
 	"reflect"
 
@@ -15,7 +15,7 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 	// Get source position using type-safe getter
 	sourcePos, okPosSource := world.GetPosition(source)
 	if !okPosSource {
-		fmt.Printf("Warning: Source entity %d for targeting has no Position.\n", source)
+		log.Printf("Warning: Source entity %d for targeting has no Position.\n", source)
 		return 0, false // Source has no position
 	}
 

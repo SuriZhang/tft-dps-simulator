@@ -114,4 +114,14 @@ DONE Today:
 - [x] Added Spell components, currently not completed, but stores Archagel's bonus AP. will add more details when it comes to implementing the champion Ability/Spell
 
 TODO:
-- [ ] implement logic when two component items are added, they form a composition item according to the formula
+- [ ] implement logic when two component items are added, they form a composition item according to the formula --> not in MVP
+- [ ] implement game event systems, sets up scaffold for DynamicEvent-typed items
+- [ ] implement DynamicEvent items
+
+## 20250418
+Debug...
+
+DONE Today:
+- [x] Set up event system scaffold
+- [x] Added more tests, and make sure they all passed...
+- [x] Correctly updated dynamic time items bonus in simulation loops
