@@ -2,6 +2,7 @@ package systems
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/suriz/tft-dps-simulator/ecs"
 	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
@@ -39,12 +40,12 @@ func (s *DamageSystem) onAttackLanded(evt eventsys.AttackLandedEvent) {
 
 	attackerAttack, okAtk := s.world.GetAttack(attacker)
 	if !okAtk {
-		fmt.Printf("DamageSystem Error: Attacker %d has no Attack component in onAttackLanded.\n", attacker)
+		log.Printf("DamageSystem Error: Attacker %d has no Attack component in onAttackLanded.\n", attacker)
 		return
 	}
 	targetHealth, okHp := s.world.GetHealth(target)
 	if !okHp {
-		fmt.Printf("DamageSystem Error: Target %d has no Health component in onAttackLanded.\n", target)
+		log.Printf("DamageSystem Error: Target %d has no Health component in onAttackLanded.\n", target)
 		return
 	}
 
@@ -83,7 +84,7 @@ func (s *DamageSystem) onAttackLanded(evt eventsys.AttackLandedEvent) {
 	s.eventBus.Enqueue(damageAppliedEvent)
 
 	// Log the calculation result
-	// fmt.Printf("DamageSystem: Calculated %.1f final damage from %d to %d.\n", finalDamage, attacker, target) // Original log
+	log.Printf("DamageSystem (onAttackLanded): Calculated %.1f final damage from %d to %d.\n", finalDamage, attacker, target) 
 }
 
 // onDamageApplied applies the final damage to the target and handles mana gain/death.
@@ -95,7 +96,7 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
 	// Get target health
 	targetHealth, okHealth := s.world.GetHealth(target)
 	if !okHealth {
-		fmt.Printf("DamageSystem: Target %d missing Health component for DamageAppliedEvent.\n", target)
+		log.Printf("DamageSystem: Target %d missing Health component for DamageAppliedEvent.\n", target)
 		return
 	}
 
@@ -121,18 +122,26 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
 	if displayHealth < 0 {
 		displayHealth = 0
 	}
-	fmt.Printf("DamageSystem: %s attacks %s for %.1f damage (%.1f -> %.1f HP)\n",
-		attackerName, targetName, finalDamage, initialHP, displayHealth)
+	log.Printf("DamageSystem (onDamageApplied): %s attacks %s for %.1f damage (%.1f -> %.1f HP)\n", attackerName, targetName, finalDamage, initialHP, displayHealth)
 
 	// Check for death
 	if targetHealth.CurrentHP <= 0 && initialHP > 0 { // Check initialHP > 0 to prevent multiple death events
-		fmt.Printf("DamageSystem: %s has been defeated!\n", targetName)
+		log.Printf("DamageSystem (onDamageApplied): %s has been defeated!\n", targetName)
 		deathEvent := eventsys.DeathEvent{
 			Target:    target,
 			Timestamp: evt.Timestamp, // Use the timestamp from the attack event
 		}
 		s.eventBus.Enqueue(deathEvent)
 		// Note: We might need a system to handle the DeathEvent (e.g., remove entity, grant kill credit)
+
+		// Enqueue Kill Event
+        killEvent := eventsys.KillEvent{
+            Killer:    attacker, // The source of the DamageAppliedEvent is the killer
+            Victim:    target,
+            Timestamp: evt.Timestamp, // Use the same timestamp
+        }
+        s.eventBus.Enqueue(killEvent)
+        log.Printf("DamageSystem: %s gets kill credit for %s.\n", attackerName, targetName)
 	}
 
 	// --- Mana Gain for Attacker ---
@@ -145,10 +154,10 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
 		if attackerMana.GetCurrentMana() > attackerMana.GetMaxMana() {
 			attackerMana.SetCurrentMana(attackerMana.GetMaxMana())
 		}
-		fmt.Printf("DamageSystem: %s gains %.1f mana (now %.1f / %.1f)\n", attackerName, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
+		log.Printf("DamageSystem: %s gains %.1f mana (now %.1f / %.1f)\n", attackerName, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
 	} else {
 		// This might be expected for units without mana
-		// fmt.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attackerName)
+		// log.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attackerName)
 	}
 	// --- End Mana Gain ---
 

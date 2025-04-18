@@ -25,3 +25,11 @@ type DeathEvent struct {
 	Target    ecs.Entity
 	Timestamp float64 // Time of death
 }
+
+// KillEvent signifies that an entity caused another entity's death.
+// This is typically triggered alongside a DeathEvent.
+type KillEvent struct {
+    Killer    ecs.Entity // The entity that dealt the killing blow
+    Victim    ecs.Entity // The entity that died
+    Timestamp float64    // Time the kill occurred (same as DeathEvent)
+}

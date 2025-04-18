@@ -212,13 +212,21 @@ var _ = Describe("DamageSystem", func() {
 				Expect(targetHealth.CurrentHP).To(BeNumerically("<=", 0))
 			})
 
-			It("should enqueue a DeathEvent", func() {
+			It("should enqueue a DeathEvent and KillEvent", func() {
 				damageSystem.HandleEvent(damageEvent)
-				Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
-				deathEvent, ok := eventBus.GetLastEvent().(eventsys.DeathEvent)
-				Expect(ok).To(BeTrue(), "Enqueued event should be DeathEvent")
+				events := eventBus.GetAllEvents()
+				Expect(events).To(HaveLen(2))
+				// Check events contain one DeathEvent and one KillEvent
+				Expect(events[0]).To(BeAssignableToTypeOf(eventsys.DeathEvent{}), "First event should be DeathEvent")
+				Expect(events[1]).To(BeAssignableToTypeOf(eventsys.KillEvent{}), "Second event should be KillEvent")
+				deathEvent, _ := events[0].(eventsys.DeathEvent)
 				Expect(deathEvent.Target).To(Equal(target))
-				Expect(deathEvent.Timestamp).To(Equal(eventTime)) // Timestamp should be passed through
+				Expect(deathEvent.Timestamp).To(Equal(eventTime)) 
+
+				killEvent, _ := events[1].(eventsys.KillEvent)
+				Expect(killEvent.Killer).To(Equal(attacker))
+				Expect(killEvent.Victim).To(Equal(target))
+				Expect(killEvent.Timestamp).To(Equal(eventTime)) // Should match the damage event timestamp
 			})
 
 			It("should still grant mana to the attacker", func() {
@@ -228,11 +236,13 @@ var _ = Describe("DamageSystem", func() {
 				Expect(attackerMana.GetCurrentMana()).To(Equal(initialMana + expectedManaGain))
 			})
 
-			It("should only enqueue one DeathEvent even if called again", func() {
+			It("should only enqueue one DeathEvent and KillEvent even if called again", func() {
 				damageSystem.HandleEvent(damageEvent) // First lethal hit
-				Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
-				_, ok := eventBus.GetLastEvent().(eventsys.DeathEvent)
-				Expect(ok).To(BeTrue())
+				events := eventBus.GetAllEvents()
+				Expect(events).To(HaveLen(2))
+				// Check events contain one DeathEvent and one KillEvent
+				Expect(events[0]).To(BeAssignableToTypeOf(eventsys.DeathEvent{}))
+				Expect(events[1]).To(BeAssignableToTypeOf(eventsys.KillEvent{}))
 
 				// Simulate another damage event hitting the already dead target
 				eventBus.ClearEvents()
