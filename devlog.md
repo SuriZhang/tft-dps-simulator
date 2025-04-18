@@ -125,3 +125,8 @@ DONE Today:
 - [x] Set up event system scaffold
 - [x] Added more tests, and make sure they all passed...
 - [x] Correctly updated dynamic time items bonus in simulation loops
+
+TODO:
+- [ ] implement very basic spell cast system, to prepare us for more item effects
+- [ ] implement DynamicEvent items
+- [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
