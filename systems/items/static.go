@@ -36,6 +36,7 @@ func (s *BaseStaticItemSystem) ApplyStats() {
 		s.applyAttackBonuses(entity, itemEffect)
 		s.applyManaBonuses(entity, itemEffect)
 		s.applyCritBonuses(entity, itemEffect)
+		s.applySpellBonuses(entity, itemEffect)
 
 		// Apply to Defense (when Defense component exists)
 		// ...
@@ -88,4 +89,10 @@ func (s *BaseStaticItemSystem) applyManaBonuses(entity ecs.Entity, itemEffect *e
 	if mana, ok := s.world.GetMana(entity); ok {
 		mana.AddBonusInitialMana(itemEffect.GetBonusInitialMana())
 	}
+}
+
+func (s *BaseStaticItemSystem) applySpellBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
+    if spell, ok := s.world.GetSpell(entity); ok {
+        spell.AddBonusAP(itemEffect.GetBonusAP())
+    }
 }

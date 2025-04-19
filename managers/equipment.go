@@ -222,29 +222,41 @@ func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) e
 			switch statName {
 			case "Health":
 				itemEffect.AddBonusHealth(value)
+				log.Printf("  [%s] Champion %d: Adding BonusHealth: %.1f", item.ApiName, champion, value)
 			case "BonusPercentHP":
 				itemEffect.AddBonusPercentHp(value)
+				log.Printf("  [%s] Champion %d: Adding BonusPercentHP: %.1f%%", item.ApiName, champion, value*100)
 			case "Mana":
 				itemEffect.AddBonusInitialMana(value)
+				log.Printf("  [%s] Champion %d: Adding Mana: %.1f", item.ApiName, champion, value)
 			case "Armor":
 				itemEffect.AddBonusArmor(value)
+				log.Printf("  [%s] Champion %d: Adding Armor: %.1f", item.ApiName, champion, value)
 			case "MagicResist":
 				itemEffect.AddBonusMR(value)
+				log.Printf("  [%s] Champion %d: Adding MagicResist: %.1f", item.ApiName, champion, value)
 			case "AD":
 				itemEffect.AddBonusPercentAD(value)
+				log.Printf("  [%s] Champion %d: Adding BonusPercentAD: %.1f%%", item.ApiName, champion, value*100)
 			case "AP":
 				itemEffect.AddBonusAP(value)
+				log.Printf("  [%s] Champion %d: Adding AP: %.1f", item.ApiName, champion, value)
 			case "AS":
 				itemEffect.AddBonusPercentAttackSpeed(value / 100)
+				log.Printf("  [%s] Champion %d: Adding BonusPercentAttackSpeed: %.1f%%", item.ApiName, champion, value) // Log original percentage value
 			case "CritChance":
 				itemEffect.AddBonusCritChance(value / 100)
+				log.Printf("  [%s] Champion %d: Adding CritChance: %.1f%%", item.ApiName, champion, value) // Log original percentage value
 			case "BonusDamage":
 				itemEffect.AddBonusDamageAmp(value)
+				log.Printf("  [%s] Champion %d: Adding BonusDamageAmp: %.1f%%", item.ApiName, champion, value*100)
 			case "CritDamageToGive": // specific to IE & JG
 				itemEffect.AddCritDamageToGive(value)
+				log.Printf("  [%s] Champion %d: Adding CritDamageToGive: %.1f%%", item.ApiName, champion, value*100)
 			// Add other known static stats...
 			default:
-				log.Printf("Warning: Unrecognized item effect stat '%s' for item %s", statName, item.ApiName)
+				log.Printf("Warning: Champion %d: Unrecognized or non-static item effect stat '%s' (value: %.2f) for item %s", champion, statName, value, item.ApiName)
+
 			}
 		}
 	}

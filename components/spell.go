@@ -1,34 +1,56 @@
 package components
 
+
 // Spell holds data related to a champion's ability/spell.
 type Spell struct {
+	Name    string
+	icon string 
 	// Base stats (potentially loaded from champion data)
 	BaseAP   float64
 	ManaCost float64
 	Cooldown float64 // Base cooldown
 
+	// --- Spell Variables (should be read from champion ability variables) ---
+	// TODO: Load these dynamically based on the spell/champion
+	// VarBaseDamage       float64 
+	// VarPercentADDamage  float64 
+	// VarAPScaling        float64 
+
 	// Bonus stats accumulated from items, traits, etc.
-	BonusAP float64
-	// Add other potential bonus spell stats (e.g., BonusSpellCritChance, BonusSpellCritDamage) if needed
+	BonusAP              float64
 
 	// Final calculated stats used by systems
-	FinalAP float64
+	FinalAP              float64
 
 	// State
 	CurrentCooldown float64
-	// CanCast bool // Could be managed by SpellSystem
+	LastCastTime    float64 // For tracking cooldowns
 }
 
 // NewSpell creates a Spell component, potentially initializing from base stats.
-func NewSpell(baseAP, manaCost, cooldown float64) *Spell {
+func NewSpell(name, icon string, manaCost, cooldown float64) *Spell {
+	// TODO: Initialize VarBaseDamage, VarPercentADDamage, VarAPScaling from data
 	return &Spell{
-		BaseAP:          baseAP,
-		ManaCost:        manaCost,
-		Cooldown:        cooldown,
-		BonusAP:         0,      // Start with no bonus
-		FinalAP:         baseAP, // Initial final value
-		CurrentCooldown: 0,
+		Name:                 name,
+		icon:                 icon,
+		BaseAP:               100.0, // default base AP in TFT
+		ManaCost:             manaCost,
+		Cooldown:             cooldown,
+		BonusAP:              0.0,
+
+		FinalAP:              100.0, // init to base AP
+		CurrentCooldown:      0.0,
 	}
+}
+
+// GetName returns the name of the spell.
+func (s *Spell) GetName() string {
+	return s.Name
+}
+
+// GetIcon returns the icon path of the spell.
+func (s *Spell) GetIcon() string {
+	return s.icon
 }
 
 // GetBaseAP returns the base ability power.
@@ -98,6 +120,41 @@ func (s *Spell) AddBonusAP(value float64) {
 	s.BonusAP += value
 }
 
+// --- Methods for Bonus Spell Stats ---
+
+// --- Methods to SET FINAL calculated spell stats ---
+
+// --- Methods to GET FINAL calculated spell stats ---
+
+// --- Methods for Spell Variables (Example) ---
+// TODO: Replace with a better system if needed
+
+// func (s *Spell) SetVarBaseDamage(value float64) {
+// 	s.VarBaseDamage = value
+// }
+
+// func (s *Spell) GetVarBaseDamage() float64 {
+// 	return s.VarBaseDamage
+// }
+
+// func (s *Spell) SetVarPercentADDamage(value float64) {
+// 	s.VarPercentADDamage = value
+// }
+
+// func (s *Spell) GetVarPercentADDamage() float64 {
+// 	return s.VarPercentADDamage
+// }
+
+// func (s *Spell) SetVarAPScaling(value float64) {
+// 	s.VarAPScaling = value
+// }
+
+// func (s *Spell) GetVarAPScaling() float64 {
+// 	return s.VarAPScaling
+// }
+
+// --- Reset Bonus Stats ---
 func (s *Spell) ResetBonuses() {
-	s.BonusAP = 0
+	s.BonusAP = 0.0
+	// Do not reset Vars, they are loaded from data
 }

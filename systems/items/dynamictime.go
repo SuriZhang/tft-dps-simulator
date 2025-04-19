@@ -77,49 +77,58 @@ func (s *DynamicTimeItemSystem) updateArchangels(entity ecs.Entity, deltaTime fl
 	effect, exists := s.world.GetArchangelsEffect(entity)
 	if !exists {
 		// Component should have been added by equipment manager when item equipped.
+		// If it doesn't exist here, something is wrong, but we can't proceed.
+		log.Printf("Warning: Entity %d has Archangel's Staff but no ArchangelsEffect component.", entity)
 		return
 	}
 
 	// --- Stacking Logic (uses the single effect component) ---
 	effect.AddTimer(deltaTime)
 	procOccurredThisFrame := false
+	intervalsPassed := 0 // Keep track of intervals passed this frame
+
 	if effect.GetTimer() >= effect.GetInterval() {
 		// Calculate how many intervals passed (handles large deltaTime)
-		intervalsPassed := int(effect.GetTimer() / effect.GetInterval())
-		effect.AddStacks(intervalsPassed) // Assuming AddStacks(n int) exists
+		intervalsPassed = int(effect.GetTimer() / effect.GetInterval())
+		effect.AddStacks(intervalsPassed) // Update internal stack count in the effect component
 		// Subtract only the time for the intervals that passed
-		effect.SetTimer(effect.GetTimer() - float64(intervalsPassed)*effect.GetInterval()) // Assuming SetTimer exists
+		effect.SetTimer(effect.GetTimer() - float64(intervalsPassed)*effect.GetInterval()) // Carry over remainder
 		procOccurredThisFrame = true
 		log.Printf("Entity %d Archangel's Proc! Stacks: %d", entity, effect.GetStacks())
 	}
 
-	// --- Apply Bonus AP (multiplied by item count) ---
-	spellComp, spellOk := s.world.GetSpell(entity)
-	if spellOk {
-		// Calculate bonus AP from *one* staff based on current stacks
-		singleBonus := float64(effect.GetStacks()) * effect.GetAPPerInterval()
-		// Multiply by the number of Archangel's Staffs equipped
-		totalBonus := singleBonus * float64(archangelsCount)
+	// --- Apply *Delta* Bonus AP (multiplied by item count) ---
+	// Only apply if a proc occurred this frame.
+	if procOccurredThisFrame && intervalsPassed > 0 {
+		spellComp, spellOk := s.world.GetSpell(entity)
+		if spellOk {
+			// Calculate the bonus AP gained *this frame* from one staff
+			singleDeltaBonus := float64(intervalsPassed) * effect.GetAPPerInterval()
+			// Multiply by the number of Archangel's Staffs equipped
+			totalDeltaBonus := singleDeltaBonus * float64(archangelsCount)
 
-		// Apply the total bonus (AddBonusAP should sum bonuses from different sources)
-		if totalBonus > 0 {
-			spellComp.SetBonusAP(totalBonus) // Assuming AddBonusAP exists
-			if procOccurredThisFrame {
-				log.Printf("Entity %d Archangel's Stacks: %d, Count: %d, Applied Total Bonus AP: %.1f, Total Bonus AP now: %.1f\n", entity, effect.GetStacks(), archangelsCount, totalBonus, spellComp.GetBonusAP())
+			if totalDeltaBonus > 0 {
+				currentBonusAP := spellComp.GetBonusAP()
+				log.Printf("Entity %d Archangel's Proc: Stacks=%d, Count=%d. Before AddBonusAP: %.1f", entity, effect.GetStacks(), archangelsCount, currentBonusAP) // New log
+				// Add the newly gained bonus AP to the spell component
+				spellComp.AddBonusAP(totalDeltaBonus) // Use AddBonusAP for delta
+				newBonusAP := spellComp.GetBonusAP()
+				log.Printf("Entity %d Archangel's Proc: Applied Delta AP: +%.1f. After AddBonusAP: %.1f", entity, totalDeltaBonus, newBonusAP) // New log
 			}
 		}
 	}
+	// Note: The StatCalculationSystem is responsible for recalculating FinalAP based on the updated BonusAP.
 }
 
 // updateQuicksilver handles the logic for Quicksilver.
 func (s *DynamicTimeItemSystem) updateQuicksilver(entity ecs.Entity, deltaTime float64) {
 	effect, exists := s.world.GetQuicksilverEffect(entity)
-	if !exists {
+	if (!exists) {
 		return // Component removed previously or never added
 	}
 
 	// Only process if the effect is marked as active.
-	if effect.IsActive() {
+	if (effect.IsActive()) {
 
 		// --- Determine if a proc interval boundary is crossed THIS frame ---
 		oldProcTimer := effect.GetProcTimer()
@@ -133,7 +142,7 @@ func (s *DynamicTimeItemSystem) updateQuicksilver(entity ecs.Entity, deltaTime f
 		intervalsAtStart := int(oldProcTimer / procInterval)
 		intervalsAtEnd := int(newProcTimer / procInterval)
 
-		if intervalsAtEnd > intervalsAtStart {
+		if (intervalsAtEnd > intervalsAtStart) {
 			newStacksToAdd = intervalsAtEnd - intervalsAtStart
 			procOccurredThisFrame = true
 			// Update the timer, carrying over the remainder past the last completed interval
@@ -145,7 +154,7 @@ func (s *DynamicTimeItemSystem) updateQuicksilver(entity ecs.Entity, deltaTime f
 		}
 
 		// --- If proc occurred, update internal state ---
-		if procOccurredThisFrame {
+		if (procOccurredThisFrame) {
 			// Assuming AddStacks updates the internal stack count
 			effect.AddStacks(newStacksToAdd)
 			effect.AddBonusAS(float64(newStacksToAdd) * effect.GetProcAttackSpeed())
@@ -155,13 +164,13 @@ func (s *DynamicTimeItemSystem) updateQuicksilver(entity ecs.Entity, deltaTime f
 
 		// --- Apply the *delta* bonus AS gained this frame ---
 		// Only apply if a proc occurred this frame.
-		if procOccurredThisFrame && newStacksToAdd > 0 {
+		if (procOccurredThisFrame && newStacksToAdd > 0) {
 			attackComp, attackOk := s.world.GetAttack(entity)
-			if attackOk {
+			if (attackOk) {
 				// Calculate the bonus AS gained *this frame*
 				deltaBonusAS := float64(newStacksToAdd) * effect.GetProcAttackSpeed()
 
-				if deltaBonusAS > 0 {
+				if (deltaBonusAS > 0) {
 					before := attackComp.GetBonusPercentAttackSpeed()
 					log.Printf("Entity %d Quicksilver Before Delta AS: %.2f%%", entity, before*100)
 					// Add the newly gained bonus AS to the attack component
@@ -177,7 +186,7 @@ func (s *DynamicTimeItemSystem) updateQuicksilver(entity ecs.Entity, deltaTime f
 
 		// --- Check for Expiry AFTER applying effects for this frame ---
 		// Use <= 0 to catch expiry exactly at 0.0
-		if effect.GetRemainingDuration() <= 0 {
+		if (effect.GetRemainingDuration() <= 0) {
 			// Duration expired THIS frame. Mark inactive.
 			// Do NOT remove the component here.
 			log.Printf("Entity %d Quicksilver expired (Duration <= 0), setting inactive.\n", entity)

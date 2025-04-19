@@ -14,10 +14,17 @@ type AttackLandedEvent struct {
 
 // DamageAppliedEvent signifies final damage being dealt after calculations.
 type DamageAppliedEvent struct {
-	Source      ecs.Entity
-	Target      ecs.Entity
-	FinalDamage float64
-	Timestamp   float64 // Time the damage was applied
+    Source      ecs.Entity
+    Target      ecs.Entity
+    Timestamp   float64
+    IsSpell     bool    // True if damage originated from a spell cast
+    // Pre-mitigation damage components (after crit/amp)
+    PreMitigationPhysical float64
+    PreMitigationMagic    float64
+    // Final damage components (after resistance/durability)
+    FinalPhysicalDamage float64
+    FinalMagicDamage    float64
+    FinalTotalDamage    float64 // Sum of FinalPhysicalDamage + FinalMagicDamage
 }
 
 // DeathEvent signifies an entity's HP reached zero or below.

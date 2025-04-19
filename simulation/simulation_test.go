@@ -3,15 +3,18 @@ package simulation_test
 import (
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
+	"github.com/suriz/tft-dps-simulator/components/effects"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
 	"github.com/suriz/tft-dps-simulator/managers"
 	"github.com/suriz/tft-dps-simulator/simulation"
+	"github.com/suriz/tft-dps-simulator/systems"
+	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 
-	// Need systems for manual stat calc check
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes" // For checking output
@@ -35,6 +38,13 @@ func getHealth(w *ecs.World, e ecs.Entity) *components.Health {
 func getSpell(w *ecs.World, e ecs.Entity) *components.Spell {
 	comp, ok := w.GetSpell(e)
 	Expect(ok).To(BeTrue(), "Entity should have Spell component")
+	Expect(comp).NotTo(BeNil())
+	return comp
+}
+
+func getCrit(w *ecs.World, e ecs.Entity) *components.Crit {
+	comp, ok := w.GetCrit(e)
+	Expect(ok).To(BeTrue(), "Entity should have Crit component")
 	Expect(comp).NotTo(BeNil())
 	return comp
 }
@@ -262,7 +272,7 @@ var _ = Describe("Simulation", func() {
 				quicksilverEffect, ok := world.GetQuicksilverEffect(attacker)
 				Expect(ok).To(BeTrue(), "Quicksilver effect component should be present")
 				quicksilverEffect.ResetEffects()
-				
+
 				// attackerAttack.SetBonusPercentAttackSpeed(0.3)
 				// Reset simulation time and run past expiry (QS duration is 18)
 				longDuration := 19.0
@@ -314,6 +324,7 @@ var _ = Describe("Simulation", func() {
 				sim.RunSimulation()
 				apAfter6Sec := attackerSpell.GetFinalAP()
 				// We expect AP to be higher than initial AP after 1 stack interval (5s)
+
 				Expect(apAfter6Sec).To(BeNumerically(">", apAfterCreation), "AP should increase after first stack interval (~5s)")
 
 				// --- Run for ~11 seconds (expect 2 stacks) ---
@@ -349,6 +360,290 @@ var _ = Describe("Simulation", func() {
 			Eventually(buffer).Should(gbytes.Say("TFT_TrainingDummy"))
 			Eventually(buffer).Should(gbytes.Say("HP:")) // Check for stat labels
 			Eventually(buffer).Should(gbytes.Say("AD:"))
+		})
+	})
+
+	Describe("Item Effects Integration", func() {
+		var (
+			world                 *ecs.World
+			championFactory       *factory.ChampionFactory
+			equipmentManager      *managers.EquipmentManager
+			statCalculationSystem *systems.StatCalculationSystem
+			abilityCritSystem     *itemsys.AbilityCritSystem
+			baseStaticItemSystem  *itemsys.BaseStaticItemSystem
+			// dynamicTimeSystem     *itemsys.DynamicTimeItemSystem // Needed for Archangel's
+			champion       ecs.Entity
+			championSpell  *components.Spell
+			championAttack *components.Attack
+			championCrit   *components.Crit
+			err            error
+		)
+
+		BeforeEach(func() {
+			world = ecs.NewWorld()
+			championFactory = factory.NewChampionFactory(world)
+			equipmentManager = managers.NewEquipmentManager(world)
+			statCalculationSystem = systems.NewStatCalculationSystem(world)
+			abilityCritSystem = itemsys.NewAbilityCritSystem(world)
+			baseStaticItemSystem = itemsys.NewBaseStaticItemSystem(world)
+			// dynamicTimeSystem = itemsys.NewDynamicTimeItemSystem(world) // Initialize for Archangel's test
+
+			// Use a champion known to have Spell, Attack, Crit components
+			champion, err = championFactory.CreatePlayerChampion("TFT14_Kindred", 1)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Get components for assertions
+			championSpell = getSpell(world, champion)
+			championAttack = getAttack(world, champion)
+			championCrit = getCrit(world, champion) // Factory should add Crit
+
+			// Reset bonuses before applying item effects (mimics main.go setup)
+			championSpell.ResetBonuses()
+			championAttack.ResetBonuses()
+			championCrit.ResetBonuses()
+		})
+
+		// Helper function to run the static stat application pipeline
+		applyStaticStats := func() {
+			abilityCritSystem.Update()                    // Check for JG/IE (Reads ItemEffect populated by AddItemToChampion)
+			baseStaticItemSystem.ApplyStats()             // Apply bonuses from ItemEffect to components
+			statCalculationSystem.ApplyStaticBonusStats() // Calculate final stats based on updated component bonuses
+		}
+
+		Context("Rabadon's Deathcap (Static)", func() {
+			var (
+				deathcapData *data.Item
+				expectedAP   float64
+				expectedAmp  float64
+			)
+			BeforeEach(func() {
+				deathcapData = data.GetItemByApiName(data.TFT_Item_RabadonsDeathcap)
+				Expect(deathcapData).NotTo(BeNil())
+				expectedAP = deathcapData.Effects["AP"]
+				expectedAmp = deathcapData.Effects["BonusDamage"] // Assuming this maps to DamageAmp
+
+				// AddItemToChampion calculates and updates the ItemEffect component internally
+				err = equipmentManager.AddItemToChampion(champion, data.TFT_Item_RabadonsDeathcap)
+				Expect(err).NotTo(HaveOccurred())
+				// applyStaticStats now just runs the systems to apply the calculated effects
+				applyStaticStats()
+			})
+
+			It("should add the correct Bonus AP to the Spell component", func() {
+				// BaseStaticItemSystem applies the bonus from ItemEffect to the component's Bonus field
+				Expect(championSpell.GetBonusAP()).To(BeNumerically("~", expectedAP, 0.01))
+			})
+
+			It("should add the correct Bonus Damage Amp to the Attack component", func() {
+				Expect(championAttack.GetBonusDamageAmp()).To(BeNumerically("~", expectedAmp, 0.01))
+			})
+
+			It("should calculate Final AP including the item bonus", func() {
+				// StatCalculationSystem calculates FinalAP = BaseAP + BonusAP
+				expectedFinalAP := championSpell.GetBaseAP() + expectedAP
+				Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedFinalAP, 0.01))
+			})
+
+			It("should calculate Final Damage Amp including the item bonus", func() {
+				// StatCalculationSystem calculates FinalDamageAmp = BaseDamageAmp + BonusDamageAmp
+				expectedFinalAmp := championAttack.GetBaseDamageAmp() + expectedAmp
+				Expect(championAttack.GetFinalDamageAmp()).To(BeNumerically("~", expectedFinalAmp, 0.01))
+			})
+		})
+
+		Context("Jeweled Gauntlet (Static + Conditional)", func() {
+			var (
+				jgData             *data.Item
+				jgBonusAP          float64
+				jgCritChance       float64 // As percentage from item data
+				jgCritDamageToGive float64
+			)
+			BeforeEach(func() {
+				jgData = data.GetItemByApiName(data.TFT_Item_JeweledGauntlet)
+				Expect(jgData).NotTo(BeNil())
+				jgBonusAP = jgData.Effects["AP"]
+				jgCritChance = jgData.Effects["CritChance"] / 100.0 // Convert to decimal
+				jgCritDamageToGive = jgData.Effects["CritDamageToGive"]
+
+				// Add JG item - this calculates and updates ItemEffect internally
+				err = equipmentManager.AddItemToChampion(champion, data.TFT_Item_JeweledGauntlet)
+				Expect(err).NotTo(HaveOccurred())
+				// Static stats application relies on the systems run in applyStaticStats
+			})
+
+			Context("when champion abilities cannot already crit", func() {
+				BeforeEach(func() {
+					// Ensure no trait/augment crit marker exists
+					world.RemoveComponent(champion, reflect.TypeOf(components.CanAbilityCritFromTraits{}))
+					world.RemoveComponent(champion, reflect.TypeOf(components.CanAbilityCritFromAugments{}))
+					// Run the systems to apply effects and calculate stats
+					applyStaticStats()
+				})
+
+				It("should add the CanAbilityCritFromItems marker component", func() {
+					_, ok := world.GetCanAbilityCritFromItems(champion)
+					Expect(ok).To(BeTrue(), "CanAbilityCritFromItems marker should be added by AbilityCritSystem")
+				})
+
+				It("should add Bonus AP and Bonus Crit Chance", func() {
+					Expect(championSpell.GetBonusAP()).To(BeNumerically("~", jgBonusAP, 0.01))
+					// JG adds to the *shared* Crit component's bonus chance
+					Expect(championCrit.GetBonusCritChance()).To(BeNumerically("~", jgCritChance, 0.01))
+				})
+
+				It("should calculate Final Spell Crit Chance correctly", func() {
+					// FinalSpellCritChance = Base (0) + Bonus (from JG)
+					championBaseCritChance := championCrit.GetBaseCritChance()
+					expectedFinalCritChance := championBaseCritChance + jgCritChance
+					expectedFinalCritChance = math.Min(expectedFinalCritChance, 1.0) // Cap at 1.0
+					Expect(championCrit.GetFinalCritChance()).To(BeNumerically("~", expectedFinalCritChance, 0.01))
+				})
+
+				It("should NOT add the conditional Crit Damage", func() {
+					expectedFinalSpellCritDamage := championCrit.GetBaseCritMultiplier()
+					Expect(championCrit.GetFinalCritMultiplier()).To(BeNumerically("~", expectedFinalSpellCritDamage, 0.01))
+				})
+			})
+
+			Context("when champion abilities can already crit (from trait)", func() {
+				BeforeEach(func() {
+					// Add trait crit marker
+					err = world.AddComponent(champion, &components.CanAbilityCritFromTraits{})
+					Expect(err).NotTo(HaveOccurred())
+					// Run the systems to apply effects and calculate stats
+					applyStaticStats()
+				})
+
+				It("should still add the CanAbilityCritFromItems marker component", func() {
+					// AbilityCritSystem shouldn't add the *item* marker if a trait marker exists
+					_, ok := world.GetCanAbilityCritFromItems(champion)
+					Expect(ok).To(BeTrue(), "CanAbilityCritFromItems marker should still be added when trait crit exists")
+				})
+
+				It("should add Bonus AP and Bonus Crit Chance", func() {
+					Expect(championSpell.GetBonusAP()).To(BeNumerically("~", jgBonusAP, 0.01))
+					Expect(championCrit.GetBonusCritChance()).To(BeNumerically("~", jgCritChance, 0.01))
+				})
+
+				It("should calculate Final Spell Crit Chance correctly", func() {
+					championBaseCritChance := championCrit.GetBaseCritChance()
+					expectedFinalCritChance := championBaseCritChance + jgCritChance
+					expectedFinalCritChance = math.Min(expectedFinalCritChance, 1.0) // Cap at 1.0
+					Expect(championCrit.GetFinalCritChance()).To(BeNumerically("~", expectedFinalCritChance, 0.01))
+				})
+
+				It("SHOULD add the conditional Crit Damage", func() {
+
+					Expect(championCrit.GetBonusCritDamageToGive()).To(BeNumerically("~", jgCritDamageToGive, 0.01))
+
+					// Now verify the final spell crit damage calculation
+					expectedFinalSpellCritDamage := championCrit.GetBaseCritMultiplier() + championCrit.GetBonusCritMultiplier() + jgCritDamageToGive
+					Expect(championCrit.GetFinalCritMultiplier()).To(BeNumerically("~", expectedFinalSpellCritDamage, 0.01))
+				})
+			})
+		})
+
+		Context("Archangel's Staff (Dynamic Time)", func() {
+			var (
+				archangelsData   *data.Item
+				initialAP        float64 // Static AP from item
+				initialMana      float64
+				interval         float64
+				apPerInterval    float64
+				archangelsEffect *effects.ArchangelsEffect
+				ok               bool
+			)
+
+			BeforeEach(func() {
+				archangelsData = data.GetItemByApiName(data.TFT_Item_ArchangelsStaff)
+				Expect(archangelsData).NotTo(BeNil())
+				initialAP = archangelsData.Effects["AP"]
+				initialMana = archangelsData.Effects["Mana"]
+				interval = archangelsData.Effects["IntervalSeconds"]    // Should be 5.0
+				apPerInterval = archangelsData.Effects["APPerInterval"] // Should be 30.0
+
+				// Add item BEFORE creating the simulation instance for this test
+				err = equipmentManager.AddItemToChampion(champion, data.TFT_Item_ArchangelsStaff)
+				Expect(err).NotTo(HaveOccurred())
+
+				archangelsEffect, ok = world.GetArchangelsEffect(champion)
+				Expect(ok).To(BeTrue())
+				archangelsEffect.ResetEffects()
+
+				// Create simulation AFTER adding the item so initial stats are calculated
+				sim = simulation.NewSimulationWithConfig(world, config)
+				Expect(sim).NotTo(BeNil())
+			})
+
+			It("should apply initial static AP and Mana", func() {
+				// Check Final fields immediately after simulation creation (initial updates run)
+				expectedInitialFinalAP := championSpell.GetBaseAP() + initialAP
+				Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedInitialFinalAP, 0.01))
+
+				manaComp, ok := world.GetMana(champion)
+				Expect(ok).To(BeTrue())
+				expectedInitialFinalMana := manaComp.GetBaseInitialMana() + initialMana
+				Expect(manaComp.GetFinalInitialMana()).To(BeNumerically("~", expectedInitialFinalMana, 0.01))
+			})
+
+			It("should stack AP correctly over time via RunSimulation", func() {
+				// --- State after initial setup (sim created in BeforeEach) ---
+				apAfterSetup := championSpell.GetFinalAP()
+				bonusAPAfterSetup := championSpell.GetBonusAP()
+				effect, ok := world.GetArchangelsEffect(champion)
+				Expect(ok).To(BeTrue())
+				Expect(effect.GetStacks()).To(Equal(0))
+				// Verify initial BonusAP comes ONLY from the static item part
+				Expect(bonusAPAfterSetup).To(BeNumerically("~", initialAP, 0.01), "Initial BonusAP should be just the static item AP")
+				Expect(apAfterSetup).To(BeNumerically("~", championSpell.GetBaseAP()+initialAP, 0.01), "Initial FinalAP should be Base + Static Item AP")
+
+				// --- Run just before first stack (e.g., 4.9s) ---
+				// Use the existing 'sim' instance, DO NOT recreate it
+				sim.SetMaxTime(interval - 0.1) // Run up to 4.9s
+				sim.RunSimulation()
+
+				finalAPAt4_9 := championSpell.GetFinalAP()
+				bonusAPAt4_9 := championSpell.GetBonusAP()
+				stacksAt4_9 := effect.GetStacks()
+
+				Expect(stacksAt4_9).To(Equal(0), "Stacks should be 0 before the first interval")
+				// Bonus AP should still only be the initial static AP
+				Expect(bonusAPAt4_9).To(BeNumerically("~", initialAP, 0.01), "Bonus AP should still be the static item AP before the first interval")
+				// Final AP should not have changed yet
+				Expect(finalAPAt4_9).To(BeNumerically("~", apAfterSetup, 0.01), "Final AP should not have increased before the first interval")
+
+				// DO NOT Reset Bonuses or Effects here
+
+				// --- Run from 4.9s to just after first stack (e.g., 5.1s) ---
+				// Continue the SAME simulation instance
+				sim.SetMaxTime(0.2) // Run up to 5.1s total
+				sim.RunSimulation()            // This runs from 4.9s to 5.1s
+
+				finalAPAt5_1 := championSpell.GetFinalAP()
+				bonusAPAt5_1 := championSpell.GetBonusAP()
+				stacksAt5_1 := effect.GetStacks()
+
+				expectedBonusAPAfterStack1 := initialAP + apPerInterval
+				expectedFinalAPAfterStack1 := championSpell.GetBaseAP() + expectedBonusAPAfterStack1
+				Expect(stacksAt5_1).To(Equal(1), "Stacks should be 1 after the first interval")
+				Expect(bonusAPAt5_1).To(BeNumerically("~", expectedBonusAPAfterStack1, 0.01), "Bonus AP should include 1 stack after the first interval")
+				Expect(finalAPAt5_1).To(BeNumerically("~", expectedFinalAPAfterStack1, 0.01), "Final AP should include 1 stack after the first interval")
+
+				// --- Run from 5.1s to just after second stack (e.g., 10.1s) ---
+				// Continue the SAME simulation instance
+				sim.SetMaxTime(interval) // Run up to 10.1s total
+				sim.RunSimulation()              // This runs from 5.1s to 10.1s
+
+				finalAPAt10_1 := championSpell.GetFinalAP()
+				bonusAPAt10_1 := championSpell.GetBonusAP()
+				stacksAt10_1 := effect.GetStacks()
+
+				expectedBonusAPAfterStack2 := initialAP + 2*apPerInterval
+				expectedFinalAPAfterStack2 := championSpell.GetBaseAP() + expectedBonusAPAfterStack2
+				Expect(stacksAt10_1).To(Equal(2), "Stacks should be 2 after the second interval")
+				Expect(bonusAPAt10_1).To(BeNumerically("~", expectedBonusAPAfterStack2, 0.01), "Bonus AP should include 2 stacks after the second interval")
+				Expect(finalAPAt10_1).To(BeNumerically("~", expectedFinalAPAfterStack2, 0.01), "Final AP should include 2 stacks after the second interval")
+			})
 		})
 	})
 })

@@ -43,6 +43,7 @@ func (s *StatCalculationSystem) ApplyStaticBonusStats() {
 		for _, entity := range entities {
 			s.calculateHealthStats(entity)
 			s.calculateAttackStats(entity)
+			s.calculateCritStats(entity)
 			s.calculateManaStats(entity)
 			s.calculateSpellStats(entity)
 		}
@@ -103,12 +104,7 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 	if !ok {
 		return // No attack component
 	}
-
-	// crit, ok := s.world.GetCrit(entity)
-	// if !ok {
-	// 	return
-	// }
-
+	
 	// AD: (Base + FlatBonus) * (1 + PercentBonus)
 	// normally there's no flat bonus AD in TFT, but there are exceptions
 	calculatedAD := (attack.GetBaseAD() + attack.GetBonusAD()) * (1 + attack.GetBonusPercentAD())
@@ -121,62 +117,6 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 		log.Printf("Entity %d: Base AS: %.2f, Bonus AS: %.2f, Calculated AS: %.2f", entity, attack.GetBaseAttackSpeed(), attack.GetBonusPercentAttackSpeed(), calculatedAS)
 	}
 	attack.SetFinalAttackSpeed(calculatedAS)
-
-	// // Crit Chance: Base + Bonus (Capped at 1.0), convert excess to Crit Damage
-	// calculatedCritChance := crit.GetBaseCritChance() + crit.GetBonusCritChance()
-	// excessCritDamageBonus := 0.0
-	// if calculatedCritChance > 1.0 {
-	// 	excessCritDamageBonus = (calculatedCritChance - 1.0) / 2.0 // 50% conversion rate
-	// 	log.Printf("Entity %d: Crit chance %.2f exceeds 1.0. Adding %.2f bonus crit damage from excess.", entity, calculatedCritChance, excessCritDamageBonus)
-	// 	calculatedCritChance = 1.0 // Cap final crit chance
-	// }
-	// crit.SetFinalCritChance(calculatedCritChance)
-
-	// // --- IE / JG Conditional Bonus Crit Damage---
-	// // handle logic for: "If the holder's abilities can already critically strike, gain 10% Critical Strike Damage instead."
-	// equipment, okEq := s.world.GetEquipment(entity)
-	// numIE := 0
-	// numJG := 0
-	// if okEq {
-	// 	// Replace the loop:
-	// 	numIE = equipment.GetItemCount(data.TFT_Item_InfinityEdge)
-	// 	numJG = equipment.GetItemCount(data.TFT_Item_JeweledGauntlet)
-	// }
-	// totalCritItems := numIE + numJG
-
-	// // Check for trait source of ability crit
-	// traitCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromTraits{})
-	// _, hasTraitCritMarker := s.world.GetComponent(entity, traitCritMarkerType)
-
-	// // Determine how many IE/JG grant the bonus damage
-	// numBonusGrantingItems := 0
-	// if hasTraitCritMarker {
-	// 	// If crit comes from trait, ALL IE/JG grant the bonus damage
-	// 	numBonusGrantingItems = totalCritItems
-	// } else {
-	// 	// If no trait crit, the first IE/JG enables the flag (via AbilityCritSystem),
-	// 	// and any subsequent ones grant the bonus damage.
-	// 	if totalCritItems > 1 {
-	// 		numBonusGrantingItems = totalCritItems - 1
-	// 	}
-	// 	// If totalCritItems is 0 or 1, and no trait source, no items grant the bonus damage.
-	// }
-
-	// // Calculate the bonus crit damage from the "instead" effect, because GetBonusCritDamageToGive() is cumulated from all IE/JE items, we'll need to remove the first one if it is not contributing to the bonus damage.
-	// conditionalCritDamageBonus := 0.0
-	// if numBonusGrantingItems > 0 {
-	// 	conditionalCritDamageBonus = float64(numBonusGrantingItems) / float64(totalCritItems) * attack.GetBonusCritDamageToGive()
-	// 	log.Printf("Entity %d: Total IE/JG items: %d, Bonus granting items: %d, Conditional Crit Damage Bonus: %.2f", entity, totalCritItems, numBonusGrantingItems, conditionalCritDamageBonus)
-
-	// 	if conditionalCritDamageBonus > 0 {
-	// 		log.Printf("Entity %d: Applying +%.2f Crit Damage from %d IE/JG instance(s) due to 'already crit' condition.", entity, conditionalCritDamageBonus, numBonusGrantingItems)
-	// 	}
-	// }
-
-	// // Crit Multiplier: Base + Bonus (from ItemEffect/Traits) + Conditional Bonus + Excess CritChance Bonus
-	// calculatedCritMultiplier := crit.GetBaseCritMultiplier() + crit.GetBonusCritMultiplier() + conditionalCritDamageBonus + excessCritDamageBonus
-
-	// crit.SetFinalCritMultiplier(calculatedCritMultiplier)
 
 	// Damage Amp: Base + Bonus (Assuming additive for now)
 	calculatedDamageAmp := attack.GetBaseDamageAmp() + attack.GetBonusDamageAmp()
@@ -275,6 +215,7 @@ func (s *StatCalculationSystem) calculateSpellStats(entity ecs.Entity) {
 	// Spell Damage: Base + Bonus
 	calculatedSpellDamage := spell.GetBaseAP() + spell.GetBonusAP()
 	spell.SetFinalAP(calculatedSpellDamage)
+	log.Printf("Entity %d: BaseAP: %.2f, BonusAP: %.2f, FinalAP: %.2f", entity, spell.GetBaseAP(), spell.GetBonusAP(), calculatedSpellDamage)
 }
 
 // applyHealthConsequences handles adjustments needed after health stats change.
