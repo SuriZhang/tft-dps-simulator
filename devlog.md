@@ -130,3 +130,39 @@ TODO:
 - [ ] implement very basic spell cast system, to prepare us for more item effects
 - [ ] implement DynamicEvent items
 - [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
+
+## 20250419
+Simplifed Spell Cast cool down handling:
+the term "cooldown" in TFT usually refers to the time after the spell animation finishes before the next spell can be cast. The period where the champion is locked out of auto-attacking is the cast animation time or cast lockout.
+
+Implementing precise cast animation times for every champion adds significant complexity, as these times vary.
+
+Simplified Approach (Using Cooldown as Lockout):
+
+For now, we can implement a simpler version where we treat the Spell.Cooldown value itself as the lockout period during which the champion cannot auto-attack.
+
+SpellCastSystem: When a spell is cast, set Spell.CurrentCooldown to Spell.Cooldown.
+AttackSystem: Modify the AttackSystem.Update function. Before an entity performs an auto-attack, check if it has a Spell component. If it does, check if Spell.GetCurrentCooldown() > 0. If the cooldown is active, prevent the entity from auto-attacking in that frame.
+Pros:
+
+Relatively simple to implement using existing components and systems.
+Achieves the basic goal: casting prevents auto-attacking for a duration.
+Cons:
+
+Inaccurate simulation: Uses the spell cooldown duration instead of the actual cast animation time.
+Might feel clunky for spells with long cooldowns but short cast times, or vice-versa.
+Recommendation:
+
+Given the complexity of true cast times, let's proceed with the simplified approach for now. We can refine it later if needed by adding a dedicated CastTime or AnimationLockout field to the Spell component.
+
+
+Might be buggy later (revisit later): when handling the edge cases where a champion died jsut before they about to cast a spell or auto attack.
+
+DONE Today:
+- [x] implement very basic spell cast system, to prepare us for more item effects
+- [x] implement DynamicEvent items system
+- [x] implement Titan's Resolve
+
+TODO:
+- [ ] implement Adaptive Helmet
+- [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
