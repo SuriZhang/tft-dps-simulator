@@ -43,7 +43,7 @@ func (s *AutoAttackSystem) TriggerAutoAttack(deltaTime float64) {
 		pos, okPos := s.world.GetPosition(attacker)
 		health, okHealth := s.world.GetHealth(attacker)
 
-		if !okAtk || !okTeam || !okPos || !okHealth || health.CurrentHP <= 0 || team.ID != 0 {
+		if !okAtk || !okTeam || !okPos || !okHealth || health.CurrentHP <= 0 {
 			continue // Skip if missing components, dead, or not on player team
 		}
 

@@ -31,8 +31,8 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 	var potentialTargets []ecs.Entity
 	for _, entity := range entities {
 		team, ok := world.GetTeam(entity)
-		// Ensure the entity has a Team component and its ID is 1
-		if ok && team.ID == 1 {
+		// Ensure the entity is on a different team and has a valid Team component
+		if ok && team.ID != sourceTeamID {
 			potentialTargets = append(potentialTargets, entity)
 		}
 	}
