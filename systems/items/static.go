@@ -35,6 +35,7 @@ func (s *BaseStaticItemSystem) ApplyStats() {
 		s.applyHealthBonuses(entity, itemEffect)
 		s.applyAttackBonuses(entity, itemEffect)
 		s.applyManaBonuses(entity, itemEffect)
+		s.applyCritBonuses(entity, itemEffect)
 
 		// Apply to Defense (when Defense component exists)
 		// ...
@@ -70,10 +71,16 @@ func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect 
 		attack.AddBonusPercentAD(itemEffect.GetBonusPercentAD())
 		attack.AddBonusDamageAmp(itemEffect.GetDamageAmp())
 		attack.AddBonusPercentAttackSpeed(itemEffect.GetBonusPercentAttackSpeed())
-		attack.AddBonusCritChance(itemEffect.GetBonusCritChance())
+	}
+}
 
+func (s *BaseStaticItemSystem) applyCritBonuses(entity ecs.Entity, itemEffect *effects.ItemStaticEffect) {
+	if crit, ok := s.world.GetCrit(entity); ok {
+		crit.AddBonusCritChance(itemEffect.GetBonusCritChance())
+		// crit.AddBonusCritMultiplier(itemEffect.GetBonusCritMultiplier())
+		
 		// Sepecific to Infinity Edge & Jeweled Gauntlet
-		attack.AddBonusCritDamageToGive(itemEffect.GetCritDamageToGive())
+		crit.AddBonusCritDamageToGive(itemEffect.GetCritDamageToGive())
 	}
 }
 

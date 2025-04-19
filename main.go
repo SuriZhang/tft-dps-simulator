@@ -135,7 +135,7 @@ func main() {
 	addComponentOrLog(world, targetDummy, components.NewHealth(10000, 0, 0))
 	addComponentOrLog(world, targetDummy, components.NewPosition(5, 1))
 	// Update Attack component as enemy will not attack for MVP1
-	addComponentOrLog(world, targetDummy, components.NewAttack(0, 0, 0, 0, 0))
+	addComponentOrLog(world, targetDummy, components.NewAttack(0, 0, 0))
 
 	utils.PrintChampionStats(world, targetDummy)
 

@@ -21,6 +21,7 @@ var _ = Describe("DamageSystem", func() {
 		attacker        ecs.Entity
 		target          ecs.Entity
 		attackerAttack  *components.Attack
+		attackerCrit	*components.Crit
 		attackerMana    *components.Mana
 		targetHealth    *components.Health
 		ok              bool
@@ -50,14 +51,16 @@ var _ = Describe("DamageSystem", func() {
 		Expect(ok).To(BeTrue())
 		attackerMana, ok = world.GetMana(attacker)
 		Expect(ok).To(BeTrue())
+		attackerCrit, ok = world.GetCrit(attacker)
+		Expect(ok).To(BeTrue())
 		targetHealth, ok = world.GetHealth(target)
 		Expect(ok).To(BeTrue())
 
 		// --- Set Base Stats for Predictable Calculations ---
 		attackerAttack.SetFinalAD(100.0)
 		attackerAttack.SetFinalAttackSpeed(1.0) // Needed for LastAttackTime update
-		attackerAttack.SetFinalCritChance(0.25)
-		attackerAttack.SetFinalCritMultiplier(1.5) // 50% bonus crit damage
+		attackerCrit.SetFinalCritChance(0.25)
+		attackerCrit.SetFinalCritMultiplier(1.5) // 50% bonus crit damage
 		attackerAttack.SetFinalDamageAmp(0.0)      // No initial amp
 
 		attackerMana.SetCurrentMana(0)

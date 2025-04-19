@@ -25,6 +25,7 @@ type World struct {
 	CanAbilityCritFromTraits map[Entity]*components.CanAbilityCritFromTraits
 	CanAbilityCritFromItems  map[Entity]*components.CanAbilityCritFromItems
 	Spell                    map[Entity]*components.Spell
+	Crit 					map[Entity]*components.Crit
 	// --- Dynamic Item Effect Components ---
 	ArchangelsEffects  map[Entity]*effects.ArchangelsEffect
 	QuicksilverEffects map[Entity]*effects.QuicksilverEffect
@@ -49,6 +50,7 @@ func NewWorld() *World {
 		CanAbilityCritFromTraits: make(map[Entity]*components.CanAbilityCritFromTraits),
 		CanAbilityCritFromItems:  make(map[Entity]*components.CanAbilityCritFromItems),
 		Spell:                    make(map[Entity]*components.Spell),
+		Crit: 				 make(map[Entity]*components.Crit),
 		// --- Dynamic Item Effect Components ---
 		ArchangelsEffects:  make(map[Entity]*effects.ArchangelsEffect),
 		QuicksilverEffects: make(map[Entity]*effects.QuicksilverEffect),
@@ -77,6 +79,7 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.CanAbilityCritFromTraits, e)
 	delete(w.CanAbilityCritFromItems, e)
 	delete(w.Spell, e)
+	delete(w.Crit, e)
 	// --- Dynamic Item Effect Components ---
 	delete(w.ArchangelsEffects, e)
 	delete(w.QuicksilverEffects, e)
@@ -142,6 +145,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.Spell[e] = &c
 	case *components.Spell:
 		w.Spell[e] = c
+	case components.Crit:
+		w.Crit[e] = &c
+	case *components.Crit:
+		w.Crit[e] = c
 	// --- Dynamic Item Effect Components ---
 	case effects.ArchangelsEffect:
 		w.ArchangelsEffects[e] = &c
@@ -200,6 +207,9 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.Spell{}):
 		comp, ok := w.Spell[e]
 		return comp, ok
+	case reflect.TypeOf(components.Crit{}):
+		comp, ok := w.Crit[e]
+		return comp, ok
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(effects.ArchangelsEffect{}):
 		comp, ok := w.ArchangelsEffects[e]
@@ -246,6 +256,8 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.CanAbilityCritFromItems, e)
 	case reflect.TypeOf(components.Spell{}):
 		delete(w.Spell, e)
+	case reflect.TypeOf(components.Crit{}):
+		delete(w.Crit, e)
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(effects.ArchangelsEffect{}):
 		delete(w.ArchangelsEffects, e)
@@ -345,6 +357,8 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.CanAbilityCritFromItems)
 	case reflect.TypeOf(components.Spell{}):
 		return len(w.Spell)
+	case reflect.TypeOf(components.Crit{}):
+		return len(w.Crit)
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(effects.ArchangelsEffect{}):
 		return len(w.ArchangelsEffects)
@@ -418,6 +432,11 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(components.Spell{}):
 		entities = make([]Entity, 0, len(w.Spell))
 		for e := range w.Spell {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.Crit{}):
+		entities = make([]Entity, 0, len(w.Crit))
+		for e := range w.Crit {
 			entities = append(entities, e)
 		}
 	// --- Dynamic Item Effect Components ---
@@ -519,6 +538,12 @@ func (w *World) GetCanAbilityCritFromItems(e Entity) (*components.CanAbilityCrit
 // GetSpell returns the Spell component for an entity, type-safe.
 func (w *World) GetSpell(e Entity) (*components.Spell, bool) {
 	comp, ok := w.Spell[e]
+	return comp, ok
+}
+
+// GetCrit returns the Crit component for an entity, type-safe.
+func (w *World) GetCrit(e Entity) (*components.Crit, bool) {
+	comp, ok := w.Crit[e]
 	return comp, ok
 }
 

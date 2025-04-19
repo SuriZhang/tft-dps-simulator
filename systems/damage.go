@@ -43,6 +43,11 @@ func (s *DamageSystem) onAttackLanded(evt eventsys.AttackLandedEvent) {
 		log.Printf("DamageSystem Error: Attacker %d has no Attack component in onAttackLanded.\n", attacker)
 		return
 	}
+	attackerCrit, okCrit := s.world.GetCrit(attacker)
+	if !okCrit {
+		log.Printf("DamageSystem Error: Attacker %d has no Crit component in onAttackLanded.\n", attacker)
+		return
+	}
 	targetHealth, okHp := s.world.GetHealth(target)
 	if !okHp {
 		log.Printf("DamageSystem Error: Target %d has no Health component in onAttackLanded.\n", target)
@@ -54,8 +59,8 @@ func (s *DamageSystem) onAttackLanded(evt eventsys.AttackLandedEvent) {
 	baseDamage := evt.BaseDamage // Use damage from event
 
 	// 2. Crit Multiplier (Expected Value)
-	critChance := attackerAttack.GetFinalCritChance()
-	critMultiplier := attackerAttack.GetFinalCritMultiplier()
+	critChance := attackerCrit.GetFinalCritChance()
+	critMultiplier := attackerCrit.GetFinalCritMultiplier()
 	critMultiplierEV := (1.0 - critChance) + (critChance * critMultiplier)
 
 	// 3. Amplification Multiplier

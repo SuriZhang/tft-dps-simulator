@@ -65,12 +65,18 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 		championData.Stats.Damage*multiplier,
 		championData.Stats.AttackSpeed,
 		championData.Stats.Range,
-		championData.Stats.CritChance,
-		championData.Stats.CritMultiplier,
 	)
 	err = cf.world.AddComponent(entity, attackComp)
 	if err != nil {
 		return 0, fmt.Errorf("failed to add Attack component to %s: %w", championData.Name, err)
+	}
+
+	// Crit
+	critComp := components.NewCrit(	championData.Stats.CritChance,
+		championData.Stats.CritMultiplier,)
+	err = cf.world.AddComponent(entity, critComp)
+	if err != nil {
+		return 0, fmt.Errorf("failed to add Crit component to %s: %w", championData.Name, err)
 	}
 
 	// Mana
@@ -84,8 +90,13 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 	}
 
 	// Add Spell component
-	// TODO: fix later, use dummy values for now, as we don't have spell data yet
-	spellComp := components.NewSpell(0, manaComp.GetMaxMana(), 1)
+	// TODO: fix cooldown later, assume it's 1 for now
+	spellComp := components.NewSpell(
+		championData.Ability.Name,
+		championData.Ability.Icon,
+		championData.Stats.Mana,
+		1, // Cooldown (not available in data yet)
+	)
 	err = cf.world.AddComponent(entity, spellComp)
 	if err != nil {
 		return 0, fmt.Errorf("failed to add Spell component to %s: %w", championData.Name, err)

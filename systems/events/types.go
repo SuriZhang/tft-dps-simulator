@@ -33,3 +33,11 @@ type KillEvent struct {
     Victim    ecs.Entity // The entity that died
     Timestamp float64    // Time the kill occurred (same as DeathEvent)
 }
+
+// SpellCastEvent is triggered when a unit casts its spell.
+type SpellCastEvent struct {
+    Source    ecs.Entity // The entity casting the spell
+    Target    ecs.Entity // The primary target (if applicable, might need refinement for AoE)
+    Timestamp float64    // Simulation time when the spell is cast
+    // Add spell-specific details if needed later
+}

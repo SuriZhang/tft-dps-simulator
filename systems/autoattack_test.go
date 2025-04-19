@@ -21,6 +21,7 @@ var _ = Describe("AutoAttackSystem", func() {
 		player           ecs.Entity // Blue Golem
 		target           ecs.Entity // Training Dummy
 		playerAttack     *components.Attack
+		playerCrit		*components.Crit
 		targetHealth     *components.Health // Still needed to check if target is alive initially
 		ok               bool
 		// Base AD for event checking
@@ -48,6 +49,9 @@ var _ = Describe("AutoAttackSystem", func() {
 		playerAttack, ok = world.GetAttack(player)
 		Expect(ok).To(BeTrue())
 		Expect(playerAttack).NotTo(BeNil())
+		playerCrit, ok = world.GetCrit(player)
+		Expect(ok).To(BeTrue())
+		Expect(playerCrit).NotTo(BeNil())
 		targetHealth, ok = world.GetHealth(target) // Still get health for setup/checks
 		Expect(ok).To(BeTrue())
 		Expect(targetHealth).NotTo(BeNil())
@@ -56,10 +60,12 @@ var _ = Describe("AutoAttackSystem", func() {
 		playerAttack.SetFinalAD(expectedBaseDamage) // Use the variable
 		playerAttack.SetFinalAttackSpeed(0.550)
 		playerAttack.SetFinalRange(1.00)
-		playerAttack.SetFinalCritChance(0.25)
-		playerAttack.SetFinalCritMultiplier(1.40)
 		playerAttack.SetFinalDamageAmp(0.00)
 
+
+		
+		playerCrit.SetFinalCritChance(0.25)
+		playerCrit.SetFinalCritMultiplier(1.40)
 		targetHealth.SetFinalArmor(30.00)
 		targetHealth.SetFinalMR(30.00)
 		targetHealth.SetFinalDurability(0.00)
