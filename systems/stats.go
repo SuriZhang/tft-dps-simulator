@@ -82,7 +82,7 @@ func (s *StatCalculationSystem) calculateHealthStats(entity ecs.Entity) {
 
 	// Max HP: (Base + FlatBonus) * (1 + PercentBonus)
 	calculatedMaxHp := (health.GetBaseMaxHp() + health.GetBonusMaxHP()) * (1 + health.GetBonusPercentHp())
-	health.SetFinalMaxHealth(calculatedMaxHp)
+	health.SetFinalMaxHP(calculatedMaxHp)
 
 	// Armor: Base + FlatBonus (Add % bonus calculation if needed)
 	calculatedArmor := health.GetBaseArmor() + health.GetBonusArmor()
@@ -229,12 +229,11 @@ func (s *StatCalculationSystem) applyHealthConsequences(entity ecs.Entity) {
 	// Adjust CurrentHP if it exceeds the new FinalMaxHP
 	if health.GetCurrentHP() > health.GetFinalMaxHP() {
 		log.Printf("Entity %d: CurrentHP (%.2f) exceeds new FinalMaxHP (%.2f). Clamping.", entity, health.GetCurrentHP(), health.GetFinalMaxHP())
-		health.SetCurrentHealth(health.GetFinalMaxHP())
-	} else {
+		health.SetCurrentHP(health.GetFinalMaxHP())
+	} else if health.GetCurrentHP() < health.GetFinalMaxHP() {
 		// update current health to the final max health if it is lower than the final max health
 		// this is needed for the case when the max health is increased before the combat
 		log.Printf("Entity %d: CurrentHP (%.2f) is lower than new FinalMaxHP (%.2f). Updating CurrentHP.", entity, health.GetCurrentHP(), health.GetFinalMaxHP())
-		health.SetCurrentHealth(health.GetFinalMaxHP())
-
+		health.SetCurrentHP(health.GetFinalMaxHP())
 	}
 }

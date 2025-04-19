@@ -70,12 +70,12 @@ func (h *Health) SetBaseMaxHP(maxHealth float64) {
 	h.BaseMaxHP = maxHealth
 }
 
-func (h *Health) SetCurrentHealth(currentHealth float64) {
+func (h *Health) SetCurrentHP(currentHealth float64) {
 	h.CurrentHP = currentHealth
 }
 
 // --- Methods to SET FINAL calculated stats (called by StatCalculationSystem) ---
-func (h *Health) SetFinalMaxHealth(value float64) {
+func (h *Health) SetFinalMaxHP(value float64) {
 	h.FinalMaxHP = value
 }
 

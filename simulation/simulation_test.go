@@ -166,8 +166,6 @@ var _ = Describe("Simulation", func() {
 		})
 	})
 
-	// Removed the Describe("Step Method") block as we test its effects via RunSimulation
-
 	Describe("RunSimulation Method", func() {
 		// Uses the 'sim' instance created in the outer BeforeEach,
 		// which has the real event bus and systems wired up internally.
@@ -336,8 +334,246 @@ var _ = Describe("Simulation", func() {
 				Expect(apAfter11Sec).To(BeNumerically(">", apAfter6Sec), "AP should increase further after second stack interval (~10s)")
 
 			})
-		})
-	})
+		}) // End Context("with Dynamic Time Items")
+
+		// +++ START NEW CONTEXT FOR DYNAMIC EVENT ITEMS +++
+		Context("with Dynamic Event Items", func() {
+			var (
+				// Variables specific to Titan's tests if needed,
+				// otherwise use variables from the outer Describe block.
+				titansData              *data.Item
+				titansMaxStacks         int
+				titansADPerStack        float64
+				titansAPPerStack        float64
+				titansBonusResistsAtCap float64
+				titansStaticArmor       float64
+				// titansStaticASPercent  float64 // Not directly used in assertions below, but good to have
+			)
+
+			BeforeEach(func() {
+				// Get Titan's data once for this context
+				titansData = data.GetItemByApiName(data.TFT_Item_TitansResolve)
+				Expect(titansData).NotTo(BeNil())
+				titansMaxStacks = int(titansData.Effects["StackCap"])
+				titansADPerStack = titansData.Effects["StackingAD"]
+				titansAPPerStack = titansData.Effects["StackingSP"]
+				titansBonusResistsAtCap = titansData.Effects["BonusResistsAtStackCap"]
+				titansStaticArmor = titansData.Effects["Armor"]
+				// titansStaticASPercent = titansData.Effects["AS"] / 100.0
+			})
+
+			It("should stack Titan's Resolve on attacks and apply AD/AP bonuses", func() {
+				// Add Titan's to attacker
+				err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_TitansResolve)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create simulation AFTER adding the item
+				sim = simulation.NewSimulationWithConfig(world, config)
+				Expect(sim).NotTo(BeNil())
+
+				// Get components and initial stats
+				attackerAttack := getAttack(world, attacker)
+				attackerAttack.SetBaseAttackSpeed(0.5) // Ensure attacker attacks
+				attackerSpell := getSpell(world, attacker)
+				attackerHealth := getHealth(world, attacker)
+				targetHealth := getHealth(world, target)
+				targetAttack := getAttack(world, target)
+				targetAttack.SetBaseAttackSpeed(0) // Ensure target doesn't attack
+				titansEffect, ok := world.GetTitansResolveEffect(attacker)
+				Expect(ok).To(BeTrue())
+
+				initialFinalAD := attackerAttack.GetFinalAD()
+				initialFinalAP := attackerSpell.GetFinalAP()
+				initialBonusArmor := attackerHealth.GetBonusArmor() // Should include static armor from Titan's
+
+				// Set simulation time for 1-2 attacks (Base AS=0.5 -> Attacks at t=2.0, 4.0)
+				sim.SetMaxTime(4.5)
+				sim.RunSimulation()
+
+				// Assertions
+				expectedStacks := 2
+				Expect(titansEffect.GetCurrentStacks()).To(Equal(expectedStacks), "Should gain 2 stacks from 2 attacks")
+				Expect(attackerAttack.GetBonusPercentAD()).To(BeNumerically("~", titansADPerStack*float64(expectedStacks), 0.001), "Bonus AD should reflect stacks")
+				Expect(attackerSpell.GetBonusAP()).To(BeNumerically("~", titansAPPerStack*float64(expectedStacks), 0.001), "Bonus AP should reflect stacks")
+				Expect(attackerHealth.GetBonusArmor()).To(BeNumerically("~", initialBonusArmor, 0.001), "Bonus Armor should not include max stack bonus yet") // Only static
+
+				// Check final stats increased due to stacking bonuses
+				Expect(attackerAttack.GetFinalAD()).To(BeNumerically(">", initialFinalAD), "Final AD should increase from stacks")
+				Expect(attackerSpell.GetFinalAP()).To(BeNumerically(">", initialFinalAP), "Final AP should increase from stacks")
+				Expect(targetHealth.GetCurrentHP()).To(BeNumerically("<", targetMaxHP), "Target should take damage")
+			})
+
+			It("should stack Titan's Resolve on taking damage and apply AD/AP bonuses", func() {
+				// Add Titan's to attacker
+				err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_TitansResolve)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Modify setup: Give target slow AS, stop attacker
+				if targetAttack, ok := world.GetAttack(target); ok {
+					targetAttack.SetBaseAttackSpeed(0.1) // Target attacks at t=10.0
+				}
+
+				attackerAttack := getAttack(world, attacker)
+				attackerAttack.SetBaseAttackSpeed(0) // Stop attacker from attacking
+				attackerAttack.SetFinalAttackSpeed(0) // Attacker doesn't attack
+
+				// Create simulation AFTER setup changes
+				sim = simulation.NewSimulationWithConfig(world, config)
+				Expect(sim).NotTo(BeNil())
+
+				// Get components and initial stats
+				attackerSpell := getSpell(world, attacker)
+				attackerHealth := getHealth(world, attacker)
+				titansEffect, ok := world.GetTitansResolveEffect(attacker)
+				Expect(ok).To(BeTrue())
+
+				initialFinalAD := attackerAttack.GetFinalAD()
+				initialFinalAP := attackerSpell.GetFinalAP()
+				initialAttackerHP := attackerHealth.GetCurrentHP()
+
+				// Set simulation time for target to land one attack
+				sim.SetMaxTime(10.5)
+				sim.RunSimulation()
+
+				// Assertions
+				expectedStacks := 1
+				Expect(titansEffect.GetCurrentStacks()).To(Equal(expectedStacks), "Should gain 1 stack from taking damage")
+				Expect(attackerAttack.GetBonusPercentAD()).To(BeNumerically("~", titansADPerStack*float64(expectedStacks), 0.001))
+				Expect(attackerSpell.GetBonusAP()).To(BeNumerically("~", titansAPPerStack*float64(expectedStacks), 0.001))
+
+				// Check final stats increased and attacker took damage
+				Expect(attackerAttack.GetFinalAD()).To(BeNumerically(">", initialFinalAD))
+				Expect(attackerSpell.GetFinalAP()).To(BeNumerically(">", initialFinalAP))
+				Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("<", initialAttackerHP), "Attacker should take damage")
+			})
+
+			It("should stack Titan's Resolve from both attacking and taking damage", func() {
+				// Add Titan's to attacker
+				err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_TitansResolve)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Modify setup: Give target slow AS, keep attacker AS normal
+				if targetAttack, ok := world.GetAttack(target); ok {
+					targetAttack.SetBaseAttackSpeed(0.1)
+				}
+				attackerAttack := getAttack(world, attacker)
+				// Base AS is 0.5, attacks land at t=2.0, 4.0, 6.0, 8.0, 10.0
+
+				// Create simulation AFTER setup changes
+				sim = simulation.NewSimulationWithConfig(world, config)
+				Expect(sim).NotTo(BeNil())
+
+				// Get components
+				attackerSpell := getSpell(world, attacker)
+				titansEffect, ok := world.GetTitansResolveEffect(attacker)
+				Expect(ok).To(BeTrue())
+
+				// Set simulation time for multiple attacker attacks and one target attack
+				sim.SetMaxTime(10.5)
+				sim.RunSimulation()
+
+				// Assertions
+				// Expected stacks: 5 from attacker attacks, 1 from target attack = 6
+				expectedStacks := 6
+				Expect(titansEffect.GetCurrentStacks()).To(Equal(expectedStacks), "Should gain 6 stacks (5 attack, 1 damage)")
+				Expect(attackerAttack.GetBonusPercentAD()).To(BeNumerically("~", titansADPerStack*float64(expectedStacks), 0.001))
+				Expect(attackerSpell.GetBonusAP()).To(BeNumerically("~", titansAPPerStack*float64(expectedStacks), 0.001))
+			})
+
+			It("should apply bonus resists upon reaching max stacks during simulation", func() {
+				// Add Titan's to attacker
+				err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_TitansResolve)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Modify setup: Increase attacker AS to reach max stacks faster
+				attackerAttack := getAttack(world, attacker)
+				attackerAttack.SetBaseAttackSpeed(1.0) // Attacks every 1s
+
+				targetHealth := getHealth(world, target)
+				targetHealth.SetBaseMaxHP(10000.0) // Set high HP to avoid quick death
+
+				// Create simulation AFTER setup changes
+				sim = simulation.NewSimulationWithConfig(world, config)
+				Expect(sim).NotTo(BeNil())
+
+				// Get components
+				attackerHealth := getHealth(world, attacker)
+				titansEffect, ok := world.GetTitansResolveEffect(attacker)
+				Expect(ok).To(BeTrue())
+
+				initialBonusArmor := attackerHealth.GetBonusArmor() // Includes static armor
+				Expect(initialBonusArmor).To(BeNumerically("~", titansStaticArmor, 0.001), "Initial Bonus Armor should include static armor")
+				initialBonusMR := attackerHealth.GetBonusMR()       // Should be 0 initially
+
+				// Set simulation time to guarantee reaching max stacks (25 attacks -> 25s)
+				sim.SetMaxTime(float64(titansMaxStacks) + 1.0) // e.g., 26.0s
+				sim.RunSimulation()
+
+				// Assertions
+				Expect(titansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks), "Should reach max stacks")
+				Expect(titansEffect.IsMaxStacks).To(BeTrue(), "IsMaxStacks flag should be true")
+				// Bonus Armor should now include static + max stack bonus
+				Expect(attackerHealth.GetBonusArmor()).To(BeNumerically("~", titansStaticArmor+titansBonusResistsAtCap, 0.001), "Bonus Armor should include static + max stack bonus")
+				// Bonus MR should now include max stack bonus
+				Expect(attackerHealth.GetBonusMR()).To(BeNumerically("~", initialBonusMR+titansBonusResistsAtCap, 0.001), "Bonus MR should include max stack bonus")
+
+				// Check final stats reflect bonuses
+				Expect(attackerHealth.GetFinalArmor()).To(BeNumerically("~", attackerHealth.GetBaseArmor()+titansStaticArmor+titansBonusResistsAtCap, 0.001))
+				Expect(attackerHealth.GetFinalMR()).To(BeNumerically("~", attackerHealth.GetBaseMR()+titansBonusResistsAtCap, 0.001))
+			})
+
+			It("should not stack beyond max stacks", func() {
+				// Add Titan's to attacker
+				err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_TitansResolve)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Modify setup: Increase attacker AS
+				attackerAttack := getAttack(world, attacker)
+				attackerAttack.SetBaseAttackSpeed(1.0) // Attacks every 1s
+
+				// Modify target: Set high HP to avoid quick death
+				targetHealth := getHealth(world, target)
+				targetHealth.SetFinalMaxHP(10000.0)
+				targetHealth.SetCurrentHP(10000.0) 
+				targetHealth.SetBaseMaxHP(10000.0)
+
+				// Create simulation AFTER setup changes
+				sim = simulation.NewSimulationWithConfig(world, config)
+				Expect(sim).NotTo(BeNil())
+
+				// Get components
+				attackerSpell := getSpell(world, attacker)
+				attackerHealth := getHealth(world, attacker)
+				titansEffect, ok := world.GetTitansResolveEffect(attacker)
+				Expect(ok).To(BeTrue())
+
+				// Run long enough to reach max stacks
+				timeToMaxStacks := float64(titansMaxStacks) + 1.0 // e.g., 26.0s
+				sim.SetMaxTime(timeToMaxStacks)
+				sim.RunSimulation()
+
+				// Record stats at max stacks
+				Expect(titansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
+				adAtMax := attackerAttack.GetFinalAD()
+				apAtMax := attackerSpell.GetFinalAP()
+				armorAtMax := attackerHealth.GetFinalArmor()
+				mrAtMax := attackerHealth.GetFinalMR()
+
+				// Run simulation for longer (using the *same* sim instance)
+				sim.SetMaxTime(10.0) // Run for an additional 10 seconds (total time 36.0s)
+				sim.RunSimulation()
+
+				// Assert stacks and stats haven't changed
+				Expect(titansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks), "Stacks should remain at max")
+				Expect(attackerAttack.GetFinalAD()).To(BeNumerically("~", adAtMax, 0.01), "Final AD should not change after max stacks")
+				Expect(attackerSpell.GetFinalAP()).To(BeNumerically("~", apAtMax, 0.01), "Final AP should not change after max stacks")
+				Expect(attackerHealth.GetFinalArmor()).To(BeNumerically("~", armorAtMax, 0.01), "Final Armor should not change after max stacks")
+				Expect(attackerHealth.GetFinalMR()).To(BeNumerically("~", mrAtMax, 0.01), "Final MR should not change after max stacks")
+			})
+
+		}) 
+
+	}) // End Describe("RunSimulation Method")
 
 	Describe("PrintResults", func() {
 		// This primarily tests output formatting.
@@ -617,7 +853,7 @@ var _ = Describe("Simulation", func() {
 				// --- Run from 4.9s to just after first stack (e.g., 5.1s) ---
 				// Continue the SAME simulation instance
 				sim.SetMaxTime(0.2) // Run up to 5.1s total
-				sim.RunSimulation()            // This runs from 4.9s to 5.1s
+				sim.RunSimulation() // This runs from 4.9s to 5.1s
 
 				finalAPAt5_1 := championSpell.GetFinalAP()
 				bonusAPAt5_1 := championSpell.GetBonusAP()
@@ -632,7 +868,7 @@ var _ = Describe("Simulation", func() {
 				// --- Run from 5.1s to just after second stack (e.g., 10.1s) ---
 				// Continue the SAME simulation instance
 				sim.SetMaxTime(interval) // Run up to 10.1s total
-				sim.RunSimulation()              // This runs from 5.1s to 10.1s
+				sim.RunSimulation()      // This runs from 5.1s to 10.1s
 
 				finalAPAt10_1 := championSpell.GetFinalAP()
 				bonusAPAt10_1 := championSpell.GetBonusAP()

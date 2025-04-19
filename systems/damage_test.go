@@ -78,7 +78,7 @@ var _ = Describe("DamageSystem", func() {
         attackerMana.SetMaxMana(100)
 
         // Target Stats
-        targetHealth.SetCurrentHealth(1000.0)
+        targetHealth.SetCurrentHP(1000.0)
         targetHealth.SetFinalArmor(50.0)
         targetHealth.SetFinalMR(50.0)
         targetHealth.SetFinalDurability(0.0) // No initial durability
@@ -308,7 +308,7 @@ var _ = Describe("DamageSystem", func() {
             }
             eventBus.ClearEvents()
             attackerMana.SetCurrentMana(10)    // Reset mana
-            targetHealth.SetCurrentHealth(200) // Reset health
+            targetHealth.SetCurrentHP(200) // Reset health
         })
 
         It("should decrease target health by FinalTotalDamage", func() {
@@ -350,7 +350,7 @@ var _ = Describe("DamageSystem", func() {
         })
 
         It("should not enqueue a DeathEvent if target survives", func() {
-            targetHealth.SetCurrentHealth(damageEvent.FinalTotalDamage + 1) // Ensure survival
+            targetHealth.SetCurrentHP(damageEvent.FinalTotalDamage + 1) // Ensure survival
             damageSystem.HandleEvent(damageEvent)
             // Expect no *new* events from this handler (Death/Kill are the only ones it sends)
             Expect(eventBus.EnqueuedEvents).To(BeEmpty())
@@ -358,7 +358,7 @@ var _ = Describe("DamageSystem", func() {
 
         Context("when damage is lethal", func() {
             BeforeEach(func() {
-                targetHealth.SetCurrentHealth(damageEvent.FinalTotalDamage - 1) // Ensure lethal damage
+                targetHealth.SetCurrentHP(damageEvent.FinalTotalDamage - 1) // Ensure lethal damage
                 damageEvent.IsSpell = false // Ensure mana gain check runs
             })
 

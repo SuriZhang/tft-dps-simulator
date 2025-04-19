@@ -1,7 +1,6 @@
 package systems_test
 
 import (
-
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
@@ -74,7 +73,7 @@ var _ = Describe("SpellCastSystem", func() {
         targetHealth, ok = world.GetHealth(target)
         Expect(ok).To(BeTrue())
         Expect(targetHealth).NotTo(BeNil())
-        targetHealth.SetCurrentHealth(1000) // Ensure target is alive
+        targetHealth.SetCurrentHP(1000) // Ensure target is alive
 
         // --- Initialize System Time ---
         spellCastSystem.SetCurrentTime(0.0)
@@ -163,7 +162,7 @@ var _ = Describe("SpellCastSystem", func() {
         BeforeEach(func() {
             playerMana.SetCurrentMana(spellMaxMana)
             playerSpell.SetCurrentCooldown(0)
-            targetHealth.SetCurrentHealth(0) // Make target dead
+            targetHealth.SetCurrentHP(0) // Make target dead
         })
 
         It("should still enqueue a SpellCastEvent", func() {

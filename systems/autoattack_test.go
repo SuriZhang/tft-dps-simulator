@@ -75,7 +75,7 @@ var _ = Describe("AutoAttackSystem", func() {
 		targetHealth.SetFinalArmor(30.00)
 		targetHealth.SetFinalMR(30.00)
 		targetHealth.SetFinalDurability(0.00)
-		targetHealth.SetCurrentHealth(550.00) // Ensure target is alive
+		targetHealth.SetCurrentHP(550.00) // Ensure target is alive
 
 		// --- Set Positions ---
 		playerPosition, ok := world.GetPosition(player)
@@ -226,7 +226,7 @@ var _ = Describe("AutoAttackSystem", func() {
 		BeforeEach(func() {
 			playerHealth, ok := world.GetHealth(player)
 			Expect(ok).To(BeTrue())
-			playerHealth.SetCurrentHealth(0) // Attacker starts dead
+			playerHealth.SetCurrentHP(0) // Attacker starts dead
 		})
 
 		It("should not enqueue an AttackLandedEvent", func() {
@@ -241,7 +241,7 @@ var _ = Describe("AutoAttackSystem", func() {
 	Context("when the target starts dead", func() {
 		BeforeEach(func() {
 			Expect(targetHealth).NotTo(BeNil())
-			targetHealth.SetCurrentHealth(0) // Target starts dead
+			targetHealth.SetCurrentHP(0) // Target starts dead
 		})
 
 		It("should not enqueue an AttackLandedEvent", func() {
