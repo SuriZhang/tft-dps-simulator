@@ -1,6 +1,8 @@
 package systems_test
 
 import (
+	"math" // Import math package
+
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
@@ -21,7 +23,8 @@ var _ = Describe("AutoAttackSystem", func() {
 		player           ecs.Entity // Blue Golem
 		target           ecs.Entity // Training Dummy
 		playerAttack     *components.Attack
-		playerCrit		*components.Crit
+		playerCrit       *components.Crit
+		playerSpell      *components.Spell // Added for lockout test
 		targetHealth     *components.Health // Still needed to check if target is alive initially
 		ok               bool
 		// Base AD for event checking
@@ -39,6 +42,8 @@ var _ = Describe("AutoAttackSystem", func() {
 		player, err = championFactory.CreatePlayerChampion("TFT_BlueGolem", 1)
 		Expect(err).NotTo(HaveOccurred())
 		world.AddComponent(player, components.NewPosition(0, 1))
+		// --- Add Spell Component ---
+		world.AddComponent(player, components.NewSpell("TestLockoutSpell", "",40,1.0)) // Name, ManaCost, MaxMana, Cooldown=1.0s
 
 		// --- Create Target (Training Dummy) ---
 		target, err = championFactory.CreateEnemyChampion("TFT_TrainingDummy", 1)
@@ -52,6 +57,9 @@ var _ = Describe("AutoAttackSystem", func() {
 		playerCrit, ok = world.GetCrit(player)
 		Expect(ok).To(BeTrue())
 		Expect(playerCrit).NotTo(BeNil())
+		playerSpell, ok = world.GetSpell(player) // Get the spell component
+		Expect(ok).To(BeTrue())
+		Expect(playerSpell).NotTo(BeNil())
 		targetHealth, ok = world.GetHealth(target) // Still get health for setup/checks
 		Expect(ok).To(BeTrue())
 		Expect(targetHealth).NotTo(BeNil())
@@ -61,8 +69,6 @@ var _ = Describe("AutoAttackSystem", func() {
 		playerAttack.SetFinalAttackSpeed(0.550)
 		playerAttack.SetFinalRange(1.00)
 		playerAttack.SetFinalDamageAmp(0.00)
-
-
 		
 		playerCrit.SetFinalCritChance(0.25)
 		playerCrit.SetFinalCritMultiplier(1.40)
@@ -89,6 +95,13 @@ var _ = Describe("AutoAttackSystem", func() {
 			targetAttack.SetBaseAttackSpeed(0)
 			targetAttack.SetFinalAttackSpeed(0)
 		}
+
+		// --- Initialize System ---
+		// Pass 0.0 as initial time, it will be updated in tests
+
+		// --- Reset Timers/Cooldowns ---
+		playerAttack.SetLastAttackTime(0) // Ready to attack immediately (if not locked out)
+		playerSpell.SetCurrentCooldown(0)      // Not locked out by default
 	})
 
 	Context("when a valid target is in range", func() {
@@ -241,6 +254,61 @@ var _ = Describe("AutoAttackSystem", func() {
 			}
 			Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No events should be enqueued when target starts dead")
 		})
+	})
+
+	Context("when the attacker is under spell cast lockout", func() {
+        var lockoutTime float64 = 1.0
+
+        BeforeEach(func() {
+            Expect(playerAttack).NotTo(BeNil())
+            playerAttack.SetFinalAttackSpeed(1.0)
+            playerAttack.SetLastAttackTime(-1000.0) // Ready to attack initially
+            // ... (target setup) ...
+            Expect(playerSpell).NotTo(BeNil())
+            playerSpell.SetCurrentCooldown(lockoutTime) // Apply lockout
+        })
+
+        It("should not enqueue an AttackLandedEvent during the lockout period", func() {
+            dt := 0.1
+            currentTime := 0.0
+            for t := 0.0; t < lockoutTime-dt/2; t += dt {
+                currentCD := playerSpell.GetCurrentCooldown()
+                playerSpell.SetCurrentCooldown(math.Max(0, currentCD-dt)) // Manually decrease cooldown
+                autoAttackSystem.TriggerAutoAttack(dt) // Use Update
+                currentTime += dt
+                Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No attack event while locked out at time %.2f", currentTime)
+            }
+        })
+
+        It("should enqueue an AttackLandedEvent immediately after the lockout period ends", func() {
+            dt := 0.1
+            currentTime := 0.0
+
+            // Simulate through the lockout period
+            for t := 0.0; t < lockoutTime; t += dt {
+                currentCD := playerSpell.GetCurrentCooldown()
+                playerSpell.SetCurrentCooldown(math.Max(0, currentCD-dt))
+                autoAttackSystem.TriggerAutoAttack(dt) // Attack system runs
+                currentTime += dt
+                // Check that no event happens *before* the lockout ends
+                if t < lockoutTime - dt { // Check all iterations except the last one
+                     Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No attack event should occur strictly before lockout ends at t=%.2f", t+dt)
+                }
+            }
+
+            // --- Assertions after the loop ---
+            // The attack should have happened exactly at lockoutTime (the end of the last step)
+            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", 0.0, dt/10), "Cooldown should be zero after the loop")
+            Expect(eventBus.EnqueuedEvents).To(HaveLen(1), "One attack event should be enqueued exactly when lockout ends")
+
+            event, ok := eventBus.GetLastEvent().(eventsys.AttackLandedEvent)
+            Expect(ok).To(BeTrue())
+            // The timestamp should be the time at the end of the last loop iteration
+            expectedAttackTime := lockoutTime
+            Expect(event.Timestamp).To(BeNumerically("~", expectedAttackTime, dt), "Timestamp should be exactly the lockout time")
+            
+			// Should not verify the last attack time here, as it is updated by the event handler
+        })
 	})
 
 })

@@ -52,6 +52,16 @@ func (s *AutoAttackSystem) TriggerAutoAttack(deltaTime float64) {
 			continue
 		}
 
+		// --- Check Spell Lockout ---
+		if spell, okSpell := s.world.GetSpell(attacker); okSpell {
+			if spell.GetCurrentCooldown() > 0 {
+				// Entity is currently casting/locked out by spell, skip attack
+				log.Printf("Attacker %d is locked out by spell cooldown (%.2f).\n", attacker, spell.GetCurrentCooldown())
+				continue
+			}
+		}
+		// --- End Check Spell Lockout ---
+
 		target, foundTarget := utils.FindNearestEnemy(s.world, attacker, team.ID)
 		if !foundTarget {
 			log.Printf("Attacker %d found no target.\n", attacker)
@@ -96,4 +106,9 @@ func (s *AutoAttackSystem) TriggerAutoAttack(deltaTime float64) {
 			// --- End Enqueue ---
 		}
 	}
+}
+
+// SetCurrentTime sets the current time for the system.
+func (s *AutoAttackSystem) SetCurrentTime(time float64) {
+	s.currentTime = time
 }

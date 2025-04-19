@@ -90,7 +90,8 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 	}
 
 	// Add Spell component
-	// TODO: fix cooldown later, assume it's 1 for now
+	// TODO 1: fix cooldown later, assume it's 1 for now
+	// TODO 2: process spell variables
 	spellComp := components.NewSpell(
 		championData.Ability.Name,
 		championData.Ability.Icon,

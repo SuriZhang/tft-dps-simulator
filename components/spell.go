@@ -8,7 +8,7 @@ type Spell struct {
 	// Base stats (potentially loaded from champion data)
 	BaseAP   float64
 	ManaCost float64
-	Cooldown float64 // Base cooldown
+	Cooldown float64 // the time after the spell animation finishes before the next spell can be cast.The period where the champion is locked out of auto-attacking is the cast animation time or cast lockout.
 
 	// --- Spell Variables (should be read from champion ability variables) ---
 	// TODO: Load these dynamically based on the spell/champion
