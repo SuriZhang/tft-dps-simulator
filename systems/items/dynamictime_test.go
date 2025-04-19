@@ -6,7 +6,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
 	"github.com/suriz/tft-dps-simulator/managers"
-	itemsys "github.com/suriz/tft-dps-simulator/systems/items" // Alias the package
+	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

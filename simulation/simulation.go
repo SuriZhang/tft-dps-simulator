@@ -22,6 +22,8 @@ type Simulation struct {
 	baseStaticItemSystem  *itemsys.BaseStaticItemSystem
 	abilityCritSystem     *itemsys.AbilityCritSystem
 	dynamicTimeItemSystem *itemsys.DynamicTimeItemSystem
+	spellCastSystem 	 *systems.SpellCastSystem
+	dynamicEventItemSystem *itemsys.DynamicEventItemSystem
 	// Add other systems as needed
 
 	config      SimulationConfig
@@ -49,9 +51,12 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
 	abilityCritSystem := itemsys.NewAbilityCritSystem(world)
 	dynamicTimeItemSystem := itemsys.NewDynamicTimeItemSystem(world)
+	spellCastSystem := systems.NewSpellCastSystem(world, eventBus)
+	dynamicEventItemSystem := itemsys.NewDynamicEventItemSystem(world, eventBus)
 
 	// Register Event Handlers
 	eventBus.RegisterHandler(damageSystem)
+	eventBus.RegisterHandler(dynamicEventItemSystem)
 	// Register other handlers here...
 
 	sim := &Simulation{
@@ -63,6 +68,8 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 		baseStaticItemSystem:  baseStaticItemSystem,
 		abilityCritSystem:     abilityCritSystem,
 		dynamicTimeItemSystem: dynamicTimeItemSystem,
+		spellCastSystem:       spellCastSystem,
+		dynamicEventItemSystem: dynamicEventItemSystem,
 		config:                config,
 		currentTime:           0.0,
 	}

@@ -29,6 +29,7 @@ type World struct {
 	// --- Dynamic Item Effect Components ---
 	ArchangelsEffects  map[Entity]*effects.ArchangelsEffect
 	QuicksilverEffects map[Entity]*effects.QuicksilverEffect
+	TitansResolveEffects map[Entity]*effects.TitansResolveEffect
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
 	// Buffs        map[Entity]*components.Buffs
@@ -54,6 +55,7 @@ func NewWorld() *World {
 		// --- Dynamic Item Effect Components ---
 		ArchangelsEffects:  make(map[Entity]*effects.ArchangelsEffect),
 		QuicksilverEffects: make(map[Entity]*effects.QuicksilverEffect),
+		TitansResolveEffects: make(map[Entity]*effects.TitansResolveEffect),
 		// Initialize other maps here...
 	}
 }
@@ -83,6 +85,7 @@ func (w *World) RemoveEntity(e Entity) {
 	// --- Dynamic Item Effect Components ---
 	delete(w.ArchangelsEffects, e)
 	delete(w.QuicksilverEffects, e)
+	delete(w.TitansResolveEffects, e)
 	// Delete from other maps here...
 }
 
@@ -158,6 +161,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.QuicksilverEffects[e] = &c
 	case *effects.QuicksilverEffect:
 		w.QuicksilverEffects[e] = c
+	case effects.TitansResolveEffect:
+		w.TitansResolveEffects[e] = &c
+	case *effects.TitansResolveEffect:
+		w.TitansResolveEffects[e] = c
 	// Add cases for other component types here...
 	default:
 		// Use reflection to get the type name for the error message
@@ -217,6 +224,9 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(effects.QuicksilverEffect{}):
 		comp, ok := w.QuicksilverEffects[e]
 		return comp, ok
+	case reflect.TypeOf(effects.TitansResolveEffect{}):
+		comp, ok := w.TitansResolveEffects[e]
+		return comp, ok
 	// Add cases for other component types here...
 	default:
 		return nil, false
@@ -263,6 +273,8 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.ArchangelsEffects, e)
 	case reflect.TypeOf(effects.QuicksilverEffect{}):
 		delete(w.QuicksilverEffects, e)
+	case reflect.TypeOf(effects.TitansResolveEffect{}):
+		delete(w.TitansResolveEffects, e)
 	// Add cases for other component types here...
 	default:
 		log.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
@@ -364,6 +376,8 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.ArchangelsEffects)
 	case reflect.TypeOf(effects.QuicksilverEffect{}):
 		return len(w.QuicksilverEffects)
+	case reflect.TypeOf(effects.TitansResolveEffect{}):
+		return len(w.TitansResolveEffects)
 	// Add cases for other component types...
 	default:
 		return 0
@@ -448,6 +462,11 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(effects.QuicksilverEffect{}):
 		entities = make([]Entity, 0, len(w.QuicksilverEffects))
 		for e := range w.QuicksilverEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(effects.TitansResolveEffect{}):
+		entities = make([]Entity, 0, len(w.TitansResolveEffects))
+		for e := range w.TitansResolveEffects {
 			entities = append(entities, e)
 		}
 	// Add cases for other component types...
@@ -556,5 +575,11 @@ func (w *World) GetArchangelsEffect(e Entity) (*effects.ArchangelsEffect, bool) 
 // GetQuicksilverEffect returns the QuicksilverEffect component for an entity, type-safe.
 func (w *World) GetQuicksilverEffect(e Entity) (*effects.QuicksilverEffect, bool) {
 	comp, ok := w.QuicksilverEffects[e]
+	return comp, ok
+}
+
+// GetTitansResolveEffect returns the TitansResolveEffect component for an entity, type-safe.
+func (w *World) GetTitansResolveEffect(e Entity) (*effects.TitansResolveEffect, bool) {
+	comp, ok := w.TitansResolveEffects[e]
 	return comp, ok
 }

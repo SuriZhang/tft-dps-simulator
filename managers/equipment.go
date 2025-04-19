@@ -30,7 +30,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 	}
 
 	championInfo, ok := em.world.GetChampionInfo(champion)
-	if !ok {
+	if (!ok) {
 		// It's often better to ensure ChampionInfo exists before calling this
 		log.Printf("Warning: Champion %d has no ChampionInfo component when adding item %s", champion, itemApiName)
 		// Decide if this should be a hard error or just a log
@@ -100,6 +100,23 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 				// em.world.AddComponent(champion, effects.IsImmuneToCC{})
 			}
 		}
+			case data.TFT_Item_TitansResolve: // <<< NEW CASE
+				if _, exists := em.world.GetTitansResolveEffect(champion); !exists {
+					// Fetch values from item data, converting StackCap to int
+					maxStacks := item.Effects["StackCap"]
+					adPerStack := item.Effects["StackingAD"]
+					apPerStack := item.Effects["StackingSP"]
+					bonusResists := item.Effects["BonusResistsAtStackCap"]
+		
+					titansEffect := effects.NewTitansResolveEffect(maxStacks, adPerStack, apPerStack, bonusResists)
+					err := em.world.AddComponent(champion, titansEffect)
+					if err != nil {
+						log.Printf("Warning: Failed to add TitansResolveEffect component for champion %s: %v", championName, err)
+					} else {
+						log.Printf("Added TitansResolveEffect component to champion %s (Stacks: %d, AD/s: %.2f%%, AP/s: %.1f, Res@Max: %.0f)",
+							championName, int(maxStacks), adPerStack*100, apPerStack, bonusResists)
+					}
+				}
 		// Add cases for other dynamic items that need specific components
 	}
 
@@ -150,6 +167,37 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 			// TODO: Remove IsImmuneToCC marker component if implemented
 			// em.world.RemoveComponent(champion, reflect.TypeOf(effects.IsImmuneToCC{}))
 		}
+		case data.TFT_Item_TitansResolve: // <<< NEW CASE
+			if effect, exists := em.world.GetTitansResolveEffect(champion); exists {
+				log.Printf("Removing Titan's Resolve effect from champion %s.", championName)
+				// Get total bonuses provided by the effect *before* removing
+				totalBonusAD := effect.GetCurrentBonusAD()
+				totalBonusAP := effect.GetCurrentBonusAP()
+				totalBonusArmor := effect.GetBonusArmorAtMax()
+				totalBonusMR := effect.GetBonusMRAtMax()
+	
+				// Subtract these bonuses from the core components
+				if attackComp, ok := em.world.GetAttack(champion); ok && totalBonusAD > 0 {
+					attackComp.AddBonusPercentAD(-totalBonusAD)
+					log.Printf("  Reversed Titan's AD: -%.2f%%. Total Bonus AD now: %.2f%%", totalBonusAD*100, attackComp.GetBonusPercentAD()*100)
+				}
+				if spellComp, ok := em.world.GetSpell(champion); ok && totalBonusAP > 0 {
+					spellComp.AddBonusAP(-totalBonusAP)
+					log.Printf("  Reversed Titan's AP: -%.1f. Total Bonus AP now: %.1f", totalBonusAP, spellComp.GetBonusAP())
+				}
+				if healthComp, ok := em.world.GetHealth(champion); ok {
+					if (totalBonusArmor > 0) {
+					healthComp.AddBonusArmor(-totalBonusArmor)
+					}
+					if (totalBonusMR > 0) {
+						healthComp.AddBonusMR(-totalBonusMR)
+					}
+					log.Printf("  Reversed Titan's Resists: -%.0f Armor, -%.0f MR.", totalBonusArmor, totalBonusMR)
+				}
+	
+				// Remove the effect component itself
+				em.world.RemoveComponent(champion, reflect.TypeOf(effects.TitansResolveEffect{}))
+			}
 		// Add cases for other dynamic items
 	}
 
