@@ -30,7 +30,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 	}
 
 	championInfo, ok := em.world.GetChampionInfo(champion)
-	if (!ok) {
+	if !ok {
 		// It's often better to ensure ChampionInfo exists before calling this
 		log.Printf("Warning: Champion %d has no ChampionInfo component when adding item %s", champion, itemApiName)
 		// Decide if this should be a hard error or just a log
@@ -100,28 +100,42 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 				// em.world.AddComponent(champion, effects.IsImmuneToCC{})
 			}
 		}
-			case data.TFT_Item_TitansResolve: // <<< NEW CASE
-				if _, exists := em.world.GetTitansResolveEffect(champion); !exists {
-					// Fetch values from item data, converting StackCap to int
-					maxStacks := item.Effects["StackCap"]
-					adPerStack := item.Effects["StackingAD"]
-					apPerStack := item.Effects["StackingSP"]
-					bonusResists := item.Effects["BonusResistsAtStackCap"]
-		
-					titansEffect := effects.NewTitansResolveEffect(maxStacks, adPerStack, apPerStack, bonusResists)
-					err := em.world.AddComponent(champion, titansEffect)
-					if err != nil {
-						log.Printf("Warning: Failed to add TitansResolveEffect component for champion %s: %v", championName, err)
-					} else {
-						log.Printf("Added TitansResolveEffect component to champion %s (Stacks: %d, AD/s: %.2f%%, AP/s: %.1f, Res@Max: %.0f)",
-							championName, int(maxStacks), adPerStack*100, apPerStack, bonusResists)
-					}
-				}
-		// Add cases for other dynamic items that need specific components
+	case data.TFT_Item_TitansResolve:
+		if _, exists := em.world.GetTitansResolveEffect(champion); !exists {
+			// Fetch values from item data, converting StackCap to int
+			maxStacks := item.Effects["StackCap"]
+			adPerStack := item.Effects["StackingAD"]
+			apPerStack := item.Effects["StackingSP"]
+			bonusResists := item.Effects["BonusResistsAtStackCap"]
+
+			titansEffect := effects.NewTitansResolveEffect(maxStacks, adPerStack, apPerStack, bonusResists)
+			err := em.world.AddComponent(champion, titansEffect)
+			if err != nil {
+				log.Printf("Warning: Failed to add TitansResolveEffect component for champion %s: %v", championName, err)
+			} else {
+				log.Printf("Added TitansResolveEffect component to champion %s (Stacks: %d, AD/s: %.2f%%, AP/s: %.1f, Res@Max: %.0f)",
+					championName, int(maxStacks), adPerStack*100, apPerStack, bonusResists)
+			}
+		}
+	// Add cases for other dynamic items that need specific components
+	case data.TFT_Item_GuinsoosRageblade:
+		if _, exists := em.world.GetGuinsoosRagebladeEffect(champion); !exists {
+			// Fetch the correct value from item data
+			asPerStack := item.Effects["AttackSpeedPerStack"]
+			// Create the effect component
+			ragebladeEffect := effects.NewGuinsoosRagebaldeEffect(asPerStack / 100)
+			err := em.world.AddComponent(champion, ragebladeEffect)
+			if err != nil {
+				log.Printf("Warning: Failed to add GuinsoosRagebladeEffect component for champion %s: %v", championName, err)
+			} else {
+				log.Printf("Added GuinsoosRagebladeEffect component to champion %s (AS per Stack: %.1f%%)",
+					championName, asPerStack)
+			}
+		}
 	}
 
 	// Calculate the item stats and apply them to the champion, update ItemEffect component
-	err = em.calculateAndUpdateItemEffects(champion)
+	err = em.calculateAndUpdateStaticItemEffects(champion)
 	if err != nil {
 		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championName, err)
 	}
@@ -167,43 +181,61 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 			// TODO: Remove IsImmuneToCC marker component if implemented
 			// em.world.RemoveComponent(champion, reflect.TypeOf(effects.IsImmuneToCC{}))
 		}
-		case data.TFT_Item_TitansResolve: // <<< NEW CASE
-			if effect, exists := em.world.GetTitansResolveEffect(champion); exists {
-				log.Printf("Removing Titan's Resolve effect from champion %s.", championName)
-				// Get total bonuses provided by the effect *before* removing
-				totalBonusAD := effect.GetCurrentBonusAD()
-				totalBonusAP := effect.GetCurrentBonusAP()
-				totalBonusArmor := effect.GetBonusArmorAtMax()
-				totalBonusMR := effect.GetBonusMRAtMax()
-	
-				// Subtract these bonuses from the core components
-				if attackComp, ok := em.world.GetAttack(champion); ok && totalBonusAD > 0 {
-					attackComp.AddBonusPercentAD(-totalBonusAD)
-					log.Printf("  Reversed Titan's AD: -%.2f%%. Total Bonus AD now: %.2f%%", totalBonusAD*100, attackComp.GetBonusPercentAD()*100)
-				}
-				if spellComp, ok := em.world.GetSpell(champion); ok && totalBonusAP > 0 {
-					spellComp.AddBonusAP(-totalBonusAP)
-					log.Printf("  Reversed Titan's AP: -%.1f. Total Bonus AP now: %.1f", totalBonusAP, spellComp.GetBonusAP())
-				}
-				if healthComp, ok := em.world.GetHealth(champion); ok {
-					if (totalBonusArmor > 0) {
-					healthComp.AddBonusArmor(-totalBonusArmor)
-					}
-					if (totalBonusMR > 0) {
-						healthComp.AddBonusMR(-totalBonusMR)
-					}
-					log.Printf("  Reversed Titan's Resists: -%.0f Armor, -%.0f MR.", totalBonusArmor, totalBonusMR)
-				}
-	
-				// Remove the effect component itself
-				em.world.RemoveComponent(champion, reflect.TypeOf(effects.TitansResolveEffect{}))
+	case data.TFT_Item_TitansResolve: 
+		if effect, exists := em.world.GetTitansResolveEffect(champion); exists {
+			log.Printf("Removing Titan's Resolve effect from champion %s.", championName)
+			// Get total bonuses provided by the effect *before* removing
+			totalBonusAD := effect.GetCurrentBonusAD()
+			totalBonusAP := effect.GetCurrentBonusAP()
+			totalBonusArmor := effect.GetBonusArmorAtMax()
+			totalBonusMR := effect.GetBonusMRAtMax()
+
+			// Subtract these bonuses from the core components
+			if attackComp, ok := em.world.GetAttack(champion); ok && totalBonusAD > 0 {
+				attackComp.AddBonusPercentAD(-totalBonusAD)
+				log.Printf("  Reversed Titan's AD: -%.2f%%. Total Bonus AD now: %.2f%%", totalBonusAD*100, attackComp.GetBonusPercentAD()*100)
 			}
+			if spellComp, ok := em.world.GetSpell(champion); ok && totalBonusAP > 0 {
+				spellComp.AddBonusAP(-totalBonusAP)
+				log.Printf("  Reversed Titan's AP: -%.1f. Total Bonus AP now: %.1f", totalBonusAP, spellComp.GetBonusAP())
+			}
+			if healthComp, ok := em.world.GetHealth(champion); ok {
+				if totalBonusArmor > 0 {
+					healthComp.AddBonusArmor(-totalBonusArmor)
+				}
+				if totalBonusMR > 0 {
+					healthComp.AddBonusMR(-totalBonusMR)
+				}
+				log.Printf("  Reversed Titan's Resists: -%.0f Armor, -%.0f MR.", totalBonusArmor, totalBonusMR)
+			}
+		
+			// Remove the effect component itself
+			em.world.RemoveComponent(champion, reflect.TypeOf(effects.TitansResolveEffect{}))
+			log.Printf("Removed TitansResolveEffect component from champion %s", championName)
+		}
+	case data.TFT_Item_GuinsoosRageblade:
+		if effect, exists := em.world.GetGuinsoosRagebladeEffect(champion); exists {
+			log.Printf("Removing Guinsoo's Rageblade effect from champion %s.", championName)
+			// Get total bonus AS provided by the effect *before* removing
+			totalBonusAS := effect.GetCurrentBonusAS()
+
+			// Subtract this bonus from the core Attack component
+			if attackComp, ok := em.world.GetAttack(champion); ok && totalBonusAS > 0 {
+				// Use the existing AddBonusPercentAttackSpeed with a negative value
+				attackComp.AddBonusPercentAttackSpeed(-totalBonusAS)
+				log.Printf("  Reversed Guinsoo's AS: -%.2f%%. Total Bonus AS now: %.2f%%", totalBonusAS*100, attackComp.GetBonusPercentAttackSpeed()*100)
+			}
+		
+			// Remove the effect component itself
+			em.world.RemoveComponent(champion, reflect.TypeOf(effects.GuinsoosRagebladeEffect{}))
+			log.Printf("Removed GuinsoosRagebladeEffect component from champion %s", championName)
+		}
 		// Add cases for other dynamic items
 	}
 
 	// --- Update Static Item Effects ---
 	log.Printf("Updating static item effects for champion %s after removing %s.", championName, itemApiName)
-	err := em.calculateAndUpdateItemEffects(champion) // Recalculate remaining static passive stats
+	err := em.calculateAndUpdateStaticItemEffects(champion) // Recalculate remaining static passive stats
 	if err != nil {
 		log.Printf("Error updating static item effects for champion %s after removing %s: %v", championName, itemApiName, err)
 		// return fmt.Errorf("failed to calculate item effects for champion %s: %w", championName, err) // Decide if this should be fatal
@@ -212,9 +244,9 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 	return nil
 }
 
-// calculateAndUpdateItemEffects calculates the total passive stats from equipped items
+// calculateAndUpdateStaticItemEffects calculates the total passive stats from equipped items
 // and updates the champion's ItemStaticEffect component.
-func (em *EquipmentManager) calculateAndUpdateItemEffects(champion ecs.Entity) error {
+func (em *EquipmentManager) calculateAndUpdateStaticItemEffects(champion ecs.Entity) error {
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {
 		return fmt.Errorf("champion %d has no ChampionInfo component", champion)

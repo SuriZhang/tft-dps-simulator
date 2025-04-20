@@ -13,8 +13,8 @@ type Attack struct {
 	BaseAttackSpeed float64 // Champion's inherent AS value
 	BaseDamageAmp   float64 // Usually 0.0
 	BaseRange       float64 // Range is often less modified, keep simple for now
-	attackStartUp float64 // Attack start-up time 
-	attackRecovery float64 // Attack recovery time
+	baseAttackStartup float64 // Attack start-up time 
+	baseAttackRecovery float64 // Attack recovery time
 
 	// --- Aggregated Bonus Stats (Sum from Items, Traits, Temp Buffs, etc.) ---
 	BonusAD                 float64 // Flat AD bonuses
@@ -30,11 +30,15 @@ type Attack struct {
 	FinalRange       float64 // Calculated: BaseRange + BonusRange
 
 	// --- Current State ---
-	LastAttackTime float64 // For tracking attack cooldown
+	LastAttackTime float64 // Simulation time when the current/last attack cycle *started*
+	currentAttackStartup float64 
+	currentAttackRecovery float64 
+	attackStartupEndTime float64 // Simulation time when the current attack windup finishes (AttackLandedEvent time)
+	attackCycleEndTime float64 // Simulation time when the current attack cycle finishes (Ready for next cycle)
 }
 
 // NewAttack creates an Attack component
-func NewAttack(baseAd, baseAs, baseRange, attackStartUp, attackRecovery float64) *Attack {
+func NewAttack(baseAd, baseAs, baseRange, attackStartup, attackRecovery float64) *Attack {
 	if baseAd < 0 || math.IsNaN(baseAd) {
 		baseAd = 0
 	}
@@ -51,8 +55,8 @@ func NewAttack(baseAd, baseAs, baseRange, attackStartUp, attackRecovery float64)
 		BaseAttackSpeed: baseAs,
 		BaseRange:       baseRange,
 		BaseDamageAmp:   0.0,
-		attackStartUp: attackStartUp,
-		attackRecovery: attackRecovery,
+		baseAttackStartup: attackStartup,
+		baseAttackRecovery: attackRecovery,
 
 		// Bonus Stats (Initialize to 0)
 		BonusAD:                 0.0,
@@ -69,6 +73,10 @@ func NewAttack(baseAd, baseAs, baseRange, attackStartUp, attackRecovery float64)
 
 		// State
 		LastAttackTime: 0.0,
+		currentAttackStartup: attackStartup,
+		currentAttackRecovery: attackRecovery,
+		attackStartupEndTime: -1.0, // indicate no startup is active
+		attackCycleEndTime: -1.0, // should be set later based on final AS
 	}
 }
 
@@ -156,6 +164,42 @@ func (a *Attack) SetLastAttackTime(value float64) {
 	a.LastAttackTime = value
 }
 
+func (a *Attack) GetAttackStartupEndTime() float64 {
+	return a.attackStartupEndTime
+}
+
+// SetAttackStartupEndTime sets the timestamp of the upcoming attack.
+func (a *Attack) SetAttackStartupEndTime(value float64) {
+	a.attackStartupEndTime = value
+}
+func (a *Attack) GetAttackCycleEndTime() float64 {
+	return a.attackCycleEndTime
+}
+func (a *Attack) SetAttackCycleEndTime(value float64) {
+	a.attackCycleEndTime = value
+}
+
+// GetCurrentAttackStartup returns the scaled attack start-up time based on current attack speed.
+func (a *Attack) GetCurrentAttackStartup() float64 {
+    return a.currentAttackStartup
+}
+
+// GetCurrentAttackRecovery returns the scaled attack recovery time based on current attack speed.
+func (a *Attack) GetCurrentAttackRecovery() float64 {
+    return a.currentAttackRecovery
+}
+
+// SetCurrentAttackStartup sets the scaled attack start-up time. Called by StatCalculationSystem.
+func (a *Attack) SetCurrentAttackStartup(value float64) {
+    a.currentAttackStartup = value
+}
+
+// SetCurrentAttackRecovery sets the scaled attack recovery time. Called by StatCalculationSystem.
+func (a *Attack) SetCurrentAttackRecovery(value float64) {
+    a.currentAttackRecovery = value
+}
+
+
 // --- Getters for Base/Bonus stats (Optional: for debugging/systems) ---
 func (a *Attack) GetBaseAD() float64 {
 	return a.BaseAD
@@ -189,12 +233,29 @@ func (a *Attack) GetBaseRange() float64 {
 	return a.BaseRange
 }
 
+func (a *Attack) GetBaseAttackStartup() float64 {
+	return a.baseAttackStartup
+}
+
+func (a *Attack) SetBaseAttackStartup(value float64) {
+	a.baseAttackStartup = value
+}
+
+func (a *Attack) GetBaseAttackRecovery() float64 {
+	return a.baseAttackRecovery
+}
+
+func (a *Attack) SetBaseAttackRecovery(value float64) {
+	a.baseAttackRecovery = value
+}
+
 // String returns a multi-line string representation of the Attack component.
 func (a *Attack) String() string {
 	var sb strings.Builder // Use strings.Builder for efficiency
 
 	sb.WriteString(fmt.Sprintf("  BaseAD: %.2f, BonusAD: %.2f, BonusPercentAD: %.2f, FinalAD: %.2f\n", a.BaseAD, a.BonusAD, a.BonusPercentAD, a.FinalAD))
 	sb.WriteString(fmt.Sprintf("  BaseAS: %.3f, BonusASPercent: %.2f, FinalAS: %.3f\n", a.BaseAttackSpeed, a.BonusPercentAttackSpeed, a.FinalAttackSpeed))
+	sb.WriteString(fmt.Sprintf("  BaseAttackStartup: %.2f, BaseAttackRecovery: %.2f, CurrentAttackStartup: %.2f, CurrentAttackRecovery: %.2f\n", a.baseAttackStartup, a.baseAttackRecovery, a.currentAttackStartup, a.currentAttackRecovery))
 	sb.WriteString(fmt.Sprintf("  BaseDamageAmp: %.2f, BonusDamageAmp: %.2f, FinalDamageAmp: %.2f\n", a.BaseDamageAmp, a.BonusDamageAmp, a.FinalDamageAmp))
 	sb.WriteString(fmt.Sprintf("  Range: %.2f, BonusRange: %.2f, FinalRange: %.2f\n", a.BaseRange, a.BonusRange, a.FinalRange))
 	sb.WriteString(fmt.Sprintf("  LastAttackTime: %.2f", a.LastAttackTime))

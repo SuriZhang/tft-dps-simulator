@@ -83,7 +83,7 @@ var _ = Describe("DynamicEventItemSystem", func() {
 
 		// Verify initial state after adding item
 		Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(0))
-		Expect(playerTitansEffect.IsMaxStacks).To(BeFalse())
+		Expect(playerTitansEffect.IsMaxStacksReached()).To(BeFalse())
 
 		// Check dynamic bonuses are initially zero
 		Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", 0, 0.001))
@@ -137,7 +137,7 @@ var _ = Describe("DynamicEventItemSystem", func() {
 				mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks - 1))
-			Expect(playerTitansEffect.IsMaxStacks).To(BeFalse())
+			Expect(playerTitansEffect.IsMaxStacksReached()).To(BeFalse())
 			Expect(playerHealth.GetBonusArmor()).To(BeNumerically("~", 0.0, 0.001)) // Only static armor
 			Expect(playerHealth.GetBonusMR()).To(BeNumerically("~", 0, 0.001)) // No bonus MR yet
 
@@ -145,7 +145,7 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			mockEventBus.SimulateAndProcessEvent(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10})
 
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
-			Expect(playerTitansEffect.IsMaxStacks).To(BeTrue())
+			Expect(playerTitansEffect.IsMaxStacksReached()).To(BeTrue())
 			// Check final stats include static + max stack bonus
 			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", titansADPerStack*float64(titansMaxStacks), 0.001))
 			Expect(playerSpell.GetBonusAP()).To(BeNumerically("~", titansAPPerStack*float64(titansMaxStacks), 0.001))
@@ -228,15 +228,15 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(stacksToGain))
 
-			// Record stats BEFORE removal
-			adBefore := playerAttack.GetBonusPercentAD()
-			apBefore := playerSpell.GetBonusAP()
-			armorBefore := playerHealth.GetBonusArmor()
-			mrBefore := playerHealth.GetBonusMR()
+			// // Record stats BEFORE removal
+			// adBefore := playerAttack.GetBonusPercentAD()
+			// apBefore := playerSpell.GetBonusAP()
+			// armorBefore := playerHealth.GetBonusArmor()
+			// mrBefore := playerHealth.GetBonusMR()
 
-			// Calculate expected dynamic bonuses that were applied
-			expectedDynamicAD := titansADPerStack * float64(stacksToGain)
-			expectedDynamicAP := titansAPPerStack * float64(stacksToGain)
+			// // Calculate expected dynamic bonuses that were applied
+			// expectedDynamicAD := titansADPerStack * float64(stacksToGain)
+			// expectedDynamicAP := titansAPPerStack * float64(stacksToGain)
 
 			// Remove the item
 			err = equipmentManager.RemoveItemFromChampion(player, data.TFT_Item_TitansResolve)
@@ -247,10 +247,10 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			Expect(ok).To(BeFalse())
 
 			// Assert stats AFTER removal (should be original stats minus all bonuses from this item)
-			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", adBefore-expectedDynamicAD, 0.001), "Dynamic AD bonus should be removed")
-			Expect(playerSpell.GetBonusAP()).To(BeNumerically("~", apBefore-expectedDynamicAP, 0.001), "Dynamic AP bonus should be removed")
-			Expect(playerHealth.GetBonusArmor()).To(BeNumerically("~", armorBefore, 0.001), "Armor should be unchanged as no dynamic Armor was added")
-			Expect(playerHealth.GetBonusMR()).To(BeNumerically("~", mrBefore, 0.001), "MR should be unchanged as no dynamic MR was added") // MR was 0 before max stacks
+			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", 0.0, 0.001), "Dynamic AD bonus should be removed")
+			Expect(playerSpell.GetBonusAP()).To(BeNumerically("~", 0.0, 0.001), "Dynamic AP bonus should be removed")
+			Expect(playerHealth.GetBonusArmor()).To(BeNumerically("~", 0.0, 0.001), "Armor should be unchanged as no dynamic Armor was added")
+			Expect(playerHealth.GetBonusMR()).To(BeNumerically("~", 0.0, 0.001), "MR should be unchanged as no dynamic MR was added") // MR was 0 before max stacks
 		})
 
 		It("should remove all dynamic and static bonuses when the item is removed (at max stacks)", func() {
@@ -259,18 +259,18 @@ var _ = Describe("DynamicEventItemSystem", func() {
 				mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
-			Expect(playerTitansEffect.IsMaxStacks).To(BeTrue())
+			Expect(playerTitansEffect.IsMaxStacksReached()).To(BeTrue())
 
-			// Record stats BEFORE removal
-			adBefore := playerAttack.GetBonusPercentAD()
-			apBefore := playerSpell.GetBonusAP()
-			armorBefore := playerHealth.GetBonusArmor()
-			mrBefore := playerHealth.GetBonusMR()
+			// // Record stats BEFORE removal
+			// adBefore := playerAttack.GetBonusPercentAD()
+			// apBefore := playerSpell.GetBonusAP()
+			// armorBefore := playerHealth.GetBonusArmor()
+			// mrBefore := playerHealth.GetBonusMR()
 
-			// Calculate expected dynamic bonuses that were applied
-			expectedDynamicAD := titansADPerStack * float64(titansMaxStacks)
-			expectedDynamicAP := titansAPPerStack * float64(titansMaxStacks)
-			expectedDynamicResists := titansBonusResistsAtCap // This was added at max stacks
+			// // Calculate expected dynamic bonuses that were applied
+			// expectedDynamicAD := titansADPerStack * float64(titansMaxStacks)
+			// expectedDynamicAP := titansAPPerStack * float64(titansMaxStacks)
+			// expectedDynamicResists := titansBonusResistsAtCap // This was added at max stacks
 
 			// Remove the item
 			err = equipmentManager.RemoveItemFromChampion(player, data.TFT_Item_TitansResolve)
@@ -281,10 +281,10 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			Expect(ok).To(BeFalse())
 
 			// Assert stats AFTER removal (should be original stats minus all bonuses from this item)
-			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", adBefore-expectedDynamicAD, 0.001), "Dynamic AD bonus should be removed")
-			Expect(playerSpell.GetBonusAP()).To(BeNumerically("~", apBefore-expectedDynamicAP, 0.001), "Dynamic AP bonus should be removed")
-			Expect(playerHealth.GetBonusArmor()).To(BeNumerically("~", armorBefore-expectedDynamicResists, 0.001), "Dynamic Armor bonuses should be removed")
-			Expect(playerHealth.GetBonusMR()).To(BeNumerically("~", mrBefore-expectedDynamicResists, 0.001), "Dynamic MR bonus should be removed")
+			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", 0.0, 0.001), "Dynamic AD bonus should be removed")
+			Expect(playerSpell.GetBonusAP()).To(BeNumerically("~", 0.0, 0.001), "Dynamic AP bonus should be removed")
+			Expect(playerHealth.GetBonusArmor()).To(BeNumerically("~", 0.0, 0.001), "Dynamic Armor bonuses should be removed")
+			Expect(playerHealth.GetBonusMR()).To(BeNumerically("~", 0.0, 0.001), "Dynamic MR bonus should be removed")
 		})
 	})
 })

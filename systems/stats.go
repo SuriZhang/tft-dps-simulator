@@ -104,7 +104,7 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 	if !ok {
 		return // No attack component
 	}
-	
+
 	// AD: (Base + FlatBonus) * (1 + PercentBonus)
 	// normally there's no flat bonus AD in TFT, but there are exceptions
 	calculatedAD := (attack.GetBaseAD() + attack.GetBonusAD()) * (1 + attack.GetBonusPercentAD())
@@ -112,11 +112,41 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 
 	// Attack Speed: BaseAS * (1 + TotalBonusAS%)
 	calculatedAS := attack.GetBaseAttackSpeed() * (1 + attack.GetBonusPercentAttackSpeed())
-	team, _ := s.world.GetTeam(entity)
-	if team.ID == 0 {
-		log.Printf("Entity %d: Base AS: %.2f, Bonus AS: %.2f, Calculated AS: %.2f", entity, attack.GetBaseAttackSpeed(), attack.GetBonusPercentAttackSpeed(), calculatedAS)
-	}
+	// team, _ := s.world.GetTeam(entity)
+
+	log.Printf("Entity %d: Base AS: %.2f, Bonus AS: %.2f, Calculated AS: %.2f", entity, attack.GetBaseAttackSpeed(), attack.GetBonusPercentAttackSpeed(), calculatedAS)
+
 	attack.SetFinalAttackSpeed(calculatedAS)
+
+	// --- Calculate Scaled Attack Times ---
+	baseAS := attack.GetBaseAttackSpeed()
+	finalAS := attack.GetFinalAttackSpeed() // Use the value just calculated
+
+	// Use the internal base startup/recovery fields directly for calculation
+	baseStartup := attack.GetBaseAttackStartup()
+	baseRecovery := attack.GetBaseAttackRecovery()
+
+	if baseAS > 0 && finalAS > 0 && (baseStartup > 0 || baseRecovery > 0) { // Avoid division by zero and only scale if base times exist
+		scaleFactor := finalAS / baseAS
+		scaledStartup := baseStartup / scaleFactor
+		scaledRecovery := baseRecovery / scaleFactor
+
+		attack.SetCurrentAttackStartup(scaledStartup)
+		attack.SetCurrentAttackRecovery(scaledRecovery)
+		// Optional logging for debugging time scaling
+		log.Printf("Entity %d: Scaled Attack Times - Startup: %.3f, Recovery: %.3f (BaseStart: %.3f, BaseRec: %.3f, ScaleFactor: %.3f)", entity, scaledStartup, scaledRecovery, baseStartup, baseRecovery, scaleFactor)
+	} else {
+		// If base/final AS is zero, or base times are zero, scaling doesn't apply or isn't needed.
+		// Set current times directly to base times.
+		attack.SetCurrentAttackStartup(baseStartup)
+		attack.SetCurrentAttackRecovery(baseRecovery)
+		// Optional logging
+		if baseStartup == 0 && baseRecovery == 0 {
+			log.Printf("Entity %d: Using base attack times (both 0.0).", entity)
+		} else if baseAS <= 0 || finalAS <= 0 {
+			log.Printf("Entity %d: Using base attack times due to zero BaseAS or FinalAS.", entity)
+		}
+	}
 
 	// Damage Amp: Base + Bonus (Assuming additive for now)
 	calculatedDamageAmp := attack.GetBaseDamageAmp() + attack.GetBonusDamageAmp()

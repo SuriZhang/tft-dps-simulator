@@ -7,7 +7,7 @@ type Spell struct {
 	// Base stats (potentially loaded from champion data)
 	BaseAP   float64
 	ManaCost float64
-	castStartUp float64 // The time it takes to cast the spell. This is the time before the spell animation starts.
+	castStartup float64 // The time it takes to cast the spell. This is the time before the spell animation starts.
 	castRecovery float64 // the time after the spell animation finishes before the next spell can be cast.The period where the champion is locked out of auto-attacking is the cast animation time or cast lockout.
 	lockManaDuringCast bool // Whether the champion should gain mana during the cast animation
 
@@ -24,7 +24,7 @@ type Spell struct {
 	FinalAP              float64
 
 	// State
-	CurrentCooldown float64
+	CurrentRecovery float64
 	LastCastTime    float64 // For tracking cooldowns
 }
 
@@ -37,12 +37,12 @@ func NewSpell(name, icon string, manaCost, castStartUp, castRecovery float64) *S
 		BaseAP:               100.0, // default base AP in TFT
 		ManaCost:             manaCost,
 		lockManaDuringCast:   true, // default to lock mana during cast
-		castStartUp: castStartUp,
+		castStartup: castStartUp,
 		castRecovery:             castRecovery,
 		BonusAP:              0.0,
 
 		FinalAP:              100.0, // init to base AP
-		CurrentCooldown:      0.0,
+		CurrentRecovery:      0.0,
 	}
 }
 
@@ -79,7 +79,7 @@ func (s *Spell) SetManaCost(value float64) {
 
 // GetCastStartUp returns the cast start-up time.
 func (s *Spell) GetCastStartUp() float64 {
-	return s.castStartUp
+	return s.castStartup
 }
 
 // GetCastRecovery returns the base cooldown.
@@ -87,8 +87,8 @@ func (s *Spell) GetCastRecovery() float64 {
 	return s.castRecovery
 }
 
-// SetCooldown sets the base cooldown.
-func (s *Spell) SetCooldown(value float64) {
+// SetRecovery sets the base cooldown.
+func (s *Spell) SetRecovery(value float64) {
 	s.castRecovery = value
 }
 
@@ -114,14 +114,14 @@ func (s *Spell) SetFinalAP(value float64) {
 	s.FinalAP = value
 }
 
-// GetCurrentCooldown returns the current cooldown remaining.
-func (s *Spell) GetCurrentCooldown() float64 {
-	return s.CurrentCooldown
+// GetCurrentRecovery returns the current cooldown remaining.
+func (s *Spell) GetCurrentRecovery() float64 {
+	return s.CurrentRecovery
 }
 
-// SetCurrentCooldown sets the current cooldown remaining.
-func (s *Spell) SetCurrentCooldown(value float64) {
-	s.CurrentCooldown = value
+// SetCurrentRecovery sets the current cooldown remaining.
+func (s *Spell) SetCurrentRecovery(value float64) {
+	s.CurrentRecovery = value
 }
 
 func (s *Spell) AddBonusAP(value float64) {

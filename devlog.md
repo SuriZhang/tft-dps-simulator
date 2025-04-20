@@ -166,3 +166,29 @@ DONE Today:
 TODO:
 - [ ] implement Adaptive Helmet
 - [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
+
+## 20250420
+Goal: implement Guinsoo's Rageblade
+
+Added attack and cast startup and recovery fields, though we dont have data yet, all default to 0. This may cause some logic refinement but let's move on for now.
+
+Now auto attack is split up into startup + recovery periods
+
+Autoattack system logic:
+Initialization: An entity starts with LastAttackTime = 0.0 and AttackStartupEndTime = -1.0. AttackCycleEndTime is also often initialized to 0.0 or -1.0.
+First Attack Scheduling (Lines 72-81):
+This block if attack.GetLastAttackTime() == 0.0 && attack.GetAttackStartupEndTime() == -1.0 is designed to run only once per entity, right at the beginning before any attacks have happened.
+It calculates totalCycleTime = 1.0 / attack.GetFinalAttackSpeed().
+It sets firstLandingTime = totalCycleTime. This variable represents the desired time for the first attack to land, aligning with your requirement (e.g., 2.0s for AS=0.5).
+Crucially, line 75: attack.SetAttackStartupEndTime(firstLandingTime + attack.GetCurrentAttackStartup()) schedules the actual landing time. This is where the confusion lies. It takes the desired landing time (firstLandingTime) and adds the attack's startup time again.
+The log message then prints firstLandingTime, which might be misleading because the actual scheduled time stored in AttackStartupEndTime is later.
+Subsequent Attack Cycle Start (Lines 85-113):
+This block if s.currentTime >= attack.GetAttackCycleEndTime() runs when the entity is ready to start a new attack cycle (meaning the previous one has fully completed). This won't run for the very first attack because AttackCycleEndTime is initially 0 or -1.
+It calculates the totalCycleTime and the startupTime for this specific cycle.
+It schedules the landing time for this attack: attack.SetAttackStartupEndTime(s.currentTime + startupTime). This means the attack lands startupTime seconds after the current cycle begins.
+It schedules when the next cycle can begin: attack.SetAttackCycleEndTime(s.currentTime + totalCycleTime).
+It records the time this cycle started: attack.SetLastAttackTime(s.currentTime).
+Attack Landing Check (Lines 116 onwards):
+This block if attack.GetAttackStartupEndTime() != -1.0 && s.currentTime >= attack.GetAttackStartupEndTime() checks if the current simulation time has reached or passed the scheduled landing time (AttackStartupEndTime).
+If it has, it finds a target, checks range, and enqueues the AttackLandedEvent.
+It then resets attack.SetAttackStartupEndTime(-1.0) to mark the landing as processed.

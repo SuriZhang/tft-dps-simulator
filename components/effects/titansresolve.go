@@ -12,7 +12,8 @@ type TitansResolveEffect struct {
     apPerStack    float64
     bonusArmor  float64 // Armor and MR granted at max stacks
 	bonusMR    float64 // MR granted at max stacks (if applicable)
-    IsMaxStacks   bool    // Flag to track if max stacks reached
+    isMaxStacks   bool    // Flag to track if max stacks reached
+	bonusResistsApplied bool // Flag to track if bonus resists were applied
 }
 
 // NewTitansResolveEffect creates a new TitansResolveEffect component.
@@ -24,19 +25,20 @@ func NewTitansResolveEffect(maxStacks float64, adPerStack, apPerStack, bonusResi
         apPerStack:    apPerStack,
         bonusArmor:  bonusResists,
 		bonusMR:   bonusResists, 
-        IsMaxStacks:   false,
+        isMaxStacks:   false,
+		bonusResistsApplied: false,
     }
 }
 
-// AddStack increments the stack count by 1 each time, up to the maximum.
+// IncrementStacks increments the stack count by 1 each time, up to the maximum.
 // Returns true if the stack count changed, false otherwise.
 // Also returns true if max stacks were reached *this time*.
-func (t *TitansResolveEffect) AddStack() (stackAdded bool, reachedMax bool) {
+func (t *TitansResolveEffect) IncrementStacks() (stackAdded bool, reachedMax bool) {
     if t.currentStacks < t.maxStacks {
         t.currentStacks ++
         stackAdded = true
-        if t.currentStacks == t.maxStacks && !t.IsMaxStacks {
-            t.IsMaxStacks = true
+        if t.currentStacks == t.maxStacks && !t.isMaxStacks {
+            t.isMaxStacks = true
             reachedMax = true
         }
         return stackAdded, reachedMax
@@ -56,7 +58,7 @@ func (t *TitansResolveEffect) GetCurrentBonusAP() float64 {
 
 // GetCurrentBonusArmor returns the bonus Armor if at max stacks.
 func (t *TitansResolveEffect) GetBonusArmorAtMax() float64 {
-    if t.IsMaxStacks {
+    if t.isMaxStacks {
         return t.bonusArmor
     }
     return 0.0
@@ -64,7 +66,7 @@ func (t *TitansResolveEffect) GetBonusArmorAtMax() float64 {
 
 // GetCurrentBonusMR returns the bonus Magic Resist if at max stacks.
 func (t *TitansResolveEffect) GetBonusMRAtMax() float64 {
-	if t.IsMaxStacks {
+	if t.isMaxStacks {
 		return t.bonusMR
 	}
 	return 0.0
@@ -85,4 +87,18 @@ func (t *TitansResolveEffect) GetCurrentStacks() int {
 
 func (t *TitansResolveEffect) GetMaxStacks() int {
 	return t.maxStacks
+}
+
+func (t *TitansResolveEffect) IsMaxStacksReached() bool {
+	return t.isMaxStacks
+}
+
+func (t *TitansResolveEffect) IsBonusResistsApplied() bool {
+	return t.bonusResistsApplied
+}
+
+func (t *TitansResolveEffect) ResetStacks() {
+	t.currentStacks = 0
+	t.isMaxStacks = false
+	t.bonusResistsApplied = false
 }

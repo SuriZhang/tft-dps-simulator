@@ -44,67 +44,130 @@ func (s *AutoAttackSystem) TriggerAutoAttack(deltaTime float64) {
 		health, okHealth := s.world.GetHealth(attacker)
 
 		if !okAtk || !okTeam || !okPos || !okHealth || health.CurrentHP <= 0 {
-			continue // Skip if missing components, dead, or not on player team
+			continue // Skip if missing components or dead
 		}
 
-		if attack.GetFinalAttackSpeed() <= 0 {
-			log.Printf("Attacker %d has 0 AS, skipping.\n", attacker)
+		finalAS := attack.GetFinalAttackSpeed()
+		if finalAS <= 0 {
+			// log.Printf("Attacker %d has 0 AS, skipping.\n", attacker) // Reduce log spam
 			continue
 		}
 
-		// --- Check Spell Lockout ---
+		// --- Check Post Spell Cast Recovery ---
 		if spell, okSpell := s.world.GetSpell(attacker); okSpell {
-			if spell.GetCurrentCooldown() > 0 {
-				// Entity is currently casting/locked out by spell, skip attack
-				log.Printf("Attacker %d is locked out by spell cooldown (%.2f).\n", attacker, spell.GetCurrentCooldown())
+			if spell.GetCurrentRecovery() > 0 {
+				attack.SetAttackStartupEndTime(-1.0) // Reset attack schedule
+				log.Printf("Attacker %d is locked out by spell cast recovery (%.2f).\n", attacker, spell.GetCurrentRecovery())
 				continue
 			}
 		}
-		// --- End Check Spell Lockout ---
 
-		target, foundTarget := utils.FindNearestEnemy(s.world, attacker, team.ID)
-		if !foundTarget {
-			log.Printf("Attacker %d found no target.\n", attacker)
-			continue // No target found for this attacker, move to the next
-		}
 
-		targetPos, okTargetPos := s.world.GetPosition(target)
-		if !okTargetPos {
-			log.Printf("Attacker %d found target %d with no position.\n", attacker, target)
-			continue // Target has no position, cannot calculate range
-		}
+		// --- Simplified Attack Scheduling Logic ---
+		// Check for scheduling the VERY FIRST attack
+        // Use LastAttackTime == 0.0 and AttackStartupEndTime == -1.0 as the trigger
+        if attack.GetLastAttackTime() == 0.0 && attack.GetAttackStartupEndTime() == -1.0 {
+            // This block runs only if *not* locked out this tick
+            finalAS := attack.GetFinalAttackSpeed()
+            if finalAS <= 0 {
+                log.Printf("Attacker %d has 0 AS when trying to schedule first attack.", attacker)
+                continue
+            }
+            totalCycleTime := 1.0 / finalAS
 
-		dx := targetPos.GetX() - pos.GetX()
-		dy := targetPos.GetY() - pos.GetY()
-		distSq := dx*dx + dy*dy
-		attackRange := attack.GetFinalRange()
-		rangeSq := attackRange * attackRange
+            // --- Determine Effective Start Time ---
+            var effectiveStartTime float64
+            // If current time is just the first delta, assume true start at t=0
+            // Otherwise, assume a state (like lockout) just ended, so the cycle *should* have started at the beginning of this tick.
+            if s.currentTime <= deltaTime { // Check if it's the first time TriggerAutoAttack runs *without lockout*
+                effectiveStartTime = 0.0
+            } else {
+                // Assume lockout/other state ended just before this tick started
+                effectiveStartTime = s.currentTime - deltaTime
+            }
 
-		if distSq > rangeSq {
-			log.Printf("Attacker %d target %d is out of range (DistSq: %.2f, RangeSq: %.2f).\n", attacker, target, distSq, rangeSq)
-			continue // Target found, but out of range
-		}
+            firstLandingTime := effectiveStartTime + totalCycleTime
 
-		attackDelay := 1.0 / attack.GetFinalAttackSpeed()
-		timeSinceLastAttack := s.currentTime - attack.GetLastAttackTime()
+            attack.SetAttackStartupEndTime(firstLandingTime) // Schedule the first landing
+            attack.SetAttackCycleEndTime(firstLandingTime) // Next cycle can start checking after this landing
 
-		if timeSinceLastAttack >= attackDelay {
-			// --- Enqueue AttackLandedEvent ---
-			// Calculate base damage (before reductions, crit, etc.)
-			baseDamage := attack.GetFinalAD()
+            log.Printf("AutoAttackSystem: Attacker %d scheduling FIRST attack to land at %.3f (effective start: %.3f, current time: %.3f).", attacker, firstLandingTime, effectiveStartTime, s.currentTime)
+        }
 
-			// Create and enqueue the event
-			attackEvent := eventsys.AttackLandedEvent{
-				Source:     attacker,
-				Target:     target,
-				BaseDamage: baseDamage,
-				Timestamp:  s.currentTime, // Include timestamp for potential future use
+        // Check for LANDING an attack and scheduling the NEXT one
+        scheduledLandingTime := attack.GetAttackStartupEndTime()
+
+		if scheduledLandingTime != -1.0 && s.currentTime >= scheduledLandingTime {
+			log.Printf("DEBUG: currentTime=%.3f, scheduledLandingTime=%.3f\n", s.currentTime, scheduledLandingTime)
+			target, foundTarget := utils.FindNearestEnemy(s.world, attacker, team.ID)
+
+			// *** RESERVED INTERRUPTION CHECK FOR CC DURING STARTUP***
+            // if s.world.IsAttackPrevented(attacker) { // Assumes this function exists in your world/ECS
+            //     log.Printf("AutoAttackSystem: Attacker %d attack scheduled for %.3f CANCELED due to interruption (e.g., CC) at time %.3f.", attacker, scheduledLandingTime, s.currentTime)
+
+            //     // Reset the attack state to cancel the current attack and allow rescheduling after CC
+            //     attack.SetAttackStartupEndTime(-1.0) // Mark scheduled attack as processed/canceled
+            //     attack.SetAttackCycleEndTime(s.currentTime) // Allow starting a new cycle check immediately after CC wears off
+            //     // LastAttackTime remains unchanged, as the attack didn't land.
+
+            //     continue // Skip the rest of the landing logic for this attacker this tick
+            // }
+            // // *** END INTERRUPTION CHECK ***
+
+			if foundTarget {
+				targetPos, okTargetPos := s.world.GetPosition(target)
+				if okTargetPos {
+					dx := targetPos.GetX() - pos.GetX()
+					dy := targetPos.GetY() - pos.GetY()
+					distSq := dx*dx + dy*dy
+					attackRange := attack.GetFinalRange()
+					rangeSq := attackRange * attackRange
+
+					if distSq <= rangeSq {
+						// Target in range, enqueue event
+						log.Printf("AutoAttackSystem: Attacker %d LANDED attack on %d at %.3f.", attacker, target, scheduledLandingTime)
+						attackEvent := eventsys.AttackLandedEvent{
+							Source:     attacker,
+							Target:     target,
+							BaseDamage: attack.GetFinalAD(), // Use current AD at time of landing
+							Timestamp:  scheduledLandingTime,
+						}
+						s.eventBus.Enqueue(attackEvent)
+
+						// Schedule the NEXT attack
+						totalCycleTime := 1.0 / finalAS // Recalculate in case AS changed
+						nextLandingTime := scheduledLandingTime + totalCycleTime
+
+						attack.SetAttackStartupEndTime(nextLandingTime) // Schedule the *next* landing
+						attack.SetLastAttackTime(scheduledLandingTime) // Record when the *last* attack landed
+						attack.SetAttackCycleEndTime(nextLandingTime) // Update cycle end time
+
+						log.Printf("AutoAttackSystem: Attacker %d scheduled next attack to land at %.3f.", attacker, nextLandingTime)
+
+					} else {
+						// Target found but out of range at landing time
+						log.Printf("AutoAttackSystem: Attacker %d attack scheduled for %.3f missed target %d (out of range).", attacker, scheduledLandingTime, target)
+						// Don't schedule next attack yet, wait for target to come in range?
+						// For now, let's reset to allow rescheduling on next opportunity (might need refinement)
+						attack.SetAttackStartupEndTime(-1.0) // Reset schedule
+						attack.SetLastAttackTime(s.currentTime) // Update last attempt time
+						attack.SetAttackCycleEndTime(s.currentTime) // Allow immediate re-check
+					}
+				} else {
+					// Target has no position? Should not happen if FindNearestEnemy worked.
+					log.Printf("AutoAttackSystem: Attacker %d attack scheduled for %.3f missed target %d (no position).", attacker, scheduledLandingTime, target)
+					attack.SetAttackStartupEndTime(-1.0)
+					attack.SetLastAttackTime(s.currentTime)
+					attack.SetAttackCycleEndTime(s.currentTime)
+				}
+			} else {
+				// No target found at landing time
+				log.Printf("AutoAttackSystem: Attacker %d attack scheduled for %.3f missed (no target found).", attacker, scheduledLandingTime)
+				attack.SetAttackStartupEndTime(-1.0)
+				attack.SetLastAttackTime(s.currentTime)
+				attack.SetAttackCycleEndTime(s.currentTime)
 			}
-			s.eventBus.Enqueue(attackEvent)
-			// Note: LastAttackTime is NOT updated here. It will be updated by a handler
-			// reacting to AttackLandedEvent to ensure the attack actually resolves.
-			// --- End Enqueue ---
-		}
+		} // End check for landing attack
 	}
 }
 

@@ -27,9 +27,10 @@ func NewDynamicEventItemSystem(world *ecs.World, bus eventsys.EventBus) *Dynamic
 func (s *DynamicEventItemSystem) HandleEvent(event interface{}) {
     switch evt := event.(type) {
     // Use AttackLandedEvent
-    case eventsys.AttackLandedEvent: // <<< CORRECTED EVENT TYPE
+    case eventsys.AttackLandedEvent: 
         // Triggered when the entity *attacks* and hits
         s.handleTitansTrigger(evt.Source)
+		s.handleRagebladeTrigger(evt.Source) // Handle Rageblade trigger
     case eventsys.DamageAppliedEvent:
         // Triggered when the entity *takes damage*
         s.handleTitansTrigger(evt.Target)
@@ -51,7 +52,7 @@ func (s *DynamicEventItemSystem) handleTitansTrigger(entity ecs.Entity) {
     }
 
     // Try to add a stack
-    stackAdded, reachedMax := effect.AddStack()
+    stackAdded, reachedMax := effect.IncrementStacks()
 
     if stackAdded {
         log.Printf("Entity %d Titan's Resolve: Stack added (%d/%d).", entity, effect.GetCurrentStacks(), effect.GetMaxStacks())
@@ -71,7 +72,7 @@ func (s *DynamicEventItemSystem) handleTitansTrigger(entity ecs.Entity) {
         }
 
         // Apply resists bonus ONLY if max stacks were reached *this time*
-        if reachedMax {
+        if reachedMax && !effect.IsBonusResistsApplied() {
             if healthComp, ok := s.world.GetHealth(entity); ok {
                 bonusMR := effect.GetBonusMRAtMax() // MR gained at max stacks
 				bonusArmor := effect.GetBonusArmorAtMax() // Armor gained at max stacks
@@ -80,6 +81,73 @@ func (s *DynamicEventItemSystem) handleTitansTrigger(entity ecs.Entity) {
                 log.Printf("  Reached max stacks! Applied bonus resists: +%.0f Armor, +%.0f MR.", bonusArmor, bonusMR)
             }
         }
+    }
+}
+
+// handleRagebladeTrigger checks if an entity has Guinsoo's Rageblade and processes stack gain.
+func (s *DynamicEventItemSystem) handleRagebladeTrigger(entity ecs.Entity) {
+    // Check if the attacker has the GuinsoosRagebladeEffect component
+    guinsosEffect, hasGuinsos := s.world.GetGuinsoosRagebladeEffect(entity)
+    if !hasGuinsos {
+        return // Entity doesn't have the effect component
+    }
+
+    // Check if the attacker has an Attack component
+    attackComp, hasAttack := s.world.GetAttack(entity)
+    if !hasAttack {
+        log.Printf("Warning: Entity %d in handleRagebladeTrigger lacks Attack component", entity)
+        return
+    }
+
+    // Check if the attacker has an Equipment component to count Rageblades
+    equipment, hasEquipment := s.world.GetEquipment(entity)
+    if !hasEquipment {
+        log.Printf("Warning: Entity %d in handleRagebladeTrigger lacks Equipment component", entity)
+        return // Cannot determine number of Rageblades
+    }
+
+    // --- Stacking Logic ---
+    numRageblades := equipment.GetItemCount(data.TFT_Item_GuinsoosRageblade)
+    if numRageblades == 0 {
+        // Safeguard: Component exists but no items? Should be removed by EquipmentManager.
+        log.Printf("Warning: Entity %d has GuinsoosRagebladeEffect but 0 Rageblades in equipment?", entity)
+        // Optionally remove the component here if EquipmentManager failed?
+        // s.world.RemoveComponent(entity, reflect.TypeOf(effects.GuinsoosRagebladeEffect{}))
+        return
+    }
+
+    // Get the bonus AS *before* adding stacks for this hit
+    bonusASBefore := guinsosEffect.GetCurrentBonusAS()
+
+    // Increment stacks (potentially multiple times if multiple Rageblades)
+    stacksBefore := guinsosEffect.GetCurrentStacks() // Store stacks before incrementing
+    for i := 0; i < numRageblades; i++ {
+        guinsosEffect.IncrementStacks() // Use the method from the effect component
+		log.Printf("Entity %d Guinsoo's Rageblade: stack incremented. Current stacks: %d", entity, guinsosEffect.GetCurrentStacks())
+    }
+
+    // Get the bonus AS *after* adding stacks
+    bonusASAfter := guinsosEffect.GetCurrentBonusAS()
+
+    // Calculate the *difference* in bonus AS to apply to the Attack component
+    deltaBonusAS := bonusASAfter - bonusASBefore
+
+    if deltaBonusAS > 0 {
+        // Apply the *change* in bonus AS to the Attack component's bonus field
+        attackComp.AddBonusPercentAttackSpeed(deltaBonusAS)
+
+        // Log the stacking
+        log.Printf("Guinsoo's Rageblade: Entity %d (%d Rageblades) attacked. Stacks: %d -> %d. Bonus AS: +%.2f%% (Total Bonus: %.2f%%)",
+            entity,
+            numRageblades,
+            stacksBefore,                         // Stacks before this hit
+            guinsosEffect.GetCurrentStacks(),     // Stacks after this hit
+            deltaBonusAS*100,                     // Delta percentage
+            attackComp.GetBonusPercentAttackSpeed()*100) // Total bonus AS on Attack comp
+
+        // IMPORTANT: Ensure StatCalculationSystem runs after this event handler
+        // to update FinalAttackSpeed based on the new BonusPercentAttackSpeed.
+        // Example: s.world.MarkForStatUpdate(entity)
     }
 }
 

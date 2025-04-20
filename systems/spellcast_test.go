@@ -81,7 +81,7 @@ var _ = Describe("SpellCastSystem", func() {
 
         // --- Reset State ---
         playerMana.SetCurrentMana(spellManaCost) // Default to having enough mana
-        playerSpell.SetCurrentCooldown(0)        // Default to being off cooldown
+        playerSpell.SetCurrentRecovery(0)        // Default to being off recovery
     })
 
     Context("when player has insufficient mana", func() {
@@ -97,44 +97,44 @@ var _ = Describe("SpellCastSystem", func() {
         })
     })
 
-    Context("when spell is on cooldown", func() {
-        var initialCooldown float64 = 1.0
+    Context("when spell is on recovery", func() {
+        var initialRecovery float64 = 1.0
         BeforeEach(func() {
             playerMana.SetCurrentMana(spellMaxMana) // Ensure enough mana
-            playerSpell.SetCurrentCooldown(initialCooldown)
+            playerSpell.SetCurrentRecovery(initialRecovery)
         })
 
-        It("should reduce cooldown over time", func() {
+        It("should reduce recovery over time", func() {
             dt := 0.1
             spellCastSystem.SetCurrentTime(dt)
             spellCastSystem.TriggerSpellCast(dt) // Use TriggerSpellCast
-            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", initialCooldown-dt, 0.001))
+            Expect(playerSpell.GetCurrentRecovery()).To(BeNumerically("~", initialRecovery-dt, 0.001))
             Expect(eventBus.EnqueuedEvents).To(BeEmpty()) // Should not cast yet
 
             spellCastSystem.SetCurrentTime(dt * 2)
             spellCastSystem.TriggerSpellCast(dt) // dt is delta, not absolute time
-            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", initialCooldown-dt*2, 0.001))
+            Expect(playerSpell.GetCurrentRecovery()).To(BeNumerically("~", initialRecovery-dt*2, 0.001))
             Expect(eventBus.EnqueuedEvents).To(BeEmpty())
         })
 
-        It("should not enqueue a SpellCastEvent while cooldown > 0", func() {
+        It("should not enqueue a SpellCastEvent while recovery > 0", func() {
             dt := 0.1
             currentTime := 0.0
-            // Simulate just before cooldown ends
-            for t := 0.0; t < initialCooldown-dt/2; t += dt {
+            // Simulate just before recovery ends
+            for t := 0.0; t < initialRecovery-dt/2; t += dt {
                 spellCastSystem.SetCurrentTime(currentTime + dt)
                 spellCastSystem.TriggerSpellCast(dt) // Use TriggerSpellCast
                 currentTime += dt
-                Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "Should not cast while cooldown is active at time %.2f", currentTime)
-                Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically(">", 0))
+                Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "Should not cast while recovery is active at time %.2f", currentTime)
+                Expect(playerSpell.GetCurrentRecovery()).To(BeNumerically(">", 0))
             }
         })
     })
 
-    Context("when player has mana and spell is off cooldown", func() {
+    Context("when player has mana and spell is off recovery", func() {
         BeforeEach(func() {
             playerMana.SetCurrentMana(spellMaxMana) // Ensure plenty of mana
-            playerSpell.SetCurrentCooldown(0)
+            playerSpell.SetCurrentRecovery(0)
         })
 
         It("should enqueue a SpellCastEvent and update state", func() {
@@ -155,14 +155,14 @@ var _ = Describe("SpellCastSystem", func() {
 
             // Check State Update
             Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", 0, 0.001), "Mana should be reduced by cost")
-            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", castRecovery, 0.001), "Cooldown should be reset")
+            Expect(playerSpell.GetCurrentRecovery()).To(BeNumerically("~", castRecovery, 0.001), "Recovery should be reset")
         })
     })
 
     Context("when no valid target exists", func() {
         BeforeEach(func() {
             playerMana.SetCurrentMana(spellMaxMana)
-            playerSpell.SetCurrentCooldown(0)
+            playerSpell.SetCurrentRecovery(0)
             targetHealth.SetCurrentHP(0) // Make target dead
         })
 
@@ -176,7 +176,7 @@ var _ = Describe("SpellCastSystem", func() {
             Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
             // Check state was NOT updated
             Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", 0, 0.001))
-            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", castRecovery, 0.001))
+            Expect(playerSpell.GetCurrentRecovery()).To(BeNumerically("~", castRecovery, 0.001))
         })
     })
 

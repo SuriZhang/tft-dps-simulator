@@ -118,18 +118,10 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
 	}
 
 	// Get attacker info
-	attackerInfo, _ := s.world.GetChampionInfo(attacker)
 	attackerName := fmt.Sprintf("Entity %d", attacker)
-	if attackerInfo != nil {
-		attackerName = attackerInfo.Name
-	}
 
 	// Get target info
-	targetInfo, _ := s.world.GetChampionInfo(target)
 	targetName := fmt.Sprintf("Entity %d", target)
-	if targetInfo != nil {
-		targetName = targetInfo.Name
-	}
 
 	// Apply damage
 	initialHP := targetHealth.CurrentHP

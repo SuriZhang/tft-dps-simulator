@@ -33,9 +33,9 @@ func (s *SpellCastSystem) TriggerSpellCast(deltaTime float64) {
     entitiesWithSpells := s.world.GetEntitiesWithComponents(spellType)
     for _, entity := range entitiesWithSpells {
         if spell, ok := s.world.GetSpell(entity); ok {
-            if spell.GetCurrentCooldown() > 0 {
-                newCooldown := math.Max(0, spell.GetCurrentCooldown()-deltaTime)
-                spell.SetCurrentCooldown(newCooldown)
+            if spell.GetCurrentRecovery() > 0 {
+                newCooldown := math.Max(0, spell.GetCurrentRecovery()-deltaTime)
+                spell.SetCurrentRecovery(newCooldown)
             }
         }
     }
@@ -58,7 +58,7 @@ func (s *SpellCastSystem) TriggerSpellCast(deltaTime float64) {
         }
 
         // Check conditions: Off cooldown and enough mana
-        if spell.GetCurrentCooldown() <= 0 && mana.GetCurrentMana() >= spell.GetManaCost() {
+        if spell.GetCurrentRecovery() <= 0 && mana.GetCurrentMana() >= spell.GetManaCost() {
 
             // --- Find Target using Utility Function ---
             target, foundTarget := utils.FindNearestEnemy(s.world, caster, team.ID)
@@ -73,7 +73,7 @@ func (s *SpellCastSystem) TriggerSpellCast(deltaTime float64) {
 				target = 0 // Set target to 0 if no valid target is found
             }
             mana.SetCurrentMana(mana.GetCurrentMana() - spell.GetManaCost())
-            spell.SetCurrentCooldown(spell.GetCastRecovery()) // Reset cooldown
+            spell.SetCurrentRecovery(spell.GetCastRecovery()) // Reset cooldown
 
             // Enqueue Event
             castEvent := eventsys.SpellCastEvent{

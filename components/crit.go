@@ -47,9 +47,22 @@ func NewCrit(critChance, critMultiplier float64) *Crit {
 }
 
 // --- Getters for Base ---
-func (c *Crit) GetBaseCritChance() float64     { return c.BaseCritChance }
-func (c *Crit) GetBaseCritMultiplier() float64 { return c.BaseCritMultiplier }
-
+func (c *Crit) GetBaseCritChance() float64     { 
+	return c.BaseCritChance }
+func (c *Crit) GetBaseCritMultiplier() float64 { 
+	return c.BaseCritMultiplier }
+func (c *Crit) SetBaseCritChance(value float64) {
+	if math.IsNaN(value) || value < 0 {
+		value = 0.0
+	}
+	c.BaseCritChance = value
+}
+func (c *Crit) SetBaseCritMultiplier(value float64) {
+	if math.IsNaN(value) || value < 0 {
+		value = 0.0
+	}
+	c.BaseCritMultiplier = value
+}
 // --- Setters/Adders for Bonus ---
 func (c *Crit) AddBonusCritChance(amount float64) {
 	c.BonusCritChance += amount
