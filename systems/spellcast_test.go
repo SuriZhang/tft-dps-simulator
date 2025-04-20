@@ -28,7 +28,8 @@ var _ = Describe("SpellCastSystem", func() {
         spellName     string  = "BlueGolemSpell"
         spellManaCost float64 = 40.0
         spellMaxMana  float64 = 80.0
-        spellCooldown float64 = 1.5 // Cooldown used as lockout duration
+		castStartUp float64 = 0.0 // cast start up time
+        castRecovery float64 = 1.5 // cast recovery used as lockout duration
     )
 
     BeforeEach(func() {
@@ -50,7 +51,7 @@ var _ = Describe("SpellCastSystem", func() {
         }
         // Add/Replace Mana and Spell components with test values
         world.AddComponent(player, components.NewMana(0, spellMaxMana)) // Start with 0 mana, set later
-        world.AddComponent(player, components.NewSpell(spellName, "", spellMaxMana, spellCooldown))
+        world.AddComponent(player, components.NewSpell(spellName, "", spellMaxMana, castStartUp, castRecovery))
 
         // --- Create Target (Training Dummy) ---
         target, err = championFactory.CreateEnemyChampion("TFT_TrainingDummy", 1)
@@ -154,7 +155,7 @@ var _ = Describe("SpellCastSystem", func() {
 
             // Check State Update
             Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", 0, 0.001), "Mana should be reduced by cost")
-            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", spellCooldown, 0.001), "Cooldown should be reset")
+            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", castRecovery, 0.001), "Cooldown should be reset")
         })
     })
 
@@ -175,7 +176,7 @@ var _ = Describe("SpellCastSystem", func() {
             Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
             // Check state was NOT updated
             Expect(playerMana.GetCurrentMana()).To(BeNumerically("~", 0, 0.001))
-            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", spellCooldown, 0.001))
+            Expect(playerSpell.GetCurrentCooldown()).To(BeNumerically("~", castRecovery, 0.001))
         })
     })
 

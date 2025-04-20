@@ -43,7 +43,7 @@ var _ = Describe("AutoAttackSystem", func() {
 		Expect(err).NotTo(HaveOccurred())
 		world.AddComponent(player, components.NewPosition(0, 1))
 		// --- Add Spell Component ---
-		world.AddComponent(player, components.NewSpell("TestLockoutSpell", "",40,1.0)) // Name, ManaCost, MaxMana, Cooldown=1.0s
+		world.AddComponent(player, components.NewSpell("TestLockoutSpell", "",40,0, 1.0)) // Name, ManaCost, MaxMana, startup=0s, recovery=1.0s
 
 		// --- Create Target (Training Dummy) ---
 		target, err = championFactory.CreateEnemyChampion("TFT_TrainingDummy", 1)

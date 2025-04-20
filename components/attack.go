@@ -13,6 +13,8 @@ type Attack struct {
 	BaseAttackSpeed float64 // Champion's inherent AS value
 	BaseDamageAmp   float64 // Usually 0.0
 	BaseRange       float64 // Range is often less modified, keep simple for now
+	attackStartUp float64 // Attack start-up time 
+	attackRecovery float64 // Attack recovery time
 
 	// --- Aggregated Bonus Stats (Sum from Items, Traits, Temp Buffs, etc.) ---
 	BonusAD                 float64 // Flat AD bonuses
@@ -32,7 +34,7 @@ type Attack struct {
 }
 
 // NewAttack creates an Attack component
-func NewAttack(baseAd, baseAs, baseRange float64) *Attack {
+func NewAttack(baseAd, baseAs, baseRange, attackStartUp, attackRecovery float64) *Attack {
 	if baseAd < 0 || math.IsNaN(baseAd) {
 		baseAd = 0
 	}
@@ -49,6 +51,8 @@ func NewAttack(baseAd, baseAs, baseRange float64) *Attack {
 		BaseAttackSpeed: baseAs,
 		BaseRange:       baseRange,
 		BaseDamageAmp:   0.0,
+		attackStartUp: attackStartUp,
+		attackRecovery: attackRecovery,
 
 		// Bonus Stats (Initialize to 0)
 		BonusAD:                 0.0,

@@ -65,6 +65,8 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 		championData.Stats.Damage*multiplier,
 		championData.Stats.AttackSpeed,
 		championData.Stats.Range,
+		0.0, // startup time, not available in data yet
+		0.0, // recovery time, not available in data yet
 	)
 	err = cf.world.AddComponent(entity, attackComp)
 	if err != nil {
@@ -96,7 +98,8 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 		championData.Ability.Name,
 		championData.Ability.Icon,
 		championData.Stats.Mana,
-		1, // Cooldown (not available in data yet)
+		1, // startup time (not available in data yet)
+		1, // recovery time (not available in data yet)
 	)
 	err = cf.world.AddComponent(entity, spellComp)
 	if err != nil {

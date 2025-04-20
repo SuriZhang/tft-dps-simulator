@@ -67,30 +67,21 @@ func (s *SpellCastSystem) TriggerSpellCast(deltaTime float64) {
             if foundTarget { // Check the boolean return value
                 // Execute Cast
                 log.Printf("SpellCastSystem: Entity %d casting spell '%s' on nearest target %d at time %.2f", caster, spell.GetName(), target, s.currentTime)
-                mana.SetCurrentMana(mana.GetCurrentMana() - spell.GetManaCost())
-                spell.SetCurrentCooldown(spell.GetCooldown()) // Reset cooldown
-
-                // Enqueue Event
-                castEvent := eventsys.SpellCastEvent{
-                    Source:    caster,
-                    Target:    target,
-                    Timestamp: s.currentTime,
-                }
-                s.eventBus.Enqueue(castEvent)
 
             } else { 
                 log.Printf("SpellCastSystem: Entity %d has mana for spell '%s' but no valid target found. Still enqueue an event", caster, spell.GetName())
-				mana.SetCurrentMana(mana.GetCurrentMana() - spell.GetManaCost())
-                spell.SetCurrentCooldown(spell.GetCooldown()) // Reset cooldown
-
-                // Enqueue Event
-                castEvent := eventsys.SpellCastEvent{
-                    Source:    caster,
-                    Target:    0, // indicate no hit
-                    Timestamp: s.currentTime,
-                }
-                s.eventBus.Enqueue(castEvent)
+				target = 0 // Set target to 0 if no valid target is found
             }
+            mana.SetCurrentMana(mana.GetCurrentMana() - spell.GetManaCost())
+            spell.SetCurrentCooldown(spell.GetCastRecovery()) // Reset cooldown
+
+            // Enqueue Event
+            castEvent := eventsys.SpellCastEvent{
+                Source:    caster,
+                Target:    target,
+                Timestamp: s.currentTime,
+            }
+            s.eventBus.Enqueue(castEvent)
         }
     }
 }

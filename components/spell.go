@@ -1,6 +1,5 @@
 package components
 
-
 // Spell holds data related to a champion's ability/spell.
 type Spell struct {
 	Name    string
@@ -8,7 +7,9 @@ type Spell struct {
 	// Base stats (potentially loaded from champion data)
 	BaseAP   float64
 	ManaCost float64
-	Cooldown float64 // the time after the spell animation finishes before the next spell can be cast.The period where the champion is locked out of auto-attacking is the cast animation time or cast lockout.
+	castStartUp float64 // The time it takes to cast the spell. This is the time before the spell animation starts.
+	castRecovery float64 // the time after the spell animation finishes before the next spell can be cast.The period where the champion is locked out of auto-attacking is the cast animation time or cast lockout.
+	lockManaDuringCast bool // Whether the champion should gain mana during the cast animation
 
 	// --- Spell Variables (should be read from champion ability variables) ---
 	// TODO: Load these dynamically based on the spell/champion
@@ -28,14 +29,16 @@ type Spell struct {
 }
 
 // NewSpell creates a Spell component, potentially initializing from base stats.
-func NewSpell(name, icon string, manaCost, cooldown float64) *Spell {
+func NewSpell(name, icon string, manaCost, castStartUp, castRecovery float64) *Spell {
 	// TODO: Initialize VarBaseDamage, VarPercentADDamage, VarAPScaling from data
 	return &Spell{
 		Name:                 name,
 		icon:                 icon,
 		BaseAP:               100.0, // default base AP in TFT
 		ManaCost:             manaCost,
-		Cooldown:             cooldown,
+		lockManaDuringCast:   true, // default to lock mana during cast
+		castStartUp: castStartUp,
+		castRecovery:             castRecovery,
 		BonusAP:              0.0,
 
 		FinalAP:              100.0, // init to base AP
@@ -74,14 +77,19 @@ func (s *Spell) SetManaCost(value float64) {
 	s.ManaCost = value
 }
 
-// GetCooldown returns the base cooldown.
-func (s *Spell) GetCooldown() float64 {
-	return s.Cooldown
+// GetCastStartUp returns the cast start-up time.
+func (s *Spell) GetCastStartUp() float64 {
+	return s.castStartUp
+}
+
+// GetCastRecovery returns the base cooldown.
+func (s *Spell) GetCastRecovery() float64 {
+	return s.castRecovery
 }
 
 // SetCooldown sets the base cooldown.
 func (s *Spell) SetCooldown(value float64) {
-	s.Cooldown = value
+	s.castRecovery = value
 }
 
 // GetBonusAP returns the bonus ability power.
