@@ -322,7 +322,7 @@ var _ = Describe("AutoAttackSystem", func() {
                      Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No attack event should occur before expected time %.2f (current: %.2f)", expectedAttackTime, currentTime)
                 }
             }
-			
+
 			Expect(t).To(BeNumerically("~", 2.1, dt), "Simulation should end around 2.1s")
 
             // --- Assertions after the loop ---
@@ -338,5 +338,93 @@ var _ = Describe("AutoAttackSystem", func() {
             Expect(event.Timestamp).To(BeNumerically("~", expectedAttackTime, dt*1.5), "Timestamp should be lockout time + attack cycle time") // Allow slightly larger tolerance due to dt steps
         })
 	})
+
+	Context("when attacker has non-zero startup and recovery", func() {
+        var (
+            startupTime  float64 = 0.2
+            recoveryTime float64 = 0.8
+            finalAS      float64 = 1.0 // For simplicity, 1 attack per second cycle *if* startup/recovery were zero
+        )
+
+        BeforeEach(func() {
+            Expect(playerAttack).NotTo(BeNil())
+            // We assume the factory or data sets base startup/recovery.
+            // For testing, we can manually set the *current* values if needed,
+            // but let's first test based on finalAS as the system uses it.
+            playerAttack.SetFinalAttackSpeed(finalAS)
+			playerAttack.SetBaseAttackStartup(startupTime) 
+			playerAttack.SetBaseAttackRecovery(recoveryTime)
+
+            // Ensure target is alive and in range
+            Expect(targetHealth).NotTo(BeNil())
+            targetHealth.SetCurrentHP(1000)
+            targetPos, ok := world.GetPosition(target)
+            Expect(ok).To(BeTrue())
+            targetPos.SetPosition(1, 0) // Ensure in range (range is 1.0)
+            playerPos, ok := world.GetPosition(player)
+            Expect(ok).To(BeTrue())
+            playerPos.SetPosition(0, 0)
+
+            // Reset timers
+            playerAttack.SetLastAttackTime(0)
+            playerAttack.SetAttackStartupEndTime(-1.0)
+            playerAttack.SetAttackCycleEndTime(-1.0)
+            playerSpell.SetCurrentRecovery(0)
+            eventBus.ClearEvents()
+            autoAttackSystem.SetCurrentTime(0.0) // Reset system time
+        })
+
+        It("should enqueue the first AttackLandedEvent based on FinalAttackSpeed", func() {
+            attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed() // Should be 1.0s
+            dt := 0.1
+            simulationEndTime := attackDelay + dt // Simulate just past the expected landing time
+
+            currentTime := 0.0
+            for t := 0.0; t < simulationEndTime; t += dt {
+                autoAttackSystem.TriggerAutoAttack(dt) // System uses internal time tracking now
+                currentTime += dt // Keep track for assertion message if needed
+                if len(eventBus.EnqueuedEvents) > 0 {
+                    break // Stop simulation once event is found
+                }
+            }
+
+            Expect(eventBus.EnqueuedEvents).To(HaveLen(1), "One AttackLandedEvent should be enqueued")
+            event, ok := eventBus.GetLastEvent().(eventsys.AttackLandedEvent)
+            Expect(ok).To(BeTrue())
+            // The current system schedules landing based purely on 1/AS
+            Expect(event.Timestamp).To(BeNumerically("~", attackDelay, dt*1.5), "Timestamp should be ~1.0/FinalAS")
+        })
+
+        It("should enqueue subsequent attacks based on FinalAttackSpeed", func() {
+            attackDelay := 1.0 / playerAttack.GetFinalAttackSpeed() // Should be 1.0s
+            dt := 0.1
+            expectedFirstAttackTime := attackDelay
+            expectedSecondAttackTime := expectedFirstAttackTime + attackDelay // Should be 2.0s
+
+            simulationEndTime := expectedSecondAttackTime + dt // Simulate just past the second expected landing
+
+            currentTime := 0.0
+            firstAttackLanded := false
+            for t := 0.0; t < simulationEndTime; t += dt {
+                autoAttackSystem.TriggerAutoAttack(dt)
+                currentTime += dt
+                if len(eventBus.EnqueuedEvents) == 1 && !firstAttackLanded {
+                    // Check first landing time roughly
+                    event1, _ := eventBus.GetLastEvent().(eventsys.AttackLandedEvent)
+                    Expect(event1.Timestamp).To(BeNumerically("~", expectedFirstAttackTime, dt*1.5))
+                    firstAttackLanded = true
+                } else if len(eventBus.EnqueuedEvents) == 2 {
+                    break // Stop simulation once second event is found
+                }
+            }
+
+            Expect(eventBus.EnqueuedEvents).To(HaveLen(2), "Two AttackLandedEvents should be enqueued")
+            // Get all events to check the second one specifically
+            allEvents := eventBus.GetAllEvents()
+            event2, ok := allEvents[1].(eventsys.AttackLandedEvent)
+            Expect(ok).To(BeTrue())
+            Expect(event2.Timestamp).To(BeNumerically("~", expectedSecondAttackTime, dt*1.5), "Second timestamp should be ~FirstLanding + 1.0/FinalAS")
+        })
+    })
 
 })
