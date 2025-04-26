@@ -297,3 +297,11 @@ Simulation Steps:
     combatEnds: 1. simulation time passed 30s; 2. one team has no alive champion units
     ```
 
+DONE Today:
+- [x] adapt new event-driven simulation design
+- [x] refactored event system
+
+TODO:
+- [ ] refactor DynamicTimeSystem to enqueue and handle events
+- [ ] fix ChampionActionSystem to correctly enqueue AttackCooldownStartEvent based on champion state
+- [ ] fix SimulationTests (currently failing 8 tests)
