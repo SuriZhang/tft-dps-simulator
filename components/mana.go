@@ -92,3 +92,7 @@ func (m *Mana) GetBonusInitialMana() float64 {
 func (m *Mana) GetFinalInitialMana() float64 {
 	return m.FinalInitialMana
 }
+
+func (m *Mana) IsFull() bool {
+	return m.Current >= m.Max
+}

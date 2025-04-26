@@ -30,11 +30,9 @@ type Attack struct {
 	FinalRange       float64 // Calculated: BaseRange + BonusRange
 
 	// --- Current State ---
-	LastAttackTime float64 // Simulation time when the current/last attack cycle *started*
 	currentAttackStartup float64 
 	currentAttackRecovery float64 
 	attackStartupEndTime float64 // Simulation time when the current attack windup finishes (AttackLandedEvent time)
-	attackCycleEndTime float64 // Simulation time when the current attack cycle finishes (Ready for next cycle)
 }
 
 // NewAttack creates an Attack component
@@ -72,11 +70,9 @@ func NewAttack(baseAd, baseAs, baseRange, attackStartup, attackRecovery float64)
 		FinalRange:       baseRange,
 
 		// State
-		LastAttackTime: 0.0,
 		currentAttackStartup: attackStartup,
 		currentAttackRecovery: attackRecovery,
 		attackStartupEndTime: -1.0, // indicate no startup is active
-		attackCycleEndTime: -1.0, // should be set later based on final AS
 	}
 }
 
@@ -157,13 +153,6 @@ func (a *Attack) GetFinalRange() float64 {
 } // Keep simple for now
 
 // --- Methods for Current State ---
-func (a *Attack) GetLastAttackTime() float64 {
-	return a.LastAttackTime
-}
-func (a *Attack) SetLastAttackTime(value float64) {
-	a.LastAttackTime = value
-}
-
 func (a *Attack) GetAttackStartupEndTime() float64 {
 	return a.attackStartupEndTime
 }
@@ -171,12 +160,6 @@ func (a *Attack) GetAttackStartupEndTime() float64 {
 // SetAttackStartupEndTime sets the timestamp of the upcoming attack.
 func (a *Attack) SetAttackStartupEndTime(value float64) {
 	a.attackStartupEndTime = value
-}
-func (a *Attack) GetAttackCycleEndTime() float64 {
-	return a.attackCycleEndTime
-}
-func (a *Attack) SetAttackCycleEndTime(value float64) {
-	a.attackCycleEndTime = value
 }
 
 // GetCurrentAttackStartup returns the scaled attack start-up time based on current attack speed.
@@ -258,7 +241,6 @@ func (a *Attack) String() string {
 	sb.WriteString(fmt.Sprintf("  BaseAttackStartup: %.2f, BaseAttackRecovery: %.2f, CurrentAttackStartup: %.2f, CurrentAttackRecovery: %.2f\n", a.baseAttackStartup, a.baseAttackRecovery, a.currentAttackStartup, a.currentAttackRecovery))
 	sb.WriteString(fmt.Sprintf("  BaseDamageAmp: %.2f, BonusDamageAmp: %.2f, FinalDamageAmp: %.2f\n", a.BaseDamageAmp, a.BonusDamageAmp, a.FinalDamageAmp))
 	sb.WriteString(fmt.Sprintf("  Range: %.2f, BonusRange: %.2f, FinalRange: %.2f\n", a.BaseRange, a.BonusRange, a.FinalRange))
-	sb.WriteString(fmt.Sprintf("  LastAttackTime: %.2f", a.LastAttackTime))
 
 	return sb.String()
 }

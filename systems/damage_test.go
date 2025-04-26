@@ -7,6 +7,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/factory"
 	"github.com/suriz/tft-dps-simulator/systems"
+	"github.com/suriz/tft-dps-simulator/utils"
 	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -16,7 +17,7 @@ import (
 var _ = Describe("DamageSystem", func() {
     var (
         world           *ecs.World
-        eventBus        *MockEventBus
+        mockEventBus        *utils.MockEventBus
         championFactory *factory.ChampionFactory
         damageSystem    *systems.DamageSystem
         attacker        ecs.Entity
@@ -31,9 +32,10 @@ var _ = Describe("DamageSystem", func() {
 
     BeforeEach(func() {
         world = ecs.NewWorld()
-        eventBus = NewMockEventBus()
+        mockEventBus = utils.NewMockEventBus()
         championFactory = factory.NewChampionFactory(world) // Factory now adds Crit component
-        damageSystem = systems.NewDamageSystem(world, eventBus)
+        damageSystem = systems.NewDamageSystem(world, mockEventBus)
+		mockEventBus.RegisterHandler(damageSystem)
 
         // --- Create Attacker ---
         var err error
@@ -69,9 +71,6 @@ var _ = Describe("DamageSystem", func() {
 
         // Spell Stats
         attackerSpell.SetFinalAP(100.0) // Example AP
-        // TODO: Set spell variables if needed for specific spell tests
-        // attackerSpell.SetVarBaseDamage(50)
-        // attackerSpell.SetVarAPScaling(0.8)
 
         // Mana Stats
         attackerMana.SetCurrentMana(0)
@@ -90,21 +89,35 @@ var _ = Describe("DamageSystem", func() {
             eventTime   float64 = 1.23
         )
 
+        // Only create the event structure in BeforeEach
         BeforeEach(func() {
             attackEvent = eventsys.AttackLandedEvent{
                 Source:     attacker,
                 Target:     target,
-                BaseDamage: attackerAttack.GetFinalAD(),
+                BaseDamage: attackerAttack.GetFinalAD(), // Base AD is 100 from outer BeforeEach
                 Timestamp:  eventTime,
             }
-            eventBus.ClearEvents()
+            // Reset potentially modified stats before each test in this context
+            attackerAttack.SetFinalDamageAmp(0.0)
+            targetHealth.SetFinalDurability(0.0)
+            mockEventBus.ClearEvents() // Clear events from any previous test runs
         })
 
         It("should calculate final physical damage considering crit EV and armor", func() {
-            damageSystem.HandleEvent(attackEvent)
+            // --- Arrange ---
+            // Initial stats (AD=100, CritC=0.25, CritM=1.5, Armor=50) are set in the outer BeforeEach
 
-            Expect(eventBus.EnqueuedEvents).To(HaveLen(1), "Should enqueue one DamageAppliedEvent")
-            damageAppliedEvent, ok := eventBus.GetLastEvent().(eventsys.DamageAppliedEvent)
+            // --- Act ---
+            // Enqueue and process the event *within this specific test*
+            mockEventBus.Enqueue(attackEvent, eventTime)
+            mockEventBus.ProcessNext() // Triggers damageSystem.HandleEvent
+
+            // --- Assert ---
+            // Check the events enqueued *by the handler* during ProcessNext
+            enqueuedEvents := mockEventBus.GetAllEvents() // Get events added since ClearEvents
+            Expect(enqueuedEvents).To(HaveLen(1), "Should enqueue one DamageAppliedEvent")
+
+            damageAppliedEvent, ok := enqueuedEvents[0].(eventsys.DamageAppliedEvent)
             Expect(ok).To(BeTrue(), "Enqueued event should be DamageAppliedEvent")
 
             // Manual Calculation:
@@ -122,30 +135,26 @@ var _ = Describe("DamageSystem", func() {
             Expect(damageAppliedEvent.Source).To(Equal(attacker))
             Expect(damageAppliedEvent.Target).To(Equal(target))
             Expect(damageAppliedEvent.Timestamp).To(Equal(eventTime))
-            Expect(damageAppliedEvent.IsSpell).To(BeFalse())
-            Expect(damageAppliedEvent.PreMitigationPhysical).To(BeNumerically("~", expectedPreMitPhys, 0.01))
-            Expect(damageAppliedEvent.PreMitigationMagic).To(BeNumerically("~", 0.0, 0.01))
-            Expect(damageAppliedEvent.FinalPhysicalDamage).To(BeNumerically("~", expectedFinalPhys, 0.01))
-            Expect(damageAppliedEvent.FinalMagicDamage).To(BeNumerically("~", 0.0, 0.01))
-            Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedTotalDamage, 0.01))
-        })
-
-        It("should update the attacker's LastAttackTime", func() {
-            initialLastAttackTime := attackerAttack.GetLastAttackTime()
-            Expect(initialLastAttackTime).NotTo(Equal(eventTime))
-
-            damageSystem.HandleEvent(attackEvent)
-
-            Expect(attackerAttack.GetLastAttackTime()).To(Equal(eventTime))
+            Expect(damageAppliedEvent.DamageSource).To(Equal("Attack"))
+            Expect(damageAppliedEvent.PreMitigationDamage).To(BeNumerically("~", expectedPreMitPhys, 0.01))
+            Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedFinalPhys, 0.01))
+            Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedTotalDamage, 0.01)) // This assertion seems redundant with the one above it
         })
 
         It("should consider damage amplification", func() {
+            // --- Arrange ---
             attackerAttack.SetFinalDamageAmp(0.10) // 10% damage amp
 
-            damageSystem.HandleEvent(attackEvent)
+            // --- Act ---
+            mockEventBus.Enqueue(attackEvent, eventTime)
+            mockEventBus.ProcessNext() // Process the event
 
-            Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
-            damageAppliedEvent, _ := eventBus.GetLastEvent().(eventsys.DamageAppliedEvent)
+            // --- Assert ---
+            enqueuedEvents := mockEventBus.GetAllEvents()
+            Expect(enqueuedEvents).To(HaveLen(1))
+            damageAppliedEvent, ok := enqueuedEvents[0].(eventsys.DamageAppliedEvent)
+            Expect(ok).To(BeTrue())
+
 
             // Manual Calculation:
             // Base Physical = 100
@@ -156,21 +165,26 @@ var _ = Describe("DamageSystem", func() {
             // Durability Multiplier = 1.0
             // Final Physical = 123.75 * 0.666... * 1.0 = 82.5
             expectedPreMitPhys := 123.75
-            expectedFinalPhys := 82.5
-            expectedTotalDamage := expectedFinalPhys
+            // expectedFinalPhys := 82.5 // This was missing in original, needed for TotalDamage check
+            expectedTotalDamage := 82.5
 
-            Expect(damageAppliedEvent.PreMitigationPhysical).To(BeNumerically("~", expectedPreMitPhys, 0.01))
-            Expect(damageAppliedEvent.FinalPhysicalDamage).To(BeNumerically("~", expectedFinalPhys, 0.01))
+            Expect(damageAppliedEvent.PreMitigationDamage).To(BeNumerically("~", expectedPreMitPhys, 0.01))
             Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedTotalDamage, 0.01))
         })
 
         It("should consider durability", func() {
+            // --- Arrange ---
             targetHealth.SetFinalDurability(0.20) // 20% durability
 
-            damageSystem.HandleEvent(attackEvent)
+            // --- Act ---
+            mockEventBus.Enqueue(attackEvent, eventTime)
+            mockEventBus.ProcessNext() // Process the event
 
-            Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
-            damageAppliedEvent, _ := eventBus.GetLastEvent().(eventsys.DamageAppliedEvent)
+            // --- Assert ---
+            enqueuedEvents := mockEventBus.GetAllEvents()
+            Expect(enqueuedEvents).To(HaveLen(1))
+            damageAppliedEvent, ok := enqueuedEvents[0].(eventsys.DamageAppliedEvent)
+            Expect(ok).To(BeTrue())
 
             // Manual Calculation:
             // Base Physical = 100
@@ -181,74 +195,55 @@ var _ = Describe("DamageSystem", func() {
             // Durability Multiplier = (1 - 0.20) = 0.80
             // Final Physical = 112.5 * 0.666... * 0.80 = 75.0 * 0.8 = 60.0
             expectedPreMitPhys := 112.5
-            expectedFinalPhys := 60.0
-            expectedTotalDamage := expectedFinalPhys
+            // expectedFinalPhys := 60.0 // This was missing in original, needed for TotalDamage check
+            expectedTotalDamage := 60.0
 
-            Expect(damageAppliedEvent.PreMitigationPhysical).To(BeNumerically("~", expectedPreMitPhys, 0.01))
-            Expect(damageAppliedEvent.FinalPhysicalDamage).To(BeNumerically("~", expectedFinalPhys, 0.01))
+            Expect(damageAppliedEvent.PreMitigationDamage).To(BeNumerically("~", expectedPreMitPhys, 0.01))
             Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedTotalDamage, 0.01))
         })
     })
 
-    Describe("handling SpellCastEvent", func() {
+	Describe("handling SpellCastEvent", func() {
         var (
-            spellCastEvent eventsys.SpellCastEvent
+            spellCastEvent eventsys.SpellLandedEvent
             eventTime      float64 = 2.50
         )
 
         BeforeEach(func() {
-            // Setup spell variables for a hypothetical spell
-            // Example: 50 base magic damage + 80% AP scaling + 20% AD scaling
-            // attackerSpell.SetVarBaseDamage(50.0)
-            // attackerSpell.SetVarAPScaling(0.8)
-            // attackerSpell.SetVarPercentADDamage(0.2)
-            // For simplicity, let's assume spell does only magic damage based on FinalAP for now
-            // rawMagicDamage := attackerSpell.GetFinalAP() // 100
-            // rawPhysicalDamage := 0.0
-
-            spellCastEvent = eventsys.SpellCastEvent{
+            spellCastEvent = eventsys.SpellLandedEvent{
                 Source:    attacker,
                 Target:    target,
                 Timestamp: eventTime,
             }
-            eventBus.ClearEvents()
-            // Ensure abilities cannot crit by default for this test
+            mockEventBus.ClearEvents()
+            // Reset crit ability flags
             world.RemoveComponent(attacker, reflect.TypeOf(components.CanAbilityCritFromItems{}))
             world.RemoveComponent(attacker, reflect.TypeOf(components.CanAbilityCritFromTraits{}))
         })
 
         It("should calculate final magic damage considering MR", func() {
-            damageSystem.HandleEvent(spellCastEvent)
+            // --- Act ---
+            // damageSystem.HandleEvent(spellCastEvent) // Use direct handling if event bus isn't needed for this interaction
+            // OR if using bus:
+            mockEventBus.Enqueue(spellCastEvent, eventTime)
+            mockEventBus.ProcessNext()
 
-            Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
-            damageAppliedEvent, ok := eventBus.GetLastEvent().(eventsys.DamageAppliedEvent)
+            // --- Assert ---
+            enqueuedEvents := mockEventBus.GetAllEvents()
+            Expect(enqueuedEvents).To(HaveLen(1))
+            damageAppliedEvent, ok := enqueuedEvents[0].(eventsys.DamageAppliedEvent)
             Expect(ok).To(BeTrue())
 
-            // Manual Calculation (Assuming spell damage = FinalAP = 100 Magic Damage):
-            // Base Magic = 100 (from FinalAP, assuming simple spell)
-            // Base Physical = 0
-            // Can Abilities Crit = false -> Crit Multiplier EV = 1.0
-            // Amp Multiplier = 1.0 (using attack amp for now, which is 0)
-            // PreMitigation Magic = 100 * 1.0 * 1.0 = 100
-            // PreMitigation Physical = 0 * 1.0 * 1.0 = 0
-            // MR Reduction = 100 / (100 + 50) = 0.666...
-            // Armor Reduction = 100 / (100 + 50) = 0.666... (not applied to magic)
-            // Durability Multiplier = 1.0
-            // Final Magic = 100 * 0.666... * 1.0 = 66.66...
-            // Final Physical = 0
-            // Final Total = 66.66...
+            // ... rest of assertions ...
             expectedPreMitMag := 100.0
-            expectedFinalMag := 66.66
-            expectedTotalDamage := expectedFinalMag
+            expectedTotalDamage := 66.66 // Approx 100 * (100 / (100 + 50))
 
             Expect(damageAppliedEvent.Source).To(Equal(attacker))
             Expect(damageAppliedEvent.Target).To(Equal(target))
             Expect(damageAppliedEvent.Timestamp).To(Equal(eventTime))
-            Expect(damageAppliedEvent.IsSpell).To(BeTrue())
-            Expect(damageAppliedEvent.PreMitigationPhysical).To(BeNumerically("~", 0.0, 0.01))
-            Expect(damageAppliedEvent.PreMitigationMagic).To(BeNumerically("~", expectedPreMitMag, 0.01))
-            Expect(damageAppliedEvent.FinalPhysicalDamage).To(BeNumerically("~", 0.0, 0.01))
-            Expect(damageAppliedEvent.FinalMagicDamage).To(BeNumerically("~", expectedFinalMag, 0.01))
+            Expect(damageAppliedEvent.DamageSource).To(Equal("Spell"))
+            Expect(damageAppliedEvent.DamageType).To(Equal("AP")) // Assuming simple AP spell for now
+            Expect(damageAppliedEvent.PreMitigationDamage).To(BeNumerically("~", expectedPreMitMag, 0.01))
             Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedTotalDamage, 0.01))
         })
 
@@ -256,39 +251,36 @@ var _ = Describe("DamageSystem", func() {
             BeforeEach(func() {
                 // Add marker component to allow spell crit
                 world.AddComponent(attacker, components.CanAbilityCritFromItems{})
-                // Use the same crit stats as attack: 25% chance, 1.5 multiplier
             })
 
             It("should calculate final magic damage considering spell crit EV and MR", func() {
-                damageSystem.HandleEvent(spellCastEvent)
+                 // --- Act ---
+                // damageSystem.HandleEvent(spellCastEvent) // Or use bus
+                mockEventBus.Enqueue(spellCastEvent, eventTime)
+                mockEventBus.ProcessNext()
 
-                Expect(eventBus.EnqueuedEvents).To(HaveLen(1))
-                damageAppliedEvent, _ := eventBus.GetLastEvent().(eventsys.DamageAppliedEvent)
+                // --- Assert ---
+                enqueuedEvents := mockEventBus.GetAllEvents()
+                Expect(enqueuedEvents).To(HaveLen(1))
+                damageAppliedEvent, ok := enqueuedEvents[0].(eventsys.DamageAppliedEvent)
+                Expect(ok).To(BeTrue())
+
 
                 // Manual Calculation (Spell damage = 100 Magic):
                 // Base Magic = 100
-                // Crit Chance = 0.25
-                // Crit Multiplier = 1.5
-                // Crit EV Multiplier = (1 - 0.25) + (0.25 * 1.5) = 1.125
-                // Amp Multiplier = 1.0
-                // PreMitigation Magic = 100 * 1.125 * 1.0 = 112.5
-                // MR Reduction = 0.666...
-                // Durability Multiplier = 1.0
-                // Final Magic = 112.5 * 0.666... * 1.0 = 75.0
+                // Crit Chance = 0.25, Crit Multiplier = 1.5 -> EV = 1.125
+                // PreMitigation Magic = 100 * 1.125 = 112.5
+                // Final Magic = 112.5 * (100 / (100 + 50)) = 112.5 * 0.666... = 75.0
                 expectedPreMitMag := 112.5
-                expectedFinalMag := 75.0
-                expectedTotalDamage := expectedFinalMag
+                expectedTotalDamage := 75.0
 
-                Expect(damageAppliedEvent.IsSpell).To(BeTrue())
-                Expect(damageAppliedEvent.PreMitigationMagic).To(BeNumerically("~", expectedPreMitMag, 0.01))
-                Expect(damageAppliedEvent.FinalMagicDamage).To(BeNumerically("~", expectedFinalMag, 0.01))
+                Expect(damageAppliedEvent.DamageSource).To(Equal("Spell"))
+                Expect(damageAppliedEvent.PreMitigationDamage).To(BeNumerically("~", expectedPreMitMag, 0.01))
+                Expect(damageAppliedEvent.DamageType).To(Equal("AP")) // Assuming simple AP spell
                 Expect(damageAppliedEvent.FinalTotalDamage).To(BeNumerically("~", expectedTotalDamage, 0.01))
             })
         })
-
-        // TODO: Add tests for spells that deal physical damage (AD scaling)
-        // TODO: Add tests for spells dealing mixed damage
-    })
+	})
 
     Describe("handling DamageAppliedEvent", func() {
         var (
@@ -301,12 +293,13 @@ var _ = Describe("DamageSystem", func() {
                 Source:              attacker,
                 Target:              target,
                 Timestamp:           eventTime,
-                IsSpell:             false, // Default to attack damage for these tests
-                FinalPhysicalDamage: 50.0,  // Example damage breakdown
-                FinalMagicDamage:    0.0,
+                DamageType: 	  "AD",
+				DamageSource:    "Attack",
+				RawDamage: 	 50.0,
+                PreMitigationDamage: 50.0,  
                 FinalTotalDamage:    50.0, // Sum of physical and magic
             }
-            eventBus.ClearEvents()
+            mockEventBus.ClearEvents()
             attackerMana.SetCurrentMana(10)    // Reset mana
             targetHealth.SetCurrentHP(200) // Reset health
         })
@@ -319,7 +312,7 @@ var _ = Describe("DamageSystem", func() {
 
         Context("when damage is from an attack (IsSpell is false)", func() {
             BeforeEach(func() {
-                damageEvent.IsSpell = false
+                damageEvent.DamageSource = "Attack"
             })
 
             It("should increase attacker mana by the standard amount", func() {
@@ -339,7 +332,7 @@ var _ = Describe("DamageSystem", func() {
 
         Context("when damage is from a spell (IsSpell is true)", func() {
             BeforeEach(func() {
-                damageEvent.IsSpell = true
+                damageEvent.DamageSource = "Spell"
             })
 
             It("should NOT increase attacker mana", func() {
@@ -353,13 +346,13 @@ var _ = Describe("DamageSystem", func() {
             targetHealth.SetCurrentHP(damageEvent.FinalTotalDamage + 1) // Ensure survival
             damageSystem.HandleEvent(damageEvent)
             // Expect no *new* events from this handler (Death/Kill are the only ones it sends)
-            Expect(eventBus.EnqueuedEvents).To(BeEmpty())
+            Expect(mockEventBus.GetAllEvents()).To(BeEmpty())
         })
 
         Context("when damage is lethal", func() {
             BeforeEach(func() {
                 targetHealth.SetCurrentHP(damageEvent.FinalTotalDamage - 1) // Ensure lethal damage
-                damageEvent.IsSpell = false // Ensure mana gain check runs
+                damageEvent.DamageSource = "Attack" // Ensure mana gain check runs
             })
 
             It("should set target health to zero or below", func() {
@@ -369,7 +362,7 @@ var _ = Describe("DamageSystem", func() {
 
             It("should enqueue a DeathEvent and KillEvent", func() {
                 damageSystem.HandleEvent(damageEvent)
-                events := eventBus.GetAllEvents()
+                events := mockEventBus.GetAllEvents()
                 Expect(events).To(HaveLen(2))
                 // Check events contain one DeathEvent and one KillEvent
                 Expect(events[0]).To(BeAssignableToTypeOf(eventsys.DeathEvent{}), "First event should be DeathEvent")
@@ -394,12 +387,12 @@ var _ = Describe("DamageSystem", func() {
 
             It("should only enqueue one DeathEvent and KillEvent even if called again", func() {
                 damageSystem.HandleEvent(damageEvent) // First lethal hit
-                Expect(eventBus.GetAllEvents()).To(HaveLen(2))
+                Expect(mockEventBus.GetAllEvents()).To(HaveLen(2))
 
                 // Simulate another damage event hitting the already dead target
-                eventBus.ClearEvents()
+                mockEventBus.ClearEvents()
                 damageSystem.HandleEvent(damageEvent)
-                Expect(eventBus.EnqueuedEvents).To(BeEmpty(), "No additional Death/Kill events should be sent for an already dead target")
+                Expect(mockEventBus.GetAllEvents()).To(BeEmpty(), "No additional Death/Kill events should be sent for an already dead target")
             })
         })
 

@@ -72,3 +72,9 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 
 	return closestEnemy, foundTarget
 }
+
+func DistSq(x1, y1, x2, y2 float64) float64 {
+	dx := x2 - x1
+	dy := y2 - y1
+	return dx*dx + dy*dy
+}

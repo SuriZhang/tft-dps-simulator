@@ -95,7 +95,9 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			initialBonusAD := playerAttack.GetBonusPercentAD()
 			initialBonusAP := playerSpell.GetBonusAP()
 
-			mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
+			currentTime := 1.0
+			mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target, Timestamp: currentTime}, currentTime)
+			mockEventBus.ProcessNext()
 
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(1))
 			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", initialBonusAD+titansADPerStack, 0.001))
@@ -108,7 +110,9 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			initialBonusAD := playerAttack.GetBonusPercentAD()
 			initialBonusAP := playerSpell.GetBonusAP()
 
-			mockEventBus.SimulateAndProcessEvent(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10})
+			currentTime := 1.0
+			mockEventBus.Enqueue(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10}, currentTime)
+			mockEventBus.ProcessNext()
 
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(1))
 			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", initialBonusAD+titansADPerStack, 0.001))
@@ -121,8 +125,12 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			initialBonusAD := playerAttack.GetBonusPercentAD()
 			initialBonusAP := playerSpell.GetBonusAP()
 
-			mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
-			mockEventBus.SimulateAndProcessEvent(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10})
+			currentTime := 1.0
+			mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, currentTime)
+			mockEventBus.ProcessNext()
+			
+			mockEventBus.Enqueue(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10}, currentTime)
+			mockEventBus.ProcessNext()
 
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(2))
 			Expect(playerAttack.GetBonusPercentAD()).To(BeNumerically("~", initialBonusAD+titansADPerStack*2, 0.001))
@@ -134,7 +142,8 @@ var _ = Describe("DynamicEventItemSystem", func() {
 		It("should apply bonus resists only when max stacks are reached", func() {
 			// Simulate events until just before max stacks
 			for i := 0; i < titansMaxStacks-1; i++ {
-				mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
+				mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, float64(i))
+				mockEventBus.ProcessNext()
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks - 1))
 			Expect(playerTitansEffect.IsMaxStacksReached()).To(BeFalse())
@@ -142,7 +151,8 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			Expect(playerHealth.GetBonusMR()).To(BeNumerically("~", 0, 0.001)) // No bonus MR yet
 
 			// Simulate the final event to reach max stacks
-			mockEventBus.SimulateAndProcessEvent(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10})
+			mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, float64(titansMaxStacks))
+				mockEventBus.ProcessNext()
 
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
 			Expect(playerTitansEffect.IsMaxStacksReached()).To(BeTrue())
@@ -156,7 +166,8 @@ var _ = Describe("DynamicEventItemSystem", func() {
 		It("should not stack beyond the maximum limit", func() {
 			// Reach max stacks
 			for i := 0; i < titansMaxStacks; i++ {
-				mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
+				mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, float64(i))
+				mockEventBus.ProcessNext()
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
 
@@ -167,7 +178,8 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			maxStackBonusMR := playerHealth.GetBonusMR()
 
 			// Simulate another event
-			mockEventBus.SimulateAndProcessEvent(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10})
+			mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, float64(titansMaxStacks+1))
+			mockEventBus.ProcessNext()
 
 			// Assert stats haven't changed
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
@@ -205,8 +217,10 @@ var _ = Describe("DynamicEventItemSystem", func() {
 			initialMR := otherPlayerHealth.GetBonusMR()
 
 			// Simulate events involving the champion without the item
-			mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: otherPlayer, Target: target})
-			mockEventBus.SimulateAndProcessEvent(eventsys.DamageAppliedEvent{Source: target, Target: otherPlayer, FinalTotalDamage: 10})
+			mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: otherPlayer, Target: target}, 0.0)
+			mockEventBus.ProcessNext()
+			mockEventBus.Enqueue(eventsys.DamageAppliedEvent{Source: target, Target: otherPlayer, FinalTotalDamage: 10}, 0.1)
+			mockEventBus.ProcessNext()
 
 			// Check component doesn't exist and stats are unchanged
 			_, ok := world.GetTitansResolveEffect(otherPlayer)
@@ -224,7 +238,8 @@ var _ = Describe("DynamicEventItemSystem", func() {
 				stacksToGain = titansMaxStacks / 2 // Ensure we don't accidentally hit max
 			}
 			for i := 0; i < stacksToGain; i++ {
-				mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
+				mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, float64(i))
+				mockEventBus.ProcessNext()
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(stacksToGain))
 
@@ -256,7 +271,8 @@ var _ = Describe("DynamicEventItemSystem", func() {
 		It("should remove all dynamic and static bonuses when the item is removed (at max stacks)", func() {
 			// Reach max stacks
 			for i := 0; i < titansMaxStacks; i++ {
-				mockEventBus.SimulateAndProcessEvent(eventsys.AttackLandedEvent{Source: player, Target: target})
+				mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, float64(i))
+				mockEventBus.ProcessNext()
 			}
 			Expect(playerTitansEffect.GetCurrentStacks()).To(Equal(titansMaxStacks))
 			Expect(playerTitansEffect.IsMaxStacksReached()).To(BeTrue())

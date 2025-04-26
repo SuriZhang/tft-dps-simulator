@@ -31,250 +31,299 @@ func (s *DamageSystem) HandleEvent(evt interface{}) {
 		s.onAttackLanded(event)
 	case eventsys.DamageAppliedEvent:
 		s.onDamageApplied(event)
-	case eventsys.SpellCastEvent:
-		s.onSpellCast(event)
+	case eventsys.SpellLandedEvent:
+		s.onSpellLanded(event)
 		// Add cases for other event types this system might handle
 	}
 }
 
+func (s *DamageSystem) CanHandle(evt interface{}) bool {
+	switch evt.(type) {
+	case eventsys.AttackLandedEvent, eventsys.DamageAppliedEvent, eventsys.SpellLandedEvent:
+		return true
+	default:
+		return false
+	}
+}
+
+
 // onAttackLanded calculates final damage from an attack and enqueues DamageAppliedEvent.
 func (s *DamageSystem) onAttackLanded(evt eventsys.AttackLandedEvent) {
 	attacker := evt.Source
-	target := evt.Target
+    target := evt.Target
+    eventTime := evt.Timestamp // Use timestamp from the event
 
-	attackerAttack, okAtk := s.world.GetAttack(attacker)
-	if !okAtk {
-		log.Printf("DamageSystem Error: Attacker %d has no Attack component in onAttackLanded.\n", attacker)
-		return
-	}
-	attackerCrit, okCrit := s.world.GetCrit(attacker)
-	if !okCrit {
-		log.Printf("DamageSystem Error: Attacker %d has no Crit component in onAttackLanded.\n", attacker)
-		return
-	}
-	targetHealth, okHp := s.world.GetHealth(target)
-	if !okHp {
-		log.Printf("DamageSystem Error: Target %d has no Health component in onAttackLanded.\n", target)
-		return
-	}
+    // --- Get Components (same as before) ---
+    attackerAttack, okAtk := s.world.GetAttack(attacker)
+    if !okAtk {
+        log.Printf("DamageSystem Error: Attacker %d has no Attack component in onAttackFired.\n", attacker)
+        return
+    }
+    attackerCrit, okCrit := s.world.GetCrit(attacker)
+    if !okCrit {
+        log.Printf("DamageSystem Error: Attacker %d has no Crit component in onAttackFired.\n", attacker)
+        return
+    }
+    targetHealth, okHp := s.world.GetHealth(target)
+    if !okHp {
+        log.Printf("DamageSystem Error: Target %d has no Health component in onAttackFired.\n", target)
+        return
+    }
 
-	// --- Damage Calculation ---
-	// 1. Base Physical Damage
-	basePhysical := evt.BaseDamage // Use damage from event (FinalAD)
+    // --- Damage Calculation ---
+    // 1. Raw Damage (Base AD)
+    rawDamage := attackerAttack.GetFinalAD()
 
-	// 2. Crit Multiplier (Expected Value) - From Crit component
-	critChance := attackerCrit.GetFinalCritChance()
-	critMultiplier := attackerCrit.GetFinalCritMultiplier()
-	critMultiplierEV := (1.0 - critChance) + (critChance * critMultiplier)
+    // 2. Crit Check & Multiplier
+    // TODO: Implement actual random crit check instead of EV for more accurate simulation?
+    // For now, using Expected Value (EV) based on crit chance.
+    isCrit := false // Placeholder for actual crit check
+    critChance := attackerCrit.GetFinalCritChance()
+    critMultiplier := attackerCrit.GetFinalCritMultiplier()
 
-	// 3. Amplification Multiplier - From Attack component
-	ampMultiplier := 1.0 + attackerAttack.GetFinalDamageAmp()
+    // Using EV for pre-mitigation calculation for now, consistent with previous logic
+    critMultiplierEV := (1.0 - critChance) + (critChance * critMultiplier)
 
-	// 4. Armor Reduction Multiplier
-	finalArmor := targetHealth.GetFinalArmor()
-	armorMultiplier := 100.0 / (100.0 + finalArmor)
+    // 3. Amplification Multiplier
+    ampMultiplier := 1.0 + attackerAttack.GetFinalDamageAmp()
 
-	// 5. Durability Multiplier (Inverse of Damage Reduction)
-	durabilityMultiplier := 1.0 - targetHealth.GetFinalDurability()
+    // 4. Pre-Mitigation Damage
+    preMitigationDamage := rawDamage * critMultiplierEV * ampMultiplier
 
-	// Calculate Damage Stages
-	preMitigationPhysical := basePhysical * critMultiplierEV * ampMultiplier
-	mitigatedPhysical := preMitigationPhysical * armorMultiplier
-	finalPhysical := mitigatedPhysical * durabilityMultiplier
-	finalTotalDamage := finalPhysical // Auto-attacks are purely physical
+    // 5. Armor Reduction Multiplier & Mitigation Amount
+    finalArmor := targetHealth.GetFinalArmor()
+    armorMultiplier := 100.0 / (100.0 + finalArmor) // Damage multiplier based on armor
+    mitigatedByArmor := preMitigationDamage * (1.0 - armorMultiplier)
 
-	// Update Attacker's LastAttackTime
-	attackerAttack.SetLastAttackTime(evt.Timestamp)
+    // 6. Durability Multiplier & Mitigation Amount
+    finalDurability := targetHealth.GetFinalDurability()
+    durabilityMultiplier := 1.0 - finalDurability // Damage multiplier based on durability
+    mitigatedByDurability := (preMitigationDamage - mitigatedByArmor) * (1.0 - durabilityMultiplier)
 
-	// Enqueue DamageAppliedEvent
-	damageAppliedEvent := eventsys.DamageAppliedEvent{
-		Source:                attacker,
-		Target:                target,
-		Timestamp:             evt.Timestamp,
-		IsSpell:               false,
-		PreMitigationPhysical: preMitigationPhysical,
-		PreMitigationMagic:    0, // No magic damage from basic attack
-		FinalPhysicalDamage:   finalPhysical,
-		FinalMagicDamage:      0, // No magic damage
-		FinalTotalDamage:      finalTotalDamage,
-	}
-	s.eventBus.Enqueue(damageAppliedEvent)
+    // 7. Final Damage & Total Mitigation
+    finalDamage := preMitigationDamage * armorMultiplier * durabilityMultiplier
+    totalMitigation := mitigatedByArmor + mitigatedByDurability
 
-	log.Printf("DamageSystem (onAttackLanded): Calculated %.1f final physical damage from %d to %d.\n", finalTotalDamage, attacker, target)
+    // --- Enqueue DamageAppliedEvent ---
+    damageAppliedEvent := eventsys.DamageAppliedEvent{
+        Source:           attacker,
+        Target:           target,
+        Timestamp:        eventTime,
+        DamageType:       "AD", // Attacks are physical
+        DamageSource:     "Attack",
+        RawDamage:        rawDamage,
+        PreMitigationDamage: preMitigationDamage,
+        MitigatedDamage:  totalMitigation,
+        FinalTotalDamage:      finalDamage,
+        IsCrit:           isCrit, // Use actual crit result if implemented
+        IsAbilityCrit:    false,  // Attacks are not ability crits
+    }
+    s.eventBus.Enqueue(damageAppliedEvent, eventTime) // Use eventTime for enqueueing
+
+    log.Printf("DamageSystem (onAttackLanded): Calculated %.1f final physical damage from %d to %d. Enqueued DamageAppliedEvent.", finalDamage, attacker, target)
 }
 
 // onDamageApplied applies the final damage to the target and handles mana gain/death.
 func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
-	attacker := evt.Source
-	target := evt.Target
-	// Use the total final damage calculated previously
-	finalDamageToApply := evt.FinalTotalDamage
+    attacker := evt.Source // Renaming for clarity, though it's evt.Source
+    target := evt.Target
+    finalDamageToApply := evt.FinalTotalDamage 
 
-	// Get target health
-	targetHealth, okHealth := s.world.GetHealth(target)
-	if !okHealth {
-		log.Printf("DamageSystem Error: Target %d has no Health component in onDamageApplied.\n", target)
-		return
-	}
+    // Get target health
+    targetHealth, okHealth := s.world.GetHealth(target)
+    if !okHealth {
+        log.Printf("DamageSystem Error: Target %d has no Health component in onDamageApplied.\n", target)
+        return
+    }
 
-	// Get attacker info
-	attackerName := fmt.Sprintf("Entity %d", attacker)
+    // Get attacker/target names (optional, for logging)
+    attackerName := fmt.Sprintf("Entity %d", attacker)
+    targetName := fmt.Sprintf("Entity %d", target)
 
-	// Get target info
-	targetName := fmt.Sprintf("Entity %d", target)
+    // Apply damage
+    initialHP := targetHealth.GetCurrentHP()
+    if initialHP <= 0 {
+         log.Printf("DamageSystem (onDamageApplied): Target %s already defeated. Ignoring damage.", targetName)
+         return // Don't apply damage or trigger effects if already dead
+    }
+    targetHealth.SetCurrentHP(initialHP - finalDamageToApply)
 
-	// Apply damage
-	initialHP := targetHealth.CurrentHP
-	targetHealth.CurrentHP -= finalDamageToApply // Apply the total damage
+    displayHealth := targetHealth.CurrentHP
+    if displayHealth < 0 {
+        displayHealth = 0
+    }
 
-	displayHealth := targetHealth.CurrentHP
-	if displayHealth < 0 {
-		displayHealth = 0
-	}
+    // Updated Log Message using DamageAppliedEvent fields
+    log.Printf("DamageSystem (onDamageApplied): %s hits %s with %s (%s) for %.1f damage (Raw: %.1f, PreMit: %.1f, Mit: %.1f). HP: %.1f -> %.1f",
+        attackerName, targetName, evt.DamageSource, evt.DamageType,
+        evt.FinalTotalDamage, evt.RawDamage, evt.PreMitigationDamage, evt.MitigatedDamage,
+        initialHP, displayHealth)
+    // if evt.IsCrit || evt.IsAbilityCrit {
+    //      log.Printf("  (Crit!)")
+    // }
 
-	// Updated Log Message
-	damageType := "Attack"
-	if evt.IsSpell {
-		damageType = "Spell"
-	}
-	log.Printf("DamageSystem (onDamageApplied): %s hits %s with %s for %.1f total damage (%.1f Phys, %.1f Mag | PreMit: %.1f Phys, %.1f Mag) (%.1f -> %.1f HP)\n",
-		attackerName, targetName, damageType,
-		evt.FinalTotalDamage, evt.FinalPhysicalDamage, evt.FinalMagicDamage,
-		evt.PreMitigationPhysical, evt.PreMitigationMagic,
-		initialHP, displayHealth)
+    // Check for death
+    if targetHealth.CurrentHP <= 0 && initialHP > 0 { // Ensure initialHP was > 0 to only trigger once
+        log.Printf("DamageSystem (onDamageApplied): %s has been defeated!\n", targetName)
+        deathEvent := eventsys.DeathEvent{
+            Target:    target,
+            Timestamp: evt.Timestamp,
+        }
+        s.eventBus.Enqueue(deathEvent, evt.Timestamp)
 
-	// Check for death
-	if targetHealth.CurrentHP <= 0 && initialHP > 0 {
-		log.Printf("DamageSystem (onDamageApplied): %s has been defeated!\n", targetName)
-		deathEvent := eventsys.DeathEvent{
-			Target:    target,
-			Timestamp: evt.Timestamp, // Use the timestamp from the attack event
-		}
-		s.eventBus.Enqueue(deathEvent)
-		// Note: We might need a system to handle the DeathEvent (e.g., remove entity, grant kill credit)
+        killEvent := eventsys.KillEvent{
+            Killer:    attacker,
+            Victim:    target,
+            Timestamp: evt.Timestamp,
+        }
+        s.eventBus.Enqueue(killEvent, evt.Timestamp)
+        log.Printf("DamageSystem (onDamageApplied): %s gets kill credit for %s.\n", attackerName, targetName)
+    }
 
-		// Enqueue Kill Event
-		killEvent := eventsys.KillEvent{
-			Killer:    attacker, // The source of the DamageAppliedEvent is the killer
-			Victim:    target,
-			Timestamp: evt.Timestamp, // Use the same timestamp
-		}
-		s.eventBus.Enqueue(killEvent)
-		log.Printf("DamageSystem (onDamageApplied): %s gets kill credit for %s.\n", attackerName, targetName)
-	}
+    // --- Mana Gain ---
+    // Attacker gains mana only if source was "Attack"
+    if evt.DamageSource == "Attack" {
+        attackerMana, okMana := s.world.GetMana(attacker)
+        if okMana {
+            manaGain := 10.0 // Standard TFT mana gain per auto-attack
+            attackerMana.AddCurrentMana(manaGain)
+            log.Printf("DamageSystem (onDamageApplied): Attacker %s gains %.1f mana (now %.1f / %.1f)\n", attackerName, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
+        } else {
+             log.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attackerName)
+        }
+    }
 
-	// --- Mana Gain for Attacker (Only on Auto-Attacks) ---
-	if !evt.IsSpell { // Check the flag
-		attackerMana, okMana := s.world.GetMana(attacker)
-		if okMana {
-			manaGain := 10.0 // Standard TFT mana gain per auto-attack
-			attackerMana.AddCurrentMana(manaGain)
-
-			// Clamp mana to max
-			if attackerMana.GetCurrentMana() > attackerMana.GetMaxMana() {
-				attackerMana.SetCurrentMana(attackerMana.GetMaxMana())
-			}
-			log.Printf("DamageSystem (onDamageApplied): %s gains %.1f mana (now %.1f / %.1f)\n", attackerName, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
-		} else {
-			// This might be expected for units without mana
-			// log.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attackerName)
-		}
-	}
-	// --- End Mana Gain ---
-
-	// TODO: Target also gains mana on being attacked
+    // Target gains mana on being hit (regardless of source?)
+    // TODO: Revisit mana lock during cast
+    targetMana, okMana := s.world.GetMana(target)
+    if okMana {
+        // TODO: Mana gain on hit might scale with damage taken? Using flat 10 for now.
+        manaGainOnHit := 10.0
+        targetMana.AddCurrentMana(manaGainOnHit)
+        log.Printf("DamageSystem (onDamageApplied): Target %s gains %.1f mana from being hit (now %.1f / %.1f)\n", targetName, manaGainOnHit, targetMana.GetCurrentMana(), targetMana.GetMaxMana())
+    }
+    // No warning if target has no mana, common for dummies/some units.
 }
 
-func (s *DamageSystem) onSpellCast(evt eventsys.SpellCastEvent) {
-	caster := evt.Source
-	target := evt.Target
+// onSpellLanded calculates final damage from a spell and enqueues DamageAppliedEvent.
+// Triggered by SpellLandedEvent.
+func (s *DamageSystem) onSpellLanded(evt eventsys.SpellLandedEvent) { // Changed event type
+    caster := evt.Source
+    target := evt.Target
+    eventTime := evt.Timestamp // Use timestamp from the event
 
-	casterSpell, okSpell := s.world.GetSpell(caster)
-	if !okSpell {
-		log.Printf("DamageSystem Error: Caster %d has no Spell component in onSpellCast.\n", caster)
-		return
-	}
-	casterAttack, okAttack := s.world.GetAttack(caster) // Needed for AD scaling
-	if !okAttack {
-		log.Printf("DamageSystem Error: Caster %d has no Attack component in onSpellCast.\n", caster)
-		return
-	}
-	casterCrit, okCrit := s.world.GetCrit(caster) // Get Crit component
-	if !okCrit {
-		log.Printf("DamageSystem Error: Caster %d has no Crit component in onSpellCast.\n", caster)
-		return
-	}
-	targetHealth, okHp := s.world.GetHealth(target)
-	if !okHp {
-		log.Printf("DamageSystem Error: Target %d has no Health component in onSpellCast.\n", target)
-		return
-	}
+    // --- Get Components ---
+    casterSpell, okSpell := s.world.GetSpell(caster)
+    if !okSpell {
+        log.Printf("DamageSystem Error: Caster %d has no Spell component in onSpellLanded.\n", caster)
+        return
+    }
+    casterAttack, okAttack := s.world.GetAttack(caster) // Needed for AD scaling/Amp
+    if !okAttack {
+        log.Printf("DamageSystem Error: Caster %d has no Attack component in onSpellLanded.\n", caster)
+        return
+    }
+    casterCrit, okCrit := s.world.GetCrit(caster) // Needed for Ability Crit check
+    if !okCrit {
+        log.Printf("DamageSystem Error: Caster %d has no Crit component in onSpellLanded.\n", caster)
+        return
+    }
+    targetHealth, okHp := s.world.GetHealth(target)
+    if !okHp {
+        log.Printf("DamageSystem Error: Target %d has no Health component in onSpellLanded.\n", target)
+        return
+    }
 
-	// --- Base Spell Damage Components ---
-	rawPhysicalDamage := 0.0
-	// rawPhysicalDamage += casterSpell.GetVarPercentADDamage() * casterAttack.GetFinalAD()
-	rawMagicDamage := casterSpell.GetFinalAP()
-	// rawMagicDamage += casterSpell.GetVarBaseDamage() + (casterSpell.GetVarAPScaling() * casterSpell.GetFinalAP())
+    // --- Base Spell Damage Components ---
+    // TODO: Implement proper spell data lookup based on evt.SpellName
+    // For now, assume simple AP scaling magic damage as before.
+    rawPhysicalDamage := 0.0
+    rawMagicDamage := casterSpell.GetFinalAP() // Placeholder: Use actual spell base + scaling
+    rawTrueDamage := 0.0                       // Placeholder for true damage spells
 
-	// --- Crit Multiplier (Expected Value) ---
-	// Check if abilities can crit (requires CanAbilityCrit flag, set by items/traits)
-	itemCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromItems{})
-	traitCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromTraits{})
-	_, hasItemCritMarker := s.world.GetComponent(caster, itemCritMarkerType)
-	_, hasTraitCritMarker := s.world.GetComponent(caster, traitCritMarkerType)
-	canAbilitiesCrit := hasItemCritMarker || hasTraitCritMarker
+    // Determine primary damage type for resistance calculation (simplification)
+    damageType := "AP" // Default for placeholder
+    rawDamage := rawMagicDamage // Placeholder
+    if rawPhysicalDamage > rawMagicDamage && rawPhysicalDamage > rawTrueDamage {
+        damageType = "AD"
+        rawDamage = rawPhysicalDamage
+    } else if rawTrueDamage > rawMagicDamage {
+        damageType = "True"
+        rawDamage = rawTrueDamage
+    }
 
-	critChance := 0.0
-	critMultiplier := 1.0 // Default to 1.0 if cannot crit
-	if canAbilitiesCrit {
-		critChance = casterCrit.GetFinalCritChance()
-		critMultiplier = casterCrit.GetFinalCritMultiplier()
-	}
-	critMultiplierEV := (1.0 - critChance) + (critChance * critMultiplier)
+    // --- Crit Check & Multiplier ---
+    itemCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromItems{})
+    traitCritMarkerType := reflect.TypeOf(components.CanAbilityCritFromTraits{})
+    _, hasItemCritMarker := s.world.GetComponent(caster, itemCritMarkerType)
+    _, hasTraitCritMarker := s.world.GetComponent(caster, traitCritMarkerType)
+    canAbilitiesCrit := hasItemCritMarker || hasTraitCritMarker
 
-	// --- Amplification Multiplier ---
-	// TODO: Distinguish between Attack Amp and Spell Amp if necessary. Using Attack Amp for now.
-	ampMultiplier := 1.0 + casterAttack.GetFinalDamageAmp()
+    isAbilityCrit := false // Placeholder for actual crit check
+    critChance := 0.0
+    critMultiplier := 1.0
+    if canAbilitiesCrit {
+        critChance = casterCrit.GetFinalCritChance()
+        critMultiplier = casterCrit.GetFinalCritMultiplier()
+        // TODO: Implement actual random crit check: isAbilityCrit = rand.Float64() < critChance
+    }
 
-	// --- Resistance Multipliers ---
-	finalArmor := targetHealth.GetFinalArmor()
-	armorMultiplier := 100.0 / (100.0 + finalArmor)
-	finalMR := targetHealth.GetFinalMR()
-	mrMultiplier := 100.0 / (100.0 + finalMR)
+    // Using EV for pre-mitigation calculation for now
+    critMultiplierEV := (1.0 - critChance) + (critChance * critMultiplier)
 
-	// --- Durability Multiplier ---
-	durabilityMultiplier := 1.0 - targetHealth.GetFinalDurability()
+    // --- Amplification Multiplier ---
+    // TODO: Use Spell Amp if available, otherwise fallback to Attack Amp?
+    ampMultiplier := 1.0 + casterAttack.GetFinalDamageAmp() // Using Attack Amp for now
 
-	// --- Calculate Damage Stages ---
-	// Apply Crit and Amp
-	preMitigationPhysical := rawPhysicalDamage * critMultiplierEV * ampMultiplier
-	preMitigationMagic := rawMagicDamage * critMultiplierEV * ampMultiplier
+    // --- Pre-Mitigation Damage ---
+    preMitigationDamage := rawDamage * critMultiplierEV * ampMultiplier
 
-	// Apply Resistance
-	mitigatedPhysical := preMitigationPhysical * armorMultiplier
-	mitigatedMagic := preMitigationMagic * mrMultiplier
+    // --- Resistance Multipliers & Mitigation Amount ---
+    resistanceMultiplier := 1.0
+    mitigatedByResistance := 0.0
+    if damageType == "AD" {
+        finalArmor := targetHealth.GetFinalArmor()
+        resistanceMultiplier = 100.0 / (100.0 + finalArmor)
+        mitigatedByResistance = preMitigationDamage * (1.0 - resistanceMultiplier)
+    } else if damageType == "AP" {
+        finalMR := targetHealth.GetFinalMR()
+        resistanceMultiplier = 100.0 / (100.0 + finalMR)
+        mitigatedByResistance = preMitigationDamage * (1.0 - resistanceMultiplier)
+    }
+    // True damage ignores resistance (multiplier remains 1.0)
 
-	// Apply Durability
-	finalPhysical := mitigatedPhysical * durabilityMultiplier
-	finalMagic := mitigatedMagic * durabilityMultiplier
+    // --- Durability Multiplier & Mitigation Amount ---
+    finalDurability := targetHealth.GetFinalDurability()
+    durabilityMultiplier := 1.0 - finalDurability
+    mitigatedByDurability := (preMitigationDamage - mitigatedByResistance) * (1.0 - durabilityMultiplier)
+    // True damage ignores durability? Check TFT rules. Assuming it does for now.
+    if damageType == "True" {
+         durabilityMultiplier = 1.0
+         mitigatedByDurability = 0.0
+    }
 
-	// Total Final Damage
-	finalTotalDamage := finalPhysical + finalMagic
 
-	// --- Enqueue DamageAppliedEvent ---
-	damageAppliedEvent := eventsys.DamageAppliedEvent{
-		Source:                caster,
-		Target:                target,
-		Timestamp:             evt.Timestamp,
-		IsSpell:               true,
-		PreMitigationPhysical: preMitigationPhysical,
-		PreMitigationMagic:    preMitigationMagic,
-		FinalPhysicalDamage:   finalPhysical,
-		FinalMagicDamage:      finalMagic,
-		FinalTotalDamage:      finalTotalDamage,
-	}
-	s.eventBus.Enqueue(damageAppliedEvent)
+    // --- Final Damage & Total Mitigation ---
+    finalDamage := preMitigationDamage * resistanceMultiplier * durabilityMultiplier
+    totalMitigation := mitigatedByResistance + mitigatedByDurability
 
-	log.Printf("DamageSystem (onSpellCast): Calculated %.1f total final damage (%.1f Phys, %.1f Mag) from %d to %d.\n",
-		finalTotalDamage, finalPhysical, finalMagic, caster, target)
+    // --- Enqueue DamageAppliedEvent ---
+    damageAppliedEvent := eventsys.DamageAppliedEvent{
+        Source:           caster,
+        Target:           target,
+        Timestamp:        eventTime,
+        DamageType:       damageType,
+        DamageSource:     "Spell", //+ evt.SpellName, // Include spell name
+        RawDamage:        rawDamage,
+        PreMitigationDamage: preMitigationDamage,
+        MitigatedDamage:  totalMitigation,
+        FinalTotalDamage:      finalDamage,
+        IsCrit:           false, // Spells don't trigger basic attack crit flag
+        IsAbilityCrit:    isAbilityCrit, // Use actual crit result if implemented
+    }
+    s.eventBus.Enqueue(damageAppliedEvent, eventTime) // Use eventTime for enqueueing
+
+    log.Printf("DamageSystem (onSpellLanded): Calculated %.1f final %s damage from %s by %d to %d. Enqueued DamageAppliedEvent.", finalDamage, damageType, evt.SpellName, caster, target)
+
+
 }

@@ -192,3 +192,108 @@ Attack Landing Check (Lines 116 onwards):
 This block if attack.GetAttackStartupEndTime() != -1.0 && s.currentTime >= attack.GetAttackStartupEndTime() checks if the current simulation time has reached or passed the scheduled landing time (AttackStartupEndTime).
 If it has, it finds a target, checks range, and enqueues the AttackLandedEvent.
 It then resets attack.SetAttackStartupEndTime(-1.0) to mark the landing as processed.
+
+Note to self: in auto attack system, the logic for checking CC/interuption during startup is already added (but commented out)
+
+DONE Today:
+- [x] added Rageblade
+- [x] revamped auto attack system to include startup and recovery times, make sure all tests passed
+- [x] when calculating damange, use the finalAD at damage calculation time, instead of at attack landed time
+- [x] add mana gain for entity taking damage
+
+TODO:
+- [ ] add spell cast startup and recovery into the actual spellcast system
+- [ ] revisit logic for mana gain when champion taking damage, this should depend on if the champion's mana is locked during cast (also mana gain from other sources)
+- [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
+
+## 20250426
+Revamped Architecture design to address some edge cases and current flaws:
+Buff/Debuff system (for a champion unit):
+
+for each buff, we should record the following information:
+
+- source
+- duration
+- startTime
+- buff/debuff specific stat
+
+there’s a function according to each buff/debuff that would apply the buff to the champion
+
+Global Buff (for the game simulation, applies for maybe more than one champion unit):
+
+e.g., effects of ionic spark, Hex Augment (the team get 10% Attack Speed per 3 seconds in the combat)
+
+Damage Statistics:
+
+- per champion, we should record each damage dealt/taken and it’s type (AD/AP/True Damage and from Auto Attack/Spell Cast/Burn/Hurricane/Traits)
+- how many spell casted during the simulation
+
+Champion State: should record the state of the champion at time t of the simulation
+
+- possible states are:
+    - isUnderStun (independent from the rest, because a champion can be under Stun but still spelling)
+    - isCasting
+    - isAttackStartingUp
+    - isAttackRecovering
+    - isAttackCoolingDown
+    - isIdle (must be under Stun)
+- we should also store the start time and (expected) duration of the state
+
+Champion Action Handler
+
+champion state at any simulation time t:
+
+ → check is stun? 
+
+    →Y: pass, do nothing until stun is over
+
+        → N: check is full mana? 
+
+            → Y: check isAttackRecovering?
+
+                →Y: pass, do nothing until attack recovery is over
+
+                → N: should cast a spell
+
+            → N: check isAttackCoolingDown?
+
+        → Y: should auto attack
+
+    → N: pass, do nothing until attack CD is over
+
+Champion Action Cycle breakdown:
+
+(1) targeting → (2) attack startup → (3) check if mana full1? → (4) no: trigger AttackFiredEvent → (5) attack recovery → (6) check if mana full2? → (7) no: attack CD → go to (1) 
+
+at any mana full check, if yes → (a) spell cast start up (has a higher priority than CC) → (b) trigger SpellCastEvent → (c) spell cast recovery → (d) check attack CD is over? → yes: go to (1)/ no: go to (7) to wait until remaining attack CD is over
+
+Event structure:
+
+- basic attributes: source, target, stats (damage, etc)
+- Timestamp (accurate timestamp for the event)
+- EnqueueTimestamp (timestamp with a delta t in range U(-10^-5, +10^-5) to help resolve simultaneity)
+
+Simulation Steps:
+
+- before combat:
+    1. resolve starting-of-combat effects, including
+        1. handle item gain, e.g., Thief’s Gloves, Sponging (Combat start: Up to 6 champions with 1 or fewer items gain a copy of a random completed item from the nearest itemized ally.)
+        2. any static item/augments/traits effects
+        3. enqueue time effects (e.g., archangel’s staff AP gain every 5s in combat, should enqueue at t=5, t-10, t=15, etc)
+        4. other special handlings (e.g., S14 Overlord: The Overlord takes a bite out of the unit in the hex behind him, dealing 40% of their max Health as true damage. He gains 40% of their Health and 25% of their Attack Damage.)
+- at t=0, enqueue all champion’s first action (auto attack or cast)
+- simulation start:
+    ```
+    while (! combatEnds) {
+    
+    1. evt = EventQueue.dequeue()
+    2. set simulation time = evt.Timestamp
+    3. handleEvent(evt)
+        1. resolve event
+        2. enqueue subsequent event (when enqueuing new events to the EventQueue, find it’s position using evt.EnqueueTimestamp)
+    4. save evt to RecordQueue (if evt should be saved to help replay/analyze the combat when simulation is over, types of event should be saved TBD)
+    }
+    
+    combatEnds: 1. simulation time passed 30s; 2. one team has no alive champion units
+    ```
+

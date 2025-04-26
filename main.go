@@ -151,7 +151,7 @@ func main() {
 	eventBus := eventsys.NewSimpleBus()
 
 	// Create Systems
-	autoAttackSystem := systems.NewAutoAttackSystem(world, eventBus)
+	// autoAttackSystem := systems.NewAutoAttackSystem(world, eventBus)
 	damageSystem := systems.NewDamageSystem(world, eventBus)
 	// ... create other systems ...
 
@@ -159,24 +159,6 @@ func main() {
 	eventBus.RegisterHandler(damageSystem)
 	// ... register other handlers ...
 
-	// Simulation Loop
-	var currentTime float64 = 0.0
-	var deltaTime float64 = 0.1 // Example timestep
-
-	for currentTime < 10.0 { // Example duration
-		// Update systems that generate events or act based on time
-		autoAttackSystem.TriggerAutoAttack(deltaTime)
-		// ... update other systems like spell casting, movement etc. ...
-
-		// Process all queued events
-		eventBus.ProcessAll()
-
-		// Increment time
-		currentTime += deltaTime
-
-		// Check for simulation end conditions (e.g., one team wiped out)
-		// ...
-	}
 
 	// --- Run Simulation ---
 	sim.RunSimulation()

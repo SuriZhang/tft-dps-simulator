@@ -23,6 +23,16 @@ func NewDynamicEventItemSystem(world *ecs.World, bus eventsys.EventBus) *Dynamic
     return s
 }
 
+func (s *DynamicEventItemSystem) CanHandle(evt interface{}) bool {
+    // Check if the event is one we can handle
+    switch evt.(type) {
+    case eventsys.AttackLandedEvent, eventsys.DamageAppliedEvent:
+        return true
+    default:
+        return false
+    }
+}
+
 // HandleEvent processes incoming events.
 func (s *DynamicEventItemSystem) HandleEvent(event interface{}) {
     switch evt := event.(type) {
