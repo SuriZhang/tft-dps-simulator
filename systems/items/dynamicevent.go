@@ -39,17 +39,17 @@ func (s *DynamicEventItemSystem) HandleEvent(event interface{}) {
     // Use AttackLandedEvent
     case eventsys.AttackLandedEvent: 
         // Triggered when the entity *attacks* and hits
-        s.handleTitansTrigger(evt.Source)
-		s.handleRagebladeTrigger(evt.Source) // Handle Rageblade trigger
+        s.handleTitansTrigger(evt.Source, evt.Timestamp)
+		s.handleRagebladeTrigger(evt.Source, evt.Timestamp) 
     case eventsys.DamageAppliedEvent:
         // Triggered when the entity *takes damage*
-        s.handleTitansTrigger(evt.Target)
+        s.handleTitansTrigger(evt.Target, evt.Timestamp)
         // Add other event cases here if needed for other items
     }
 }
 
 // handleTitansTrigger checks if an entity has Titan's and processes a stack gain.
-func (s *DynamicEventItemSystem) handleTitansTrigger(entity ecs.Entity) {
+func (s *DynamicEventItemSystem) handleTitansTrigger(entity ecs.Entity, evtTimestamp float64) {
     equipment, ok := s.world.GetEquipment(entity)
     if (!ok || !equipment.HasItem(data.TFT_Item_TitansResolve)) {
         return // Entity doesn't have the item
@@ -91,11 +91,15 @@ func (s *DynamicEventItemSystem) handleTitansTrigger(entity ecs.Entity) {
                 log.Printf("  Reached max stacks! Applied bonus resists: +%.0f Armor, +%.0f MR.", bonusArmor, bonusMR)
             }
         }
+        recalcEvent := eventsys.RecalculateStatsEvent{Entity: entity, Timestamp: evtTimestamp}
+        s.eventBus.Enqueue(recalcEvent, evtTimestamp)
+        log.Printf("DynamicEventItemSystem (handleTitansTrigger): Enqueued RecalculateStatsEvent for entity %d at %.3fs", entity, evtTimestamp)
     }
+
 }
 
 // handleRagebladeTrigger checks if an entity has Guinsoo's Rageblade and processes stack gain.
-func (s *DynamicEventItemSystem) handleRagebladeTrigger(entity ecs.Entity) {
+func (s *DynamicEventItemSystem) handleRagebladeTrigger(entity ecs.Entity, evtTimestamp float64) {
     // Check if the attacker has the GuinsoosRagebladeEffect component
     guinsosEffect, hasGuinsos := s.world.GetGuinsoosRagebladeEffect(entity)
     if !hasGuinsos {
@@ -159,9 +163,7 @@ func (s *DynamicEventItemSystem) handleRagebladeTrigger(entity ecs.Entity) {
         // to update FinalAttackSpeed based on the new BonusPercentAttackSpeed.
         // Example: s.world.MarkForStatUpdate(entity)
     }
-}
-
-// Update function - currently empty as logic is event-driven.
-func (s *DynamicEventItemSystem) Update(dt float64) {
-    // No periodic updates needed for Titan's Resolve itself
+    recalcEvent := eventsys.RecalculateStatsEvent{Entity: entity, Timestamp: evtTimestamp}
+    s.eventBus.Enqueue(recalcEvent, evtTimestamp)
+    log.Printf("DynamicEventItemSystem (handleRagebladeTrigger): Enqueued RecalculateStatsEvent for entity %d at %.3fs", entity, evtTimestamp)
 }

@@ -30,6 +30,23 @@ func (s *BaseStaticItemSystem) ApplyStats() {
 	entitiesWithItemEffect := s.world.GetEntitiesWithComponents(itemEffectType)
 
 	for _, entity := range entitiesWithItemEffect {
+		// Reset component bonuses BEFORE applying static item bonuses
+        if health, ok := s.world.GetHealth(entity); ok {
+            health.ResetBonuses()
+        }
+        if attack, ok := s.world.GetAttack(entity); ok {
+            attack.ResetBonuses()
+        }
+        if spell, ok := s.world.GetSpell(entity); ok {
+            spell.ResetBonuses()
+        }
+        if crit, ok := s.world.GetCrit(entity); ok {
+            crit.ResetBonuses()
+        }
+        if mana, ok := s.world.GetMana(entity); ok {
+            mana.ResetBonuses()
+        }
+
 		itemEffect, _ := s.world.GetItemEffect(entity)
 
 		s.applyHealthBonuses(entity, itemEffect)

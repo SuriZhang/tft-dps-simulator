@@ -132,3 +132,15 @@ type QuicksilverProcEvent struct {
     Entity    ecs.Entity
     Timestamp float64
 }
+
+// QuicksilverEndEvent signals the end of Quicksilver's active duration.
+type QuicksilverEndEvent struct {
+    Entity    ecs.Entity
+    Timestamp float64 // Time the effect ends
+}
+
+// RecalculateStatsEvent signals that an entity's stats need recalculation due to a change.
+type RecalculateStatsEvent struct {
+    Entity    ecs.Entity
+    Timestamp float64 // Time the recalculation is requested (can be same as triggering event)
+}

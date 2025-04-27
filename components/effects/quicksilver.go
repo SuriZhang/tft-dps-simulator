@@ -7,11 +7,9 @@ package effects
 type QuicksilverEffect struct {
 	spellShieldDuration float64 // Duration of CC immunity (in seconds).
 	// CC Immunity State
-	remainingDuration float64 // Time left for CC immunity.
 	isActive          bool    // Flag to indicate if the CC immunity is currently active.
 
 	// Attack Speed Proc State (during immunity)
-	procTimer       float64 // Time elapsed since the last AS proc.
 	procInterval    float64 // Time interval to gain AS stack (e.g., 2.0 seconds).
 	stacks          int
 	procAttackSpeed float64 // Bonus AS gained per proc (as a decimal, e.g., 0.03 for 3%).
@@ -24,13 +22,10 @@ type QuicksilverEffect struct {
 func NewQuicksilverEffect(spellShieldDuration, procAttackSpeed, procInterval float64) *QuicksilverEffect {
 	return &QuicksilverEffect{
 		spellShieldDuration: spellShieldDuration,
-		// CC Immunity Defaults (from JSON)
-		remainingDuration: spellShieldDuration,
 		isActive:          true,
 
 		// Attack Speed Proc Defaults (from JSON)
 		stacks:          0, // Starts with no stacks
-		procTimer:       0.0,
 		procInterval:    procInterval,    // ProcInterval
 		procAttackSpeed: procAttackSpeed, // ProcAttackSpeed (approx)
 		currentBonusAS:  0.0,             // Starts with no bonus AS
@@ -38,24 +33,6 @@ func NewQuicksilverEffect(spellShieldDuration, procAttackSpeed, procInterval flo
 }
 
 // --- CC Immunity Methods ---
-
-// GetRemainingDuration returns the remaining duration of the CC immunity.
-func (q *QuicksilverEffect) GetRemainingDuration() float64 {
-	return q.remainingDuration
-}
-
-// SetRemainingDuration sets the remaining duration of the CC immunity.
-func (q *QuicksilverEffect) SetRemainingDuration(duration float64) {
-	q.remainingDuration = duration
-}
-
-// DecreaseRemainingDuration reduces the immunity duration by deltaTime.
-func (q *QuicksilverEffect) DecreaseRemainingDuration(deltaTime float64) {
-	if q.isActive {
-		q.remainingDuration -= deltaTime
-	}
-}
-
 // IsActive returns whether the CC immunity effect is currently active.
 func (q *QuicksilverEffect) IsActive() bool {
 	return q.isActive
@@ -65,26 +42,12 @@ func (q *QuicksilverEffect) IsActive() bool {
 // Note: Usually managed internally by DecreaseRemainingDuration.
 func (q *QuicksilverEffect) SetIsActive(active bool) {
 	q.isActive = active
-	if !active {
-		q.remainingDuration = 0 // Ensure duration is 0 if deactivated manually
-	}
 }
 
 // --- Attack Speed Proc Methods ---
-
-// GetProcTimer returns the time elapsed since the last AS proc.
-func (q *QuicksilverEffect) GetProcTimer() float64 {
-	return q.procTimer
-}
-
-// AddProcTimer increases the proc timer.
-func (q *QuicksilverEffect) SetProcTimer(deltaTime float64) {
-	q.procTimer = deltaTime
-}
-
-// ResetProcTimer resets the proc timer (usually after a proc occurs).
-func (q *QuicksilverEffect) ResetProcTimer(overflow float64) {
-	q.procTimer = overflow // Carry over any excess time
+// GetSpellShieldDuration returns the duration of CC immunity.
+func (q *QuicksilverEffect) GetSpellShieldDuration() float64 {
+	return q.spellShieldDuration
 }
 
 // GetProcInterval returns the interval between AS procs.
@@ -125,12 +88,9 @@ func (q *QuicksilverEffect) AddStacks(deltaStacks int) {
 }
 
 func (q *QuicksilverEffect) ResetEffects() {
-
-	q.remainingDuration = q.spellShieldDuration
 	q.isActive = true
 
 	// Attack Speed Proc State (during immunity)
-	q.procTimer = 0.0 // Time elapsed since the last AS proc.
 	q.stacks = 0
 	q.currentBonusAS = 0.0
 }

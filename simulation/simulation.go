@@ -51,13 +51,13 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 
 	// Create Systems, passing event bus where needed
 	autoAttackSystem := systems.NewAutoAttackSystem(world, eventBus)
-	damageSystem := systems.NewDamageSystem(world, eventBus) 
+	damageSystem := systems.NewDamageSystem(world, eventBus)
 	statCalcSystem := systems.NewStatCalculationSystem(world)
 	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
 	abilityCritSystem := itemsys.NewAbilityCritSystem(world)
-	dynamicTimeItemSystem := itemsys.NewDynamicTimeItemSystem(world) 
 	spellCastSystem := systems.NewSpellCastSystem(world, eventBus)
 	dynamicEventItemSystem := itemsys.NewDynamicEventItemSystem(world, eventBus)
+	dynamicTimeItemSystem := itemsys.NewDynamicTimeItemSystem(world, eventBus)
 	championActionSystem := systems.NewChampionActionSystem(world, eventBus)
 
 	// Register Event Handlers
@@ -66,6 +66,8 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	eventBus.RegisterHandler(championActionSystem)
 	eventBus.RegisterHandler(autoAttackSystem)
 	eventBus.RegisterHandler(spellCastSystem)
+	eventBus.RegisterHandler(statCalcSystem)
+	eventBus.RegisterHandler(dynamicTimeItemSystem)
 	// TODO: Register handlers for other systems that react to events (e.g., SpellCastSystem, AutoAttackSystem for recovery events, DynamicTimeItemSystem for timer events)
 
 	sim := &Simulation{
@@ -81,11 +83,11 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 		dynamicEventItemSystem: dynamicEventItemSystem,
 		config:                 config,
 		currentTime:            0.0,
-		recordQueue: 		  make([]*eventsys.EventItem, 0),
+		recordQueue:            make([]*eventsys.EventItem, 0),
 	}
 
 	// apply bonus static item stats to champions AND enqueue initial events
-	sim.setupCombat() 
+	sim.setupCombat()
 	return sim
 }
 
@@ -100,8 +102,7 @@ func (s *Simulation) setupCombat() {
 	// TODO: Implement other "before combat" steps from devlog.md (L279)
 	// 1. Resolve start-of-combat effects (Items like Thief's Gloves - requires item implementation) (devlog.md L280)
 	// 3. Enqueue time effects (e.g., Archangel's) - Requires DynamicTimeItemSystem refactor (devlog.md L282)
-	//    Example (conceptual - needs system changes):
-	//    s.dynamicTimeItemSystem.EnqueueInitialTimerEvents(s.eventBus)
+	s.dynamicTimeItemSystem.EnqueueInitialEvents()
 	// 4. Other special handlings (e.g., Overlord - requires trait implementation) (devlog.md L283)
 
 	// Enqueue first actions for all champions at t=0 (devlog.md L284)

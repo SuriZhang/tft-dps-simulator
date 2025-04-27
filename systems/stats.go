@@ -7,6 +7,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
+	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 )
 
 // StatCalculationSystem calculates the final derived stats for entities
@@ -19,6 +20,24 @@ type StatCalculationSystem struct {
 // NewStatCalculationSystem creates a new StatCalculationSystem.
 func NewStatCalculationSystem(world *ecs.World) *StatCalculationSystem {
 	return &StatCalculationSystem{world: world}
+}
+
+// CanHandle checks if the system can process the given event type.
+func (s *StatCalculationSystem) CanHandle(evt interface{}) bool {
+    switch evt.(type) {
+    case eventsys.RecalculateStatsEvent:
+        return true
+    default:
+        return false
+    }
+}
+
+// HandleEvent processes incoming events, specifically RecalculateStatsEvent.
+func (s *StatCalculationSystem) HandleEvent(evt interface{}) {
+    switch event := evt.(type) {
+    case eventsys.RecalculateStatsEvent:
+        s.handleRecalculateStats(event)
+    }
 }
 
 // ApplyStaticBonusStats calculates and sets the final stats for all relevant entities (from items/traits), runs only once before simulation starts.
@@ -54,23 +73,26 @@ func (s *StatCalculationSystem) ApplyStaticBonusStats() {
 	}
 }
 
-// Update() is called every tick to recalculate stats for applying dymnamic bonuses during the combat.
-func (s *StatCalculationSystem) Update(dt float64) {
-	// Define component types needed. We need entities that have stats to calculate.
-	// Querying for just one core stat component like Health might be sufficient,
-	// as entities with stats usually have multiple stat components.
-	healthType := reflect.TypeOf(components.Health{})
-	attackType := reflect.TypeOf(components.Attack{})
-	manaType := reflect.TypeOf(components.Mana{})
+// handleRecalculateStats recalculates all stats for a specific entity.
+func (s *StatCalculationSystem) handleRecalculateStats(evt eventsys.RecalculateStatsEvent) {
+    entity := evt.Entity
+    // Check if entity still exists before calculating
+    if _, exists := s.world.GetHealth(entity); exists { // Check one component
+         log.Printf("StatCalculationSystem: Recalculating stats for entity %d at t=%.3fs", entity, evt.Timestamp)
+         s.calculateAllStats(entity)
+    } else {
+         log.Printf("StatCalculationSystem: Entity %d no longer exists, skipping recalculation.", entity)
+    }
+}
 
-	entities := s.world.GetEntitiesWithComponents(healthType, manaType, attackType)
 
-	for _, entity := range entities {
-		s.calculateHealthStats(entity)
-		s.calculateAttackStats(entity)
-		s.calculateManaStats(entity)
-		s.calculateSpellStats(entity)
-	}
+// calculateAllStats() performs all stat calculations for a single entity.
+func (s *StatCalculationSystem) calculateAllStats(entity ecs.Entity) {
+    s.calculateHealthStats(entity)
+    s.calculateAttackStats(entity)
+    s.calculateManaStats(entity)
+    s.calculateSpellStats(entity)
+    s.calculateCritStats(entity)
 }
 
 // calculateHealthStats calculates FinalMaxHP, FinalArmor, FinalMR, FinalDurability.
@@ -142,9 +164,9 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 		attack.SetCurrentAttackRecovery(baseRecovery)
 		// Optional logging
 		if baseStartup == 0 && baseRecovery == 0 {
-			log.Printf("Entity %d: Using base attack times (both 0.0).", entity)
+			// log.Printf("Entity %d: Using base attack times (both 0.0).", entity)
 		} else if baseAS <= 0 || finalAS <= 0 {
-			log.Printf("Entity %d: Using base attack times due to zero BaseAS or FinalAS.", entity)
+			// log.Printf("Entity %d: Using base attack times due to zero BaseAS or FinalAS.", entity)
 		}
 	}
 

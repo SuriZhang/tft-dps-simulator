@@ -5,194 +5,190 @@ import (
 	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
-	effects "github.com/suriz/tft-dps-simulator/components/effects"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
+	eventsys "github.com/suriz/tft-dps-simulator/systems/events" // Import events package
 )
 
-// DynamicTimeItemSystem handles items whose effects change over time.
+// DynamicTimeItemSystem handles items whose effects change over time via events.
 type DynamicTimeItemSystem struct {
-	world *ecs.World
+	world    *ecs.World
+	eventBus eventsys.EventBus // Store the bus to enqueue subsequent events
 }
 
 // NewDynamicTimeItemSystem creates a new system instance.
-func NewDynamicTimeItemSystem(world *ecs.World) *DynamicTimeItemSystem {
+func NewDynamicTimeItemSystem(world *ecs.World, bus eventsys.EventBus) *DynamicTimeItemSystem { // Added bus parameter
 	return &DynamicTimeItemSystem{
-		world: world,
+		world:    world,
+		eventBus: bus, // Store the bus
 	}
 }
 
-// Update processes time-based item effects for relevant entities.
-func (s *DynamicTimeItemSystem) Update(deltaTime float64) {
-	// Query entities that have equipment (potential item carriers)
-	// We don't query for the specific effect components because they might be added/removed by this system.
+// EnqueueInitialEvents checks equipped items and schedules the first timer events.
+// This should be called during simulation setup (e.g., in Simulation.setupCombat).
+func (s *DynamicTimeItemSystem) EnqueueInitialEvents() {
+	log.Println("DynamicTimeItemSystem: Enqueueing initial timer events...")
 	entities := s.world.GetEntitiesWithComponents(reflect.TypeOf(components.Equipment{}))
 
 	for _, entity := range entities {
 		equipment, ok := s.world.GetEquipment(entity)
 		if !ok {
-			continue // Should not happen based on query, but good practice
+			continue
 		}
 
 		// --- Archangel's Staff ---
 		if equipment.HasItem(data.TFT_Item_ArchangelsStaff) {
-			s.updateArchangels(entity, deltaTime)
-		} else {
-			// If the item was removed, ensure the effect component is also removed
-			if _, exists := s.world.GetArchangelsEffect(entity); exists {
-				s.world.RemoveComponent(entity, reflect.TypeOf(effects.ArchangelsEffect{}))
+			effect, exists := s.world.GetArchangelsEffect(entity)
+
+			if exists && effect.GetInterval() > 0 {
+				effect.ResetEffects()
+				firstTickTime := effect.GetInterval() // First tick happens after interval
+				tickEvent := eventsys.ArchangelsTickEvent{Entity: entity, Timestamp: firstTickTime}
+				s.eventBus.Enqueue(tickEvent, firstTickTime)
+				log.Printf("  Enqueued initial ArchangelsTickEvent for entity %d at t=%.3fs", entity, firstTickTime)
 			}
 		}
 
 		// --- Quicksilver ---
 		if equipment.HasItem(data.TFT_Item_Quicksilver) {
-			s.updateQuicksilver(entity, deltaTime)
-		} else {
-			// If the item was removed, ensure the effect component is also removed
-			if _, exists := s.world.GetQuicksilverEffect(entity); exists {
-				s.world.RemoveComponent(entity, reflect.TypeOf(effects.QuicksilverEffect{}))
-				// TODO: Also remove IsImmuneToCC marker if implemented
-			}
-		}
-
-		// --- Add logic for other DynamicTime items here ---
-		// Example: Redemption (needs careful handling of activation trigger/delay)
-		// if equipment.HasItem("TFT_Item_Redemption") { ... }
-	}
-}
-
-// updateArchangels handles the logic for Archangel's Staff.
-func (s *DynamicTimeItemSystem) updateArchangels(entity ecs.Entity, deltaTime float64) {
-	// Check how many Archangel's Staffs are equipped first
-	equipComp, equipOk := s.world.GetEquipment(entity)
-	if !equipOk {
-		return // No equipment component, shouldn't happen if item was added
-	}
-	archangelsCount := equipComp.GetItemCount(data.TFT_Item_ArchangelsStaff)
-	if archangelsCount == 0 {
-		// No Archangel's Staff equipped, nothing to do
-		return
-	}
-
-	effect, exists := s.world.GetArchangelsEffect(entity)
-	if !exists {
-		// Component should have been added by equipment manager when item equipped.
-		// If it doesn't exist here, something is wrong, but we can't proceed.
-		log.Printf("Warning: Entity %d has Archangel's Staff but no ArchangelsEffect component.", entity)
-		return
-	}
-
-	// --- Stacking Logic (uses the single effect component) ---
-	effect.AddTimer(deltaTime)
-	procOccurredThisFrame := false
-	intervalsPassed := 0 // Keep track of intervals passed this frame
-
-	if effect.GetTimer() >= effect.GetInterval() {
-		// Calculate how many intervals passed (handles large deltaTime)
-		intervalsPassed = int(effect.GetTimer() / effect.GetInterval())
-		effect.AddStacks(intervalsPassed) // Update internal stack count in the effect component
-		// Subtract only the time for the intervals that passed
-		effect.SetTimer(effect.GetTimer() - float64(intervalsPassed)*effect.GetInterval()) // Carry over remainder
-		procOccurredThisFrame = true
-		log.Printf("Entity %d Archangel's Proc! Stacks: %d", entity, effect.GetStacks())
-	}
-
-	// --- Apply *Delta* Bonus AP (multiplied by item count) ---
-	// Only apply if a proc occurred this frame.
-	if procOccurredThisFrame && intervalsPassed > 0 {
-		spellComp, spellOk := s.world.GetSpell(entity)
-		if spellOk {
-			// Calculate the bonus AP gained *this frame* from one staff
-			singleDeltaBonus := float64(intervalsPassed) * effect.GetAPPerInterval()
-			// Multiply by the number of Archangel's Staffs equipped
-			totalDeltaBonus := singleDeltaBonus * float64(archangelsCount)
-
-			if totalDeltaBonus > 0 {
-				currentBonusAP := spellComp.GetBonusAP()
-				log.Printf("Entity %d Archangel's Proc: Stacks=%d, Count=%d. Before AddBonusAP: %.1f", entity, effect.GetStacks(), archangelsCount, currentBonusAP) // New log
-				// Add the newly gained bonus AP to the spell component
-				spellComp.AddBonusAP(totalDeltaBonus) // Use AddBonusAP for delta
-				newBonusAP := spellComp.GetBonusAP()
-				log.Printf("Entity %d Archangel's Proc: Applied Delta AP: +%.1f. After AddBonusAP: %.1f", entity, totalDeltaBonus, newBonusAP) // New log
-			}
-		}
-	}
-	// Note: The StatCalculationSystem is responsible for recalculating FinalAP based on the updated BonusAP.
-}
-
-// updateQuicksilver handles the logic for Quicksilver.
-func (s *DynamicTimeItemSystem) updateQuicksilver(entity ecs.Entity, deltaTime float64) {
-	effect, exists := s.world.GetQuicksilverEffect(entity)
-	if (!exists) {
-		return // Component removed previously or never added
-	}
-
-	// Only process if the effect is marked as active.
-	if (effect.IsActive()) {
-
-		// --- Determine if a proc interval boundary is crossed THIS frame ---
-		oldProcTimer := effect.GetProcTimer()
-		newProcTimer := oldProcTimer + deltaTime
-		procInterval := effect.GetProcInterval()
-		procOccurredThisFrame := false
-		newStacksToAdd := 0
-
-		// Check how many full intervals were completed by the end of this frame
-		// compared to the start. Use integer division for floor effect.
-		intervalsAtStart := int(oldProcTimer / procInterval)
-		intervalsAtEnd := int(newProcTimer / procInterval)
-
-		if (intervalsAtEnd > intervalsAtStart) {
-			newStacksToAdd = intervalsAtEnd - intervalsAtStart
-			procOccurredThisFrame = true
-			// Update the timer, carrying over the remainder past the last completed interval
-			remainder := newProcTimer - float64(intervalsAtEnd)*procInterval
-			effect.SetProcTimer(remainder) // Assuming SetProcTimer exists
-		} else {
-			// No full interval completed, just update the timer
-			effect.SetProcTimer(newProcTimer)
-		}
-
-		// --- If proc occurred, update internal state ---
-		if (procOccurredThisFrame) {
-			// Assuming AddStacks updates the internal stack count
-			effect.AddStacks(newStacksToAdd)
-			effect.AddBonusAS(float64(newStacksToAdd) * effect.GetProcAttackSpeed())
-			// Assuming GetCurrentBonusAS now calculates based on the new stack count
-			log.Printf("Entity %d Quicksilver Proc! Stacks: %d, Internal Bonus AS now: %.2f%%", entity, effect.GetStacks(), effect.GetCurrentBonusAS()*100)
-		}
-
-		// --- Apply the *delta* bonus AS gained this frame ---
-		// Only apply if a proc occurred this frame.
-		if (procOccurredThisFrame && newStacksToAdd > 0) {
-			attackComp, attackOk := s.world.GetAttack(entity)
-			if (attackOk) {
-				// Calculate the bonus AS gained *this frame*
-				deltaBonusAS := float64(newStacksToAdd) * effect.GetProcAttackSpeed()
-
-				if (deltaBonusAS > 0) {
-					before := attackComp.GetBonusPercentAttackSpeed()
-					log.Printf("Entity %d Quicksilver Before Delta AS: %.2f%%", entity, before*100)
-					// Add the newly gained bonus AS to the attack component
-					attackComp.AddBonusPercentAttackSpeed(deltaBonusAS)
-					log.Printf("Entity %d Quicksilver Applied Delta AS: +%.2f%%, Total Bonus AS now: %.2f%%", entity, deltaBonusAS*100, attackComp.GetBonusPercentAttackSpeed()*100)
+			effect, exists := s.world.GetQuicksilverEffect(entity)
+			if exists && effect.GetProcInterval() > 0 && effect.GetSpellShieldDuration() > 0 {
+				effect.ResetEffects()
+				// Enqueue first proc event
+				firstProcTime := effect.GetProcInterval()
+				if firstProcTime <= effect.GetSpellShieldDuration() { // Only if first proc happens before expiry
+					procEvent := eventsys.QuicksilverProcEvent{Entity: entity, Timestamp: firstProcTime}
+					s.eventBus.Enqueue(procEvent, firstProcTime)
+					log.Printf("  Enqueued initial QuicksilverProcEvent for entity %d at t=%.3fs", entity, firstProcTime)
 				}
+
+				// Enqueue the end event
+				endTime := effect.GetSpellShieldDuration() // Duration starts at t=0
+				endEvent := eventsys.QuicksilverEndEvent{Entity: entity, Timestamp: endTime}
+				s.eventBus.Enqueue(endEvent, endTime)
+				log.Printf("  Enqueued QuicksilverEndEvent for entity %d at t=%.3fs", entity, endTime)
 			}
 		}
-
-		// --- Handle Duration Countdown ---
-		effect.DecreaseRemainingDuration(deltaTime)
-		// log.Printf("Entity %d Quicksilver remaining: %.2f\n", entity, effect.GetRemainingDuration()) // Log remaining duration
-
-		// --- Check for Expiry AFTER applying effects for this frame ---
-		// Use <= 0 to catch expiry exactly at 0.0
-		if (effect.GetRemainingDuration() <= 0) {
-			// Duration expired THIS frame. Mark inactive.
-			// Do NOT remove the component here.
-			log.Printf("Entity %d Quicksilver expired (Duration <= 0), setting inactive.\n", entity)
-			effect.SetIsActive(false)
-			// TODO: Remove IsImmuneToCC marker if implemented
-		}
+		// --- Add other items here ---
 	}
-	// If effect.IsActive() is false, do nothing.
+}
+
+// CanHandle checks if the system can process the given event type.
+func (s *DynamicTimeItemSystem) CanHandle(evt interface{}) bool {
+	switch evt.(type) {
+	case eventsys.ArchangelsTickEvent,
+		eventsys.QuicksilverProcEvent,
+		eventsys.QuicksilverEndEvent:
+		return true
+	default:
+		return false
+	}
+}
+
+// HandleEvent processes incoming timer events.
+func (s *DynamicTimeItemSystem) HandleEvent(evt interface{}) {
+	switch event := evt.(type) {
+	case eventsys.ArchangelsTickEvent:
+		s.handleArchangelsTick(event)
+	case eventsys.QuicksilverProcEvent:
+		s.handleQuicksilverProc(event)
+	case eventsys.QuicksilverEndEvent:
+		s.handleQuicksilverEnd(event)
+	}
+}
+
+// handleArchangelsTick applies AP bonus and enqueues the next tick.
+func (s *DynamicTimeItemSystem) handleArchangelsTick(evt eventsys.ArchangelsTickEvent) {
+	entity := evt.Entity
+	currentTime := evt.Timestamp
+
+	// Check if entity still exists and has the item/effect
+	equipment, equipOk := s.world.GetEquipment(entity)
+	effect, effectOk := s.world.GetArchangelsEffect(entity)
+	spellComp, spellOk := s.world.GetSpell(entity)
+	health, healthOk := s.world.GetHealth(entity) // Check if alive
+
+	if !equipOk || !effectOk || !spellOk || !healthOk || health.GetCurrentHP() <= 0 || !equipment.HasItem(data.TFT_Item_ArchangelsStaff) {
+		log.Printf("DynamicTimeItemSystem (ArchangelsTick): Entity %d no longer valid or item removed at %.3fs. Stopping ticks.", entity, currentTime)
+		return
+	}
+
+	// Apply effect (add bonus AP)
+	archangelsCount := equipment.GetItemCount(data.TFT_Item_ArchangelsStaff)
+	apGain := effect.GetAPPerInterval() * float64(archangelsCount)
+	spellComp.AddBonusAP(apGain)
+	effect.AddStacks(1)
+
+	log.Printf("DynamicTimeItemSystem (ArchangelsTick): Entity %d gained %.1f AP at %.3fs (Stacks: %d, Count: %d). Total Bonus AP: %.1f",
+		entity, apGain, currentTime, effect.GetStacks(), archangelsCount, spellComp.GetBonusAP())
+
+	// Enqueue event to recalculate stats
+	recalcEvent := eventsys.RecalculateStatsEvent{Entity: entity, Timestamp: currentTime}
+	s.eventBus.Enqueue(recalcEvent, currentTime)
+
+	// Enqueue the next tick event
+	nextTickTime := currentTime + effect.GetInterval()
+	nextTickEvent := eventsys.ArchangelsTickEvent{Entity: entity, Timestamp: nextTickTime}
+	s.eventBus.Enqueue(nextTickEvent, nextTickTime)
+}
+
+// handleQuicksilverProc applies AS bonus and enqueues the next proc if applicable.
+func (s *DynamicTimeItemSystem) handleQuicksilverProc(evt eventsys.QuicksilverProcEvent) {
+	entity := evt.Entity
+	currentTime := evt.Timestamp
+
+	// Check if entity still exists and has the item/effect and is active
+	equipment, equipOk := s.world.GetEquipment(entity)
+	effect, effectOk := s.world.GetQuicksilverEffect(entity)
+	attackComp, attackOk := s.world.GetAttack(entity)
+	health, healthOk := s.world.GetHealth(entity) // Check if alive
+
+	// Crucially, also check if the effect is still active (duration hasn't ended)
+	if !equipOk || !effectOk || !attackOk || !healthOk || health.GetCurrentHP() <= 0 || !equipment.HasItem(data.TFT_Item_Quicksilver) || !effect.IsActive() {
+		log.Printf("DynamicTimeItemSystem (QuicksilverProc): Entity %d no longer valid, item removed, or effect inactive at %.3fs. Stopping procs.", entity, currentTime)
+		return
+	}
+
+	// Apply effect (add bonus AS)
+	quicksilverCount := equipment.GetItemCount(data.TFT_Item_Quicksilver) // Should always be 1 due to uniqueness, but check anyway
+	asGain := effect.GetProcAttackSpeed() * float64(quicksilverCount)
+	attackComp.AddBonusPercentAttackSpeed(asGain)
+	effect.AddStacks(1) // Increment internal stack count
+
+	log.Printf("DynamicTimeItemSystem (QuicksilverProc): Entity %d gained %.2f%% AS at %.3fs (Stacks: %d). Total Bonus AS: %.2f%%",
+		entity, asGain*100, currentTime, effect.GetStacks(), attackComp.GetBonusPercentAttackSpeed()*100)
+
+	// Enqueue event to recalculate stats
+	recalcEvent := eventsys.RecalculateStatsEvent{Entity: entity, Timestamp: currentTime}
+	s.eventBus.Enqueue(recalcEvent, currentTime)
+
+	// Enqueue the next proc event ONLY if it happens before the effect expires
+	nextProcTime := currentTime + effect.GetProcInterval()
+	// Use the original duration stored in the effect, don't rely on RemainingDuration which might change
+	expiryTime := effect.GetSpellShieldDuration()
+	if nextProcTime <= expiryTime {
+		nextProcEvent := eventsys.QuicksilverProcEvent{Entity: entity, Timestamp: nextProcTime}
+		s.eventBus.Enqueue(nextProcEvent, nextProcTime)
+	} else {
+		log.Printf("DynamicTimeItemSystem (QuicksilverProc): Next proc for entity %d at %.3fs would be after expiry (%.3fs). Not enqueueing.", entity, nextProcTime, expiryTime)
+	}
+}
+
+// handleQuicksilverEnd marks the effect as inactive.
+func (s *DynamicTimeItemSystem) handleQuicksilverEnd(evt eventsys.QuicksilverEndEvent) {
+	entity := evt.Entity
+	currentTime := evt.Timestamp
+
+	effect, effectOk := s.world.GetQuicksilverEffect(entity)
+	if !effectOk {
+		// Effect might have been removed if item was removed earlier
+		return
+	}
+
+	if effect.IsActive() {
+		log.Printf("DynamicTimeItemSystem (QuicksilverEnd): Entity %d Quicksilver duration ended at %.3fs. Marking inactive.", entity, currentTime)
+		effect.SetIsActive(false)
+		// Note: Bonus AS is NOT removed here. It persists but stops stacking.
+		// If removal is desired, EquipmentManager should handle it on item removal.
+	}
 }
