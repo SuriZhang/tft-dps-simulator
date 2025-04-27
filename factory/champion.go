@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/suriz/tft-dps-simulator/components"
-	"github.com/suriz/tft-dps-simulator/components/effects"
+	"github.com/suriz/tft-dps-simulator/components/items"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 )
@@ -134,7 +134,7 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 	}
 
 	// create empty item effect component
-	err = cf.world.AddComponent(entity, effects.NewItemStaticEffect())
+	err = cf.world.AddComponent(entity, items.NewItemStaticEffect())
 	if err != nil {
 		return 0, fmt.Errorf("failed to add ItemEffect component to %s: %w", championData.Name, err)
 	}

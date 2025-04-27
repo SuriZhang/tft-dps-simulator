@@ -1,5 +1,4 @@
-// filepath: components/effects/titansresolve.go
-package effects
+package items
 
 /*
  * "desc": "Gain @StackingAD*100@% Attack Damage and @StackingSP@ Ability Power when attacking or taking damage, stacking up to @StackCap@ times.  <br><br>At full stacks, gain @BonusResistsAtStackCap@ Armor and @BonusResistsAtStackCap@ Magic Resist."

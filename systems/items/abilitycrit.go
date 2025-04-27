@@ -6,8 +6,6 @@ import (
 
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/ecs"
-	// Assuming data package provides item definitions if needed, but not strictly required here
-	// "github.com/suriz/tft-dps-simulator/data"
 )
 
 // AbilityCritSystem checks for items granting the ability crit effect (JG, IE)

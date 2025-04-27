@@ -1,4 +1,4 @@
-package effects
+package items
 
 // ArchangelsEffect holds the state for Archangel's Staff.
 /**

@@ -305,3 +305,10 @@ TODO:
 - [ ] refactor DynamicTimeSystem to enqueue and handle events
 - [ ] fix ChampionActionSystem to correctly enqueue AttackCooldownStartEvent based on champion state
 - [ ] fix SimulationTests (currently failing 8 tests)
+
+## 20250427
+DONE Today:
+- [x] major event-driven refactor is done!!
+- [x] refactor DynamicTimeSystem to enqueue and handle events
+- [x] fix ChampionActionSystem to correctly enqueue AttackCooldownStartEvent based on champion state
+- [x] all tests passed

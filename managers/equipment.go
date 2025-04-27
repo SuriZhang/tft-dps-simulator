@@ -5,7 +5,7 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/suriz/tft-dps-simulator/components/effects"
+	"github.com/suriz/tft-dps-simulator/components/items"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
 )
@@ -73,7 +73,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 			apPerStack := item.Effects["APPerInterval"] // Default to 0 if not found
 
 			// Call the updated constructor with fetched values
-			archangelsEffect := effects.NewArchangelsEffect(interval, apPerStack)
+			archangelsEffect := items.NewArchangelsEffect(interval, apPerStack)
 			err := em.world.AddComponent(champion, archangelsEffect)
 			if err != nil {
 				log.Printf("Warning: Failed to add ArchangelsEffect component for champion %s: %v", championName, err)
@@ -89,7 +89,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 			procAS := item.Effects["ProcAttackSpeed"]       // Default to 0 if not found
 			procInterval := item.Effects["ProcInterval"]    // Default to 0 if not found
 
-			quicksilverEffect := effects.NewQuicksilverEffect(duration, procAS, procInterval)
+			quicksilverEffect := items.NewQuicksilverEffect(duration, procAS, procInterval)
 			err := em.world.AddComponent(champion, quicksilverEffect)
 			if err != nil {
 				log.Printf("Warning: Failed to add QuicksilverEffect component for champion %s: %v", championName, err)
@@ -97,7 +97,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 				log.Printf("Added QuicksilverEffect component to champion %s (Duration: %.1f, ProcAS: %.2f, Interval: %.1f)",
 					championName, duration, procAS, procInterval)
 				// TODO: Add IsImmuneToCC marker component if implemented
-				// em.world.AddComponent(champion, effects.IsImmuneToCC{})
+				// em.world.AddComponent(champion, itemsIsImmuneToCC{})
 			}
 		}
 	case data.TFT_Item_TitansResolve:
@@ -108,7 +108,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 			apPerStack := item.Effects["StackingSP"]
 			bonusResists := item.Effects["BonusResistsAtStackCap"]
 
-			titansEffect := effects.NewTitansResolveEffect(maxStacks, adPerStack, apPerStack, bonusResists)
+			titansEffect := items.NewTitansResolveEffect(maxStacks, adPerStack, apPerStack, bonusResists)
 			err := em.world.AddComponent(champion, titansEffect)
 			if err != nil {
 				log.Printf("Warning: Failed to add TitansResolveEffect component for champion %s: %v", championName, err)
@@ -123,7 +123,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 			// Fetch the correct value from item data
 			asPerStack := item.Effects["AttackSpeedPerStack"]
 			// Create the effect component
-			ragebladeEffect := effects.NewGuinsoosRagebaldeEffect(asPerStack / 100)
+			ragebladeEffect := items.NewGuinsoosRagebaldeEffect(asPerStack / 100)
 			err := em.world.AddComponent(champion, ragebladeEffect)
 			if err != nil {
 				log.Printf("Warning: Failed to add GuinsoosRagebladeEffect component for champion %s: %v", championName, err)
@@ -171,12 +171,12 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 	switch itemApiName {
 	case data.TFT_Item_ArchangelsStaff:
 		if _, exists := em.world.GetArchangelsEffect(champion); exists {
-			em.world.RemoveComponent(champion, reflect.TypeOf(effects.ArchangelsEffect{}))
+			em.world.RemoveComponent(champion, reflect.TypeOf(items.ArchangelsEffect{}))
 			log.Printf("Removed ArchangelsEffect component from champion %s", championName)
 		}
 	case data.TFT_Item_Quicksilver:
 		if _, exists := em.world.GetQuicksilverEffect(champion); exists {
-			em.world.RemoveComponent(champion, reflect.TypeOf(effects.QuicksilverEffect{}))
+			em.world.RemoveComponent(champion, reflect.TypeOf(items.QuicksilverEffect{}))
 			log.Printf("Removed QuicksilverEffect component from champion %s", championName)
 			// TODO: Remove IsImmuneToCC marker component if implemented
 			// em.world.RemoveComponent(champion, reflect.TypeOf(effects.IsImmuneToCC{}))
@@ -210,7 +210,7 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 			}
 		
 			// Remove the effect component itself
-			em.world.RemoveComponent(champion, reflect.TypeOf(effects.TitansResolveEffect{}))
+			em.world.RemoveComponent(champion, reflect.TypeOf(items.TitansResolveEffect{}))
 			log.Printf("Removed TitansResolveEffect component from champion %s", championName)
 		}
 	case data.TFT_Item_GuinsoosRageblade:
@@ -227,7 +227,7 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 			}
 		
 			// Remove the effect component itself
-			em.world.RemoveComponent(champion, reflect.TypeOf(effects.GuinsoosRagebladeEffect{}))
+			em.world.RemoveComponent(champion, reflect.TypeOf(items.GuinsoosRagebladeEffect{}))
 			log.Printf("Removed GuinsoosRagebladeEffect component from champion %s", championName)
 		}
 		// Add cases for other dynamic items
@@ -263,7 +263,7 @@ func (em *EquipmentManager) calculateAndUpdateStaticItemEffects(champion ecs.Ent
 	itemEffect, ok := em.world.GetItemEffect(champion)
 	if !ok {
 		// If no ItemStaticEffect component exists, create a new one
-		newItemEffect := effects.NewItemStaticEffect()
+		newItemEffect := items.NewItemStaticEffect()
 		err := em.world.AddComponent(champion, newItemEffect)
 		if err != nil {
 			return fmt.Errorf("failed to add ItemStaticEffect component to champion %s: %w", championName, err)

@@ -1,4 +1,4 @@
-package effects
+package items
 
 // GuinsoosRagebladeEffect tracks the stacking attack speed bonus from Guinsoo's Rageblade.
 type GuinsoosRagebladeEffect struct {

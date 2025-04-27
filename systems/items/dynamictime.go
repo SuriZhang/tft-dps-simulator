@@ -7,7 +7,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
-	eventsys "github.com/suriz/tft-dps-simulator/systems/events" // Import events package
+	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 )
 
 // DynamicTimeItemSystem handles items whose effects change over time via events.

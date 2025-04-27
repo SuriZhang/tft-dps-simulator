@@ -1,4 +1,4 @@
-package effects
+package items
 
 // QuicksilverEffect holds the state for Quicksilver.
 /**

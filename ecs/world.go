@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/suriz/tft-dps-simulator/components"
-	"github.com/suriz/tft-dps-simulator/components/effects"
+	"github.com/suriz/tft-dps-simulator/components/items"
 )
 
 // World contains all entities and their components, stored in type-specific maps.
@@ -20,7 +20,7 @@ type World struct {
 	ChampionInfo             map[Entity]*components.ChampionInfo
 	Position                 map[Entity]*components.Position
 	Team                     map[Entity]*components.Team
-	Item                     map[Entity]*effects.ItemStaticEffect
+	Item                     map[Entity]*items.ItemStaticEffect
 	Equipment                map[Entity]*components.Equipment
 	CanAbilityCritFromTraits map[Entity]*components.CanAbilityCritFromTraits
 	CanAbilityCritFromItems  map[Entity]*components.CanAbilityCritFromItems
@@ -28,10 +28,10 @@ type World struct {
 	Crit                     map[Entity]*components.Crit
 	State                    map[Entity]*components.State
 	// --- Dynamic Item Effect Components ---
-	ArchangelsEffects        map[Entity]*effects.ArchangelsEffect
-	QuicksilverEffects       map[Entity]*effects.QuicksilverEffect
-	TitansResolveEffects     map[Entity]*effects.TitansResolveEffect
-	GuinsoosRagebladeEffects map[Entity]*effects.GuinsoosRagebladeEffect
+	ArchangelsEffects        map[Entity]*items.ArchangelsEffect
+	QuicksilverEffects       map[Entity]*items.QuicksilverEffect
+	TitansResolveEffects     map[Entity]*items.TitansResolveEffect
+	GuinsoosRagebladeEffects map[Entity]*items.GuinsoosRagebladeEffect
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
 	// Buffs        map[Entity]*components.Buffs
@@ -48,7 +48,7 @@ func NewWorld() *World {
 		ChampionInfo:             make(map[Entity]*components.ChampionInfo),
 		Position:                 make(map[Entity]*components.Position),
 		Team:                     make(map[Entity]*components.Team),
-		Item:                     make(map[Entity]*effects.ItemStaticEffect),
+		Item:                     make(map[Entity]*items.ItemStaticEffect),
 		Equipment:                make(map[Entity]*components.Equipment),
 		CanAbilityCritFromTraits: make(map[Entity]*components.CanAbilityCritFromTraits),
 		CanAbilityCritFromItems:  make(map[Entity]*components.CanAbilityCritFromItems),
@@ -56,10 +56,10 @@ func NewWorld() *World {
 		Crit:                     make(map[Entity]*components.Crit),
 		State: make(map[Entity]*components.State),
 		// --- Dynamic Item Effect Components ---
-		ArchangelsEffects:        make(map[Entity]*effects.ArchangelsEffect),
-		QuicksilverEffects:       make(map[Entity]*effects.QuicksilverEffect),
-		TitansResolveEffects:     make(map[Entity]*effects.TitansResolveEffect),
-		GuinsoosRagebladeEffects: make(map[Entity]*effects.GuinsoosRagebladeEffect),
+		ArchangelsEffects:        make(map[Entity]*items.ArchangelsEffect),
+		QuicksilverEffects:       make(map[Entity]*items.QuicksilverEffect),
+		TitansResolveEffects:     make(map[Entity]*items.TitansResolveEffect),
+		GuinsoosRagebladeEffects: make(map[Entity]*items.GuinsoosRagebladeEffect),
 		// Initialize other maps here...
 	}
 }
@@ -134,9 +134,9 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.Team[e] = &c
 	case *components.Team:
 		w.Team[e] = c
-	case effects.ItemStaticEffect:
+	case items.ItemStaticEffect:
 		w.Item[e] = &c
-	case *effects.ItemStaticEffect:
+	case *items.ItemStaticEffect:
 		w.Item[e] = c
 	case components.Equipment:
 		w.Equipment[e] = &c
@@ -163,21 +163,21 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 	case *components.State:
 		w.State[e] = c
 	// --- Dynamic Item Effect Components ---
-	case effects.ArchangelsEffect:
+	case items.ArchangelsEffect:
 		w.ArchangelsEffects[e] = &c
-	case *effects.ArchangelsEffect:
+	case *items.ArchangelsEffect:
 		w.ArchangelsEffects[e] = c
-	case effects.QuicksilverEffect:
+	case items.QuicksilverEffect:
 		w.QuicksilverEffects[e] = &c
-	case *effects.QuicksilverEffect:
+	case *items.QuicksilverEffect:
 		w.QuicksilverEffects[e] = c
-	case effects.TitansResolveEffect:
+	case items.TitansResolveEffect:
 		w.TitansResolveEffects[e] = &c
-	case *effects.TitansResolveEffect:
+	case *items.TitansResolveEffect:
 		w.TitansResolveEffects[e] = c
-	case effects.GuinsoosRagebladeEffect:
+	case items.GuinsoosRagebladeEffect:
 		w.GuinsoosRagebladeEffects[e] = &c
-	case *effects.GuinsoosRagebladeEffect:
+	case *items.GuinsoosRagebladeEffect:
 		w.GuinsoosRagebladeEffects[e] = c
 	// Add cases for other component types here...
 	default:
@@ -213,7 +213,7 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.Team{}):
 		comp, ok := w.Team[e]
 		return comp, ok
-	case reflect.TypeOf(effects.ItemStaticEffect{}):
+	case reflect.TypeOf(items.ItemStaticEffect{}):
 		comp, ok := w.Item[e]
 		return comp, ok
 	case reflect.TypeOf(components.Equipment{}):
@@ -235,16 +235,16 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 		comp, ok := w.State[e]
 		return comp, ok
 	// --- Dynamic Item Effect Components ---
-	case reflect.TypeOf(effects.ArchangelsEffect{}):
+	case reflect.TypeOf(items.ArchangelsEffect{}):
 		comp, ok := w.ArchangelsEffects[e]
 		return comp, ok
-	case reflect.TypeOf(effects.QuicksilverEffect{}):
+	case reflect.TypeOf(items.QuicksilverEffect{}):
 		comp, ok := w.QuicksilverEffects[e]
 		return comp, ok
-	case reflect.TypeOf(effects.TitansResolveEffect{}):
+	case reflect.TypeOf(items.TitansResolveEffect{}):
 		comp, ok := w.TitansResolveEffects[e]
 		return comp, ok
-	case reflect.TypeOf(effects.GuinsoosRagebladeEffect{}):
+	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		comp, ok := w.GuinsoosRagebladeEffects[e]
 		return comp, ok
 	// Add cases for other component types here...
@@ -276,7 +276,7 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.Position, e)
 	case reflect.TypeOf(components.Team{}):
 		delete(w.Team, e)
-	case reflect.TypeOf(effects.ItemStaticEffect{}):
+	case reflect.TypeOf(items.ItemStaticEffect{}):
 		delete(w.Item, e)
 	case reflect.TypeOf(components.Equipment{}):
 		delete(w.Equipment, e)
@@ -291,13 +291,13 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 	case reflect.TypeOf(components.State{}):
 		delete(w.State, e)
 	// --- Dynamic Item Effect Components ---
-	case reflect.TypeOf(effects.ArchangelsEffect{}):
+	case reflect.TypeOf(items.ArchangelsEffect{}):
 		delete(w.ArchangelsEffects, e)
-	case reflect.TypeOf(effects.QuicksilverEffect{}):
+	case reflect.TypeOf(items.QuicksilverEffect{}):
 		delete(w.QuicksilverEffects, e)
-	case reflect.TypeOf(effects.TitansResolveEffect{}):
+	case reflect.TypeOf(items.TitansResolveEffect{}):
 		delete(w.TitansResolveEffects, e)
-	case reflect.TypeOf(effects.GuinsoosRagebladeEffect{}):
+	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		delete(w.GuinsoosRagebladeEffects, e)
 	// Add cases for other component types here...
 	default:
@@ -383,7 +383,7 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.Position)
 	case reflect.TypeOf(components.Team{}):
 		return len(w.Team)
-	case reflect.TypeOf(effects.ItemStaticEffect{}):
+	case reflect.TypeOf(items.ItemStaticEffect{}):
 		return len(w.Item)
 	case reflect.TypeOf(components.Equipment{}):
 		return len(w.Equipment)
@@ -398,13 +398,13 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 	case reflect.TypeOf(components.State{}):
 		return len(w.State)
 	// --- Dynamic Item Effect Components ---
-	case reflect.TypeOf(effects.ArchangelsEffect{}):
+	case reflect.TypeOf(items.ArchangelsEffect{}):
 		return len(w.ArchangelsEffects)
-	case reflect.TypeOf(effects.QuicksilverEffect{}):
+	case reflect.TypeOf(items.QuicksilverEffect{}):
 		return len(w.QuicksilverEffects)
-	case reflect.TypeOf(effects.TitansResolveEffect{}):
+	case reflect.TypeOf(items.TitansResolveEffect{}):
 		return len(w.TitansResolveEffects)
-	case reflect.TypeOf(effects.GuinsoosRagebladeEffect{}):
+	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		return len(w.GuinsoosRagebladeEffects)
 	// Add cases for other component types...
 	default:
@@ -451,7 +451,7 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 		for e := range w.Team {
 			entities = append(entities, e)
 		}
-	case reflect.TypeOf(effects.ItemStaticEffect{}):
+	case reflect.TypeOf(items.ItemStaticEffect{}):
 		entities = make([]Entity, 0, len(w.Item))
 		for e := range w.Item {
 			entities = append(entities, e)
@@ -487,22 +487,22 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 			entities = append(entities, e)
 		}
 	// --- Dynamic Item Effect Components ---
-	case reflect.TypeOf(effects.ArchangelsEffect{}):
+	case reflect.TypeOf(items.ArchangelsEffect{}):
 		entities = make([]Entity, 0, len(w.ArchangelsEffects))
 		for e := range w.ArchangelsEffects {
 			entities = append(entities, e)
 		}
-	case reflect.TypeOf(effects.QuicksilverEffect{}):
+	case reflect.TypeOf(items.QuicksilverEffect{}):
 		entities = make([]Entity, 0, len(w.QuicksilverEffects))
 		for e := range w.QuicksilverEffects {
 			entities = append(entities, e)
 		}
-	case reflect.TypeOf(effects.TitansResolveEffect{}):
+	case reflect.TypeOf(items.TitansResolveEffect{}):
 		entities = make([]Entity, 0, len(w.TitansResolveEffects))
 		for e := range w.TitansResolveEffects {
 			entities = append(entities, e)
 		}
-	case reflect.TypeOf(effects.GuinsoosRagebladeEffect{}):
+	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		entities = make([]Entity, 0, len(w.GuinsoosRagebladeEffects))
 		for e := range w.GuinsoosRagebladeEffects {
 			entities = append(entities, e)
@@ -569,7 +569,7 @@ func (w *World) GetChampionByName(name string) (Entity, bool) {
 }
 
 // GetItemEffect returns the ItemEffect component for an entity, type-safe.
-func (w *World) GetItemEffect(e Entity) (*effects.ItemStaticEffect, bool) {
+func (w *World) GetItemEffect(e Entity) (*items.ItemStaticEffect, bool) {
 	comp, ok := w.Item[e]
 	return comp, ok
 }
@@ -611,25 +611,25 @@ func (w *World) GetState(e Entity) (*components.State, bool) {
 }
 
 // GetArchangelsEffect returns the ArchangelsEffect component for an entity, type-safe.
-func (w *World) GetArchangelsEffect(e Entity) (*effects.ArchangelsEffect, bool) {
+func (w *World) GetArchangelsEffect(e Entity) (*items.ArchangelsEffect, bool) {
 	comp, ok := w.ArchangelsEffects[e]
 	return comp, ok
 }
 
 // GetQuicksilverEffect returns the QuicksilverEffect component for an entity, type-safe.
-func (w *World) GetQuicksilverEffect(e Entity) (*effects.QuicksilverEffect, bool) {
+func (w *World) GetQuicksilverEffect(e Entity) (*items.QuicksilverEffect, bool) {
 	comp, ok := w.QuicksilverEffects[e]
 	return comp, ok
 }
 
 // GetTitansResolveEffect returns the TitansResolveEffect component for an entity, type-safe.
-func (w *World) GetTitansResolveEffect(e Entity) (*effects.TitansResolveEffect, bool) {
+func (w *World) GetTitansResolveEffect(e Entity) (*items.TitansResolveEffect, bool) {
 	comp, ok := w.TitansResolveEffects[e]
 	return comp, ok
 }
 
 // GetGuinsoosRagebladeEffect returns the GuinsoosRagebladeEffect component for an entity, type-safe.
-func (w *World) GetGuinsoosRagebladeEffect(e Entity) (*effects.GuinsoosRagebladeEffect, bool) {
+func (w *World) GetGuinsoosRagebladeEffect(e Entity) (*items.GuinsoosRagebladeEffect, bool) {
 	comp, ok := w.GuinsoosRagebladeEffects[e]
 	return comp, ok
 }

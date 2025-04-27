@@ -5,7 +5,7 @@ package itemsys_test
 // 	. "github.com/onsi/gomega"
 
 // 	"github.com/suriz/tft-dps-simulator/components"
-// 	"github.com/suriz/tft-dps-simulator/components/effects"
+// 	"github.com/suriz/tft-dps-simulator/components/items"
 // 	"github.com/suriz/tft-dps-simulator/data"
 // 	"github.com/suriz/tft-dps-simulator/ecs"
 // 	"github.com/suriz/tft-dps-simulator/factory"
@@ -128,7 +128,7 @@ package itemsys_test
 // 			currentTime := 1.0
 // 			mockEventBus.Enqueue(eventsys.AttackLandedEvent{Source: player, Target: target}, currentTime)
 // 			mockEventBus.ProcessNext()
-			
+
 // 			mockEventBus.Enqueue(eventsys.DamageAppliedEvent{Source: target, Target: player, FinalTotalDamage: 10}, currentTime)
 // 			mockEventBus.ProcessNext()
 
