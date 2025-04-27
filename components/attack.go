@@ -32,7 +32,8 @@ type Attack struct {
 	// --- Current State ---
 	currentAttackStartup float64 
 	currentAttackRecovery float64 
-	attackStartupEndTime float64 // Simulation time when the current attack windup finishes (AttackLandedEvent time)
+	currentAttackCooldown float64 
+	attackCount int
 }
 
 // NewAttack creates an Attack component
@@ -72,7 +73,8 @@ func NewAttack(baseAd, baseAs, baseRange, attackStartup, attackRecovery float64)
 		// State
 		currentAttackStartup: attackStartup,
 		currentAttackRecovery: attackRecovery,
-		attackStartupEndTime: -1.0, // indicate no startup is active
+		currentAttackCooldown: 1/baseAs - attackStartup - attackRecovery,
+		attackCount: 0,
 	}
 }
 
@@ -152,16 +154,6 @@ func (a *Attack) GetFinalRange() float64 {
 	return a.FinalRange
 } // Keep simple for now
 
-// --- Methods for Current State ---
-func (a *Attack) GetAttackStartupEndTime() float64 {
-	return a.attackStartupEndTime
-}
-
-// SetAttackStartupEndTime sets the timestamp of the upcoming attack.
-func (a *Attack) SetAttackStartupEndTime(value float64) {
-	a.attackStartupEndTime = value
-}
-
 // GetCurrentAttackStartup returns the scaled attack start-up time based on current attack speed.
 func (a *Attack) GetCurrentAttackStartup() float64 {
     return a.currentAttackStartup
@@ -182,6 +174,24 @@ func (a *Attack) SetCurrentAttackRecovery(value float64) {
     a.currentAttackRecovery = value
 }
 
+// SetCurrentAttackRecovery sets the scaled attack recovery time. Called by StatCalculationSystem.
+func (a *Attack) SetCurrentAttackCooldown(value float64) {
+	a.currentAttackCooldown = value
+}
+
+// GetCurrentAttackCooldown returns the current attack cooldown.
+func (a *Attack) GetCurrentAttackCooldown() float64 {
+	return a.currentAttackCooldown
+}
+
+// IncrementAttackCount sets the attack count.
+func (a *Attack) IncrementAttackCount() {
+	a.attackCount++
+}
+
+func (a *Attack) GetAttackCount() int {
+	return a.attackCount
+}
 
 // --- Getters for Base/Bonus stats (Optional: for debugging/systems) ---
 func (a *Attack) GetBaseAD() float64 {

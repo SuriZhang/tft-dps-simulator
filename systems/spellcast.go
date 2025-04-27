@@ -51,7 +51,7 @@ func (s *SpellCastSystem) handleSpellCastStart(evt eventsys.SpellCastStartEvent)
 	currentTime := evt.Timestamp
 
 	// --- Get Components ---
-	state, okState := s.world.GetState(caster)
+	_, okState := s.world.GetState(caster)
 	spell, okSpell := s.world.GetSpell(caster)
 	mana, okMana := s.world.GetMana(caster)
 	health, okHealth := s.world.GetHealth(caster)
@@ -70,13 +70,9 @@ func (s *SpellCastSystem) handleSpellCastStart(evt eventsys.SpellCastStartEvent)
 	target, foundTarget := utils.FindNearestEnemy(s.world, caster, team.ID)
 	if !foundTarget {
 		log.Printf("SpellCastSystem (Start): Entity %d found no target for spell at %.3fs. Spell canceled.", caster, currentTime)
-		// state.EndAction() // Go back to idle
 		return
 	}
 
-	// --- Update State & Consume Mana ---
-	castDuration := spell.GetCastStartUp() + spell.GetCurrentRecovery() // Get base cast time
-	state.StartCast(currentTime, castDuration) // Sets IsCasting = true
     currentMana := mana.GetCurrentMana() - mana.GetMaxMana()
 	mana.SetCurrentMana(currentMana)
 
@@ -89,6 +85,8 @@ func (s *SpellCastSystem) handleSpellCastStart(evt eventsys.SpellCastStartEvent)
 		Timestamp: landTime,
 	}
 	s.eventBus.Enqueue(spellLandedEvent, landTime)
+	
+	spell.IncrementSpellCount()
 
 	log.Printf("SpellCastSystem (Start): Entity %d started casting '%s' (-> %d) at %.3fs. Landing at %.3fs. Mana set to %.3f.", caster, spell.GetName(), target, currentTime, landTime, currentMana)
 }
@@ -99,7 +97,7 @@ func (s *SpellCastSystem) handleSpellLanded(evt eventsys.SpellLandedEvent) {
 	landTime := evt.Timestamp
 
 	// --- Get Components ---
-	state, okState := s.world.GetState(caster)
+	_, okState := s.world.GetState(caster)
 	spell, okSpell := s.world.GetSpell(caster)
 	health, okHealth := s.world.GetHealth(caster) // Check if caster is still alive
 
@@ -117,12 +115,7 @@ func (s *SpellCastSystem) handleSpellLanded(evt eventsys.SpellLandedEvent) {
 
 	// --- Update State & Schedule Recovery End ---
 	recoveryDuration := spell.GetCastRecovery()
-	state.IsCasting = true 
-	// TODO: Need a state for Spell Recovery? Or just Idle? Assuming Idle for now.
-	// If there's a specific spell lockout, a state flag would be needed.
-	// Let's assume recovery means returning to Idle, ready for the next Action Check.
-	// state.EndAction() // Set back to Idle
-	state.ActionStartTime = landTime // Track when idleness began post-spell
+	// no state update needed for spell, as casting cannot be interrupted by other actions.
 
 	recoveryEndTime := landTime + recoveryDuration
 	recoveryEndEvent := eventsys.SpellRecoveryEndEvent{
@@ -131,8 +124,6 @@ func (s *SpellCastSystem) handleSpellLanded(evt eventsys.SpellLandedEvent) {
 	}
 	s.eventBus.Enqueue(recoveryEndEvent, recoveryEndTime)
 	log.Printf("SpellCastSystem (Landed): Entity %d starting spell recovery at %.3fs. Recovery ends at %.3fs.", caster, landTime, recoveryEndTime)
-
-	// TODO: Implement handleSpellRecoveryEnd to potentially enqueue ChampionActionEvent
 }
 
 func (s *SpellCastSystem) handleSpellRecoveryEnd(evt eventsys.SpellRecoveryEndEvent) {
@@ -140,7 +131,7 @@ func (s *SpellCastSystem) handleSpellRecoveryEnd(evt eventsys.SpellRecoveryEndEv
     recoveryEndTime := evt.Timestamp
 
     // --- Get Components ---
-    state, okState := s.world.GetState(caster)
+    _, okState := s.world.GetState(caster)
     _, okSpell := s.world.GetSpell(caster)
     health, okHealth := s.world.GetHealth(caster) // Check if caster is still alive
 
@@ -149,15 +140,9 @@ func (s *SpellCastSystem) handleSpellRecoveryEnd(evt eventsys.SpellRecoveryEndEv
         return
     }
 
-    // --- Update State ---
-    state.IsCasting = false 
-    state.IsIdle = true
-    state.ActionStartTime = recoveryEndTime 
-    state.ActionDuration = 0
-
     log.Printf("SpellCastSystem (RecoveryEnd): Entity %d finished spell recovery at %.3fs. Triggering action check.", caster, recoveryEndTime)
 
-    // Enqueue ChampionActionEvent for the Action System to decide next step (Cast or AttackStart)
+    // Enqueue ChampionActionEvent for the Action System to decide next step (AttackCooldown or AttackStart)
 	actionCheckEvent := eventsys.ChampionActionEvent{
 		Entity:    caster,
 		Timestamp: recoveryEndTime, // Check action immediately

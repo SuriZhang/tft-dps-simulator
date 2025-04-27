@@ -95,14 +95,14 @@ type AssistEvent struct {
     Timestamp float64 // Time the assist occurred
 }
 
-// SpellCastEvent is triggered when a unit casts its spell.
-type SpellCastEvent struct {
-    Source    ecs.Entity // The entity casting the spell
-    Target    ecs.Entity // The primary target (if applicable, might need refinement for AoE)
-    SpellName string   // Name of the spell
-    Timestamp float64    // Simulation time when the spell is cast
-    // Add spell-specific details if needed later
-}
+// // SpellCastEvent is triggered when a unit casts its spell.
+// type SpellCastEvent struct {
+//     Source    ecs.Entity // The entity casting the spell
+//     Target    ecs.Entity // The primary target (if applicable, might need refinement for AoE)
+//     SpellName string   // Name of the spell
+//     Timestamp float64    // Simulation time when the spell is cast
+//     // Add spell-specific details if needed later
+// }
 
 // SpellCastStartEvent signals the beginning of a spell cast animation/channel.
 // The SpellCastSystem should handle this to schedule the SpellLandedEvent.

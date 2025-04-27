@@ -29,7 +29,7 @@ func (s *AutoAttackSystem) CanHandle(evt interface{}) bool {
 	case eventsys.AttackStartEvent,
 		eventsys.AttackFiredEvent,
 		eventsys.AttackRecoveryEndEvent,
-		eventsys.AttackCooldownStartEvent, 
+		eventsys.AttackCooldownStartEvent,
 		eventsys.AttackLandedEvent,
 		eventsys.AttackCooldownEndEvent:
 		return true
@@ -48,11 +48,11 @@ func (s *AutoAttackSystem) HandleEvent(evt interface{}) {
 	case eventsys.AttackLandedEvent:
 		s.handleAttackLanded(event)
 	case eventsys.AttackRecoveryEndEvent:
-		s.handleAttackRecoveryEnd(event) 
+		s.handleAttackRecoveryEnd(event)
 	case eventsys.AttackCooldownStartEvent:
 		s.handleAttackCooldownStart(event)
 	case eventsys.AttackCooldownEndEvent:
-		s.handleAttackCooldownEnd(event) 
+		s.handleAttackCooldownEnd(event)
 	}
 }
 
@@ -94,12 +94,13 @@ func (s *AutoAttackSystem) handleAttackStart(evt eventsys.AttackStartEvent) {
 		return // Cannot attack with invalid speeds
 	}
 
-	var startupDuration, recoveryDuration float64
+	var startupDuration, recoveryDuration, cooldownDuration float64
 	// Adjust startup time based on attack speed ratio
 	// Faster attack speed (finalAS > baseAS) reduces startup time.
-	if finalAS > 0 && baseAS > 0 { 
+	if finalAS > 0 && baseAS > 0 {
 		startupDuration = baseStartup * (baseAS / finalAS)
 		recoveryDuration = baseRecovery * (baseAS / finalAS)
+		cooldownDuration = 1/finalAS - startupDuration - recoveryDuration
 	} else {
 		// Fallback or error handling if attack speeds are invalid
 		log.Printf("WARN: AutoAttackSystem (Start): Entity %d has invalid attack speed (Base: %.2f, Final: %.2f). Using base startup time.", attacker, baseAS, finalAS)
@@ -107,7 +108,7 @@ func (s *AutoAttackSystem) handleAttackStart(evt eventsys.AttackStartEvent) {
 	}
 	attack.SetCurrentAttackStartup(startupDuration)
 	attack.SetCurrentAttackRecovery(recoveryDuration)
-	
+	attack.SetCurrentAttackCooldown(cooldownDuration)
 	state.StartAttack(currentTime, startupDuration)
 
 	// --- Enqueue AttackFiredEvent ---
@@ -159,7 +160,7 @@ func (s *AutoAttackSystem) handleAttackFired(evt eventsys.AttackFiredEvent) {
 				Source:     attacker,
 				Target:     target,
 				BaseDamage: attack.GetFinalAD(), // AD at time of firing/landing? Using current AD.
-				Timestamp:  fireTime,          // Assuming instant hit for now
+				Timestamp:  fireTime,            // Assuming instant hit for now
 			}
 			s.eventBus.Enqueue(landedEvent, fireTime)
 			// Target valid and in range, enqueue AttackLandedEvent
@@ -170,15 +171,11 @@ func (s *AutoAttackSystem) handleAttackFired(evt eventsys.AttackFiredEvent) {
 
 		}
 	} else {
-		 log.Printf("AutoAttackSystem (Fired): Target %d or Attacker %d missing position at %.3fs. Attack fizzles.", target, attacker, fireTime)
-		 // Attack fizzles, recovery/cooldown still happens.
+		log.Printf("AutoAttackSystem (Fired): Target %d or Attacker %d missing position at %.3fs. Attack fizzles.", target, attacker, fireTime)
+		// Attack fizzles, recovery/cooldown still happens.
 	}
-
-
-	state.IsAttackStartingUp = false // No longer starting up
-	state.IsAttackRecovering = true  // Now recovering
-	state.ActionStartTime = fireTime // Recovery starts now
-	state.ActionDuration = attack.GetCurrentAttackRecovery()
+	attack.IncrementAttackCount()
+	state.StartAttackRecovery(fireTime, attack.GetCurrentAttackRecovery())
 }
 
 func (s *AutoAttackSystem) handleAttackLanded(evt eventsys.AttackLandedEvent) {
@@ -212,7 +209,7 @@ func (s *AutoAttackSystem) handleAttackRecoveryEnd(evt eventsys.AttackRecoveryEn
 	entity := evt.Entity
 	recoveryEndTime := evt.Timestamp
 
-	state, okState := s.world.GetState(entity)
+	_, okState := s.world.GetState(entity)
 	health, okHealth := s.world.GetHealth(entity)
 
 	if !okState || !okHealth || health.GetCurrentHP() <= 0 {
@@ -220,20 +217,7 @@ func (s *AutoAttackSystem) handleAttackRecoveryEnd(evt eventsys.AttackRecoveryEn
 		return
 	}
 
-	// Ensure we were actually recovering
-	if !state.IsAttackRecovering {
-		log.Printf("WARN: AutoAttackSystem (RecoveryEnd): Entity %d received AttackRecoveryEndEvent at %.3fs but was not in recovery state (%+v). Ignoring.", entity, recoveryEndTime, *state)
-		return
-	}
-
-	// Update State: Recovery finished, now idle pending action check
-	state.IsAttackRecovering = false
-	state.IsIdle = true // Mark as idle until next action determined
-	state.ActionStartTime = recoveryEndTime
-	state.ActionDuration = 0
-
 	log.Printf("AutoAttackSystem (RecoveryEnd): Entity %d finished recovery at %.3fs. Triggering action check.", entity, recoveryEndTime)
-
 	// Enqueue ChampionActionEvent for the Action System to decide next step (Cast or CooldownStart)
 	actionCheckEvent := eventsys.ChampionActionEvent{
 		Entity:    entity,
@@ -256,65 +240,28 @@ func (s *AutoAttackSystem) handleAttackCooldownStart(evt eventsys.AttackCooldown
 		return
 	}
 
-	// Calculate total cycle time based on final attack speed
-	finalAS := attack.GetFinalAttackSpeed()
-	if finalAS <= 0 {
-		log.Printf("ERROR: AutoAttackSystem (CooldownStart): Entity %d has non-positive final attack speed (%.2f) at %.3fs. Cannot calculate cooldown.", entity, finalAS, cooldownStartTime)
-		// state.EndAction() // Go idle to prevent getting stuck
-		return
-	}
-	totalCycleTime := 1.0 / finalAS
-
-	// Recalculate startup and recovery based on current AS (simplification)
-	currentStartupDuration := attack.GetCurrentAttackStartup()
-	currentRecoveryDuration := attack.GetCurrentAttackRecovery()
-
-	// Cooldown is the remaining time in the cycle
-	cooldownDuration := totalCycleTime - currentStartupDuration - currentRecoveryDuration
-	if cooldownDuration < 0 {
-		cooldownDuration = 0 // Cannot have negative cooldown
-	}
-
-	// Update State
-	state.IsIdle = false // No longer idle
-	state.IsAttackCoolingDown = true
-	state.ActionStartTime = cooldownStartTime // Cooldown starts now
-	state.ActionDuration = cooldownDuration
-
-	cooldownEndTime := cooldownStartTime + cooldownDuration
+	// use ActonDuration because AttackCooldown might not be a full CD due to spell casted, calculation for total cooldown time is done in ActionSystem.
+	cooldownEndTime := cooldownStartTime + state.ActionDuration
 	cooldownEndEvent := eventsys.AttackCooldownEndEvent{
 		Entity:    entity,
 		Timestamp: cooldownEndTime,
 	}
 	s.eventBus.Enqueue(cooldownEndEvent, cooldownEndTime)
-	log.Printf("AutoAttackSystem (CooldownStart): Entity %d starting cooldown at %.3fs (duration %.3fs). Cooldown ends at %.3fs.", entity, cooldownStartTime, cooldownDuration, cooldownEndTime)
+	log.Printf("AutoAttackSystem (CooldownStart): Entity %d starting cooldown at %.3fs (duration %.3fs). Cooldown ends at %.3fs.", entity, cooldownStartTime, attack.GetCurrentAttackCooldown(), cooldownEndTime)
 }
-
 
 // handleAttackCooldownEnd transitions state to idle and triggers ChampionActionSystem check.
 func (s *AutoAttackSystem) handleAttackCooldownEnd(evt eventsys.AttackCooldownEndEvent) {
 	entity := evt.Entity
 	cooldownEndTime := evt.Timestamp
 
-	state, okState := s.world.GetState(entity)
+	_, okState := s.world.GetState(entity)
 	health, okHealth := s.world.GetHealth(entity)
 
 	if !okState || !okHealth || health.GetCurrentHP() <= 0 {
 		log.Printf("AutoAttackSystem (CooldownEnd): Entity %d missing state or dead at %.3fs.", entity, cooldownEndTime)
 		return
 	}
-
-	// Ensure we were actually cooling down
-	if !state.IsAttackCoolingDown {
-		log.Printf("WARN: AutoAttackSystem (CooldownEnd): Entity %d received AttackCooldownEndEvent at %.3fs but was not in cooldown state (%+v). Ignoring.", entity, cooldownEndTime, *state)
-		return
-	}
-
-	// Update State back to Idle, pending action check
-	state.IsAttackCoolingDown = false
-	state.IsIdle = true
-	state.ActionStartTime = cooldownEndTime
-	state.ActionDuration = 0
 
 	log.Printf("AutoAttackSystem (CooldownEnd): Entity %d finished cooldown at %.3fs. Triggering action check.", entity, cooldownEndTime)
 

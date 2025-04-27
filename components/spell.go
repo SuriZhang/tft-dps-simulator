@@ -26,6 +26,7 @@ type Spell struct {
 	// State
 	CurrentRecovery float64
 	LastCastTime    float64 // For tracking cooldowns
+	castCount int
 }
 
 // NewSpell creates a Spell component, potentially initializing from base stats.
@@ -43,6 +44,7 @@ func NewSpell(name, icon string, manaCost, castStartUp, castRecovery float64) *S
 
 		FinalAP:              100.0, // init to base AP
 		CurrentRecovery:      0.0,
+		castCount: 0,
 	}
 }
 
@@ -165,4 +167,14 @@ func (s *Spell) AddBonusAP(value float64) {
 func (s *Spell) ResetBonuses() {
 	s.BonusAP = 0.0
 	// Do not reset Vars, they are loaded from data
+}
+
+// GetSpellCount returns the number of times the spell has been cast.
+func (s *Spell) GetSpellCount() int {
+	return s.castCount
+}
+
+// IncrementSpellCount increments the spell cast count.
+func (s *Spell) IncrementSpellCount() {
+	s.castCount++
 }

@@ -96,3 +96,7 @@ func (m *Mana) GetFinalInitialMana() float64 {
 func (m *Mana) IsFull() bool {
 	return m.Current >= m.Max
 }
+
+func (m *Mana) CanCastSpell() bool {
+	return m.Current > m.Max && m.Max != 0.0
+}

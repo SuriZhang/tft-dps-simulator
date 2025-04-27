@@ -107,6 +107,7 @@ var _ = Describe("Simulation", func() {
 
         // Ensure target dummy doesn't attack
         if targetAttack, ok := world.GetAttack(target); ok {
+            targetAttack.SetBaseAttackSpeed(0)
             targetAttack.SetFinalAttackSpeed(0)
         }
     })
@@ -234,15 +235,18 @@ var _ = Describe("Simulation", func() {
         })
 
         It("should handle multiple attack cycles correctly", func() {
-            // Attacker Base AS = 0.5. Attacks land around t=2.0, t=4.0.
-            sim.SetMaxTime(4.5) // Enough time for two attacks
+            // Attacker Base AS = 0.5. Attack Startup/Recovery = 0
+            // first attack fired at 0.0s
+            // second attack fired at 2.0s
+            sim.SetMaxTime(3.9) // Enough time for two attacks
 
             targetHealth := getHealth(world, target)
-
+            attackerAttack := getAttack(world, attacker)
             sim.RunSimulation() // Processes events for both attacks
 
             // Check effects after two attacks
             // Damage = 50 per attack
+            Expect(attackerAttack.GetAttackCount()).To(Equal(2))
             expectedHPAfterTwoAttacks := targetMaxHP - 50.0 - 50.0
             Expect(targetHealth.GetCurrentHP()).To(BeNumerically("~", expectedHPAfterTwoAttacks, 0.1))
         })
