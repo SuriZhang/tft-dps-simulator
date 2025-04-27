@@ -26,7 +26,7 @@ func NewAutoAttackSystem(world *ecs.World, bus eventsys.EventBus) *AutoAttackSys
 // CanHandle checks if the system can process the given event type.
 func (s *AutoAttackSystem) CanHandle(evt interface{}) bool {
 	switch evt.(type) {
-	case eventsys.AttackStartEvent,
+	case eventsys.AttackStartupEvent,
 		eventsys.AttackFiredEvent,
 		eventsys.AttackRecoveryEndEvent,
 		eventsys.AttackCooldownStartEvent,
@@ -41,7 +41,7 @@ func (s *AutoAttackSystem) CanHandle(evt interface{}) bool {
 // HandleEvent processes events related to the auto-attack cycle.
 func (s *AutoAttackSystem) HandleEvent(evt interface{}) {
 	switch event := evt.(type) {
-	case eventsys.AttackStartEvent:
+	case eventsys.AttackStartupEvent:
 		s.handleAttackStart(event)
 	case eventsys.AttackFiredEvent:
 		s.handleAttackFired(event)
@@ -57,7 +57,7 @@ func (s *AutoAttackSystem) HandleEvent(evt interface{}) {
 }
 
 // handleAttackStart initiates the attack wind-up.
-func (s *AutoAttackSystem) handleAttackStart(evt eventsys.AttackStartEvent) {
+func (s *AutoAttackSystem) handleAttackStart(evt eventsys.AttackStartupEvent) {
 	attacker := evt.Entity
 	currentTime := evt.Timestamp
 

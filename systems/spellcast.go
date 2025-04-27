@@ -25,7 +25,7 @@ func NewSpellCastSystem(world *ecs.World, bus eventsys.EventBus) *SpellCastSyste
 // CanHandle checks if the system can process the given event type.
 func (s *SpellCastSystem) CanHandle(evt interface{}) bool {
 	switch evt.(type) {
-	case eventsys.SpellCastStartEvent, eventsys.SpellLandedEvent, eventsys.SpellRecoveryEndEvent: // Add more as needed
+	case eventsys.SpellCastCycleStartEvent, eventsys.SpellLandedEvent, eventsys.SpellRecoveryEndEvent: // Add more as needed
 		return true
 	default:
 		return false
@@ -35,7 +35,7 @@ func (s *SpellCastSystem) CanHandle(evt interface{}) bool {
 // HandleEvent processes events related to the spell cast cycle.
 func (s *SpellCastSystem) HandleEvent(evt interface{}) {
 	switch event := evt.(type) {
-	case eventsys.SpellCastStartEvent:
+	case eventsys.SpellCastCycleStartEvent:
 		s.handleSpellCastStart(event)
 	case eventsys.SpellLandedEvent:
 		s.handleSpellLanded(event)
@@ -46,7 +46,7 @@ func (s *SpellCastSystem) HandleEvent(evt interface{}) {
 }
 
 // handleSpellCastStart initiates the spell cast.
-func (s *SpellCastSystem) handleSpellCastStart(evt eventsys.SpellCastStartEvent) {
+func (s *SpellCastSystem) handleSpellCastStart(evt eventsys.SpellCastCycleStartEvent) {
 	caster := evt.Entity
 	currentTime := evt.Timestamp
 

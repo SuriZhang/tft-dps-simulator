@@ -81,14 +81,14 @@ func (s *ChampionActionSystem) decideNextAction(entity ecs.Entity, currentTime f
 		if mana.CanCastSpell() {
 			log.Printf("ActionSystem: Entity %d casting spell at %.3fs.", entity, currentTime)
 			state.StartCast(currentTime, spell.GetCastStartUp() + spell.GetCastRecovery()) 
-			s.eventBus.Enqueue(eventsys.SpellCastStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
+			s.eventBus.Enqueue(eventsys.SpellCastCycleStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
 			return
 		} else {
 			if (attack.GetFinalAttackSpeed() > 0.0) {
 			log.Printf("ActionSystem: Entity %d attacking at %.3fs.", entity, currentTime)
 
 			state.StartAttack(currentTime, attack.GetCurrentAttackStartup())
-			s.eventBus.Enqueue(eventsys.AttackStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
+			s.eventBus.Enqueue(eventsys.AttackStartupEvent{Entity: entity, Timestamp: currentTime}, currentTime)
 			}
 			return
 		}
@@ -100,7 +100,7 @@ func (s *ChampionActionSystem) decideNextAction(entity ecs.Entity, currentTime f
 		if mana.CanCastSpell() {
 			log.Printf("ActionSystem: Entity %d casting spell at %.3fs.", entity, currentTime)
 			state.StartCast(currentTime, spell.GetCastStartUp() + spell.GetCastRecovery()) 
-			s.eventBus.Enqueue(eventsys.SpellCastStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
+			s.eventBus.Enqueue(eventsys.SpellCastCycleStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
 			return
 		} else {
 			log.Printf("ActionSystem: Entity %d start attack coolingdown at %.3fs.", entity, currentTime)
@@ -123,7 +123,7 @@ func (s *ChampionActionSystem) decideNextAction(entity ecs.Entity, currentTime f
 		} else {
 			log.Printf("ActionSystem: Entity %d start attack at %.3fs.", entity, currentTime)
 			state.StartAttack(currentTime, attack.GetCurrentAttackStartup())
-			s.eventBus.Enqueue(eventsys.AttackStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
+			s.eventBus.Enqueue(eventsys.AttackStartupEvent{Entity: entity, Timestamp: currentTime}, currentTime)
 			return
 		}
 	}

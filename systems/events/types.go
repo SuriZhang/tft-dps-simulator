@@ -11,9 +11,9 @@ type ChampionActionEvent struct {
     Timestamp float64 // Time the action check should occur
 }
 
-// AttackStartEvent signals the beginning of an auto-attack wind-up.
+// AttackStartupEvent signals the beginning of an auto-attack wind-up.
 // The AutoAttackSystem should handle this to schedule the AttackFiredEvent.
-type AttackStartEvent struct {
+type AttackStartupEvent struct {
     Entity    ecs.Entity
     Timestamp float64 // Time the attack startup begins
 }
@@ -95,18 +95,9 @@ type AssistEvent struct {
     Timestamp float64 // Time the assist occurred
 }
 
-// // SpellCastEvent is triggered when a unit casts its spell.
-// type SpellCastEvent struct {
-//     Source    ecs.Entity // The entity casting the spell
-//     Target    ecs.Entity // The primary target (if applicable, might need refinement for AoE)
-//     SpellName string   // Name of the spell
-//     Timestamp float64    // Simulation time when the spell is cast
-//     // Add spell-specific details if needed later
-// }
-
-// SpellCastStartEvent signals the beginning of a spell cast animation/channel.
+// SpellCastCycleStartEvent signals the beginning of a spell cast animation/channel.
 // The SpellCastSystem should handle this to schedule the SpellLandedEvent.
-type SpellCastStartEvent struct {
+type SpellCastCycleStartEvent struct {
     Entity    ecs.Entity
     Timestamp float64 // Time the cast begins
 }
