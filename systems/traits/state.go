@@ -49,10 +49,15 @@ func (tts *TeamTraitState) GetUnitCount(teamID int, traitApiName string) int {
 	return 0
 }
 
-// GetActiveTier returns the active tier index for a specific trait for a team.
+// GetActiveTierForTrait returns the active tier index for a specific trait for a team.
 func (tts *TeamTraitState) GetActiveTier(teamID int, traitApiName string) int {
 	if tiers, ok := tts.activeTier[teamID]; ok {
 		return tiers[traitApiName]
 	}
 	return -1 // Trait is inactive for the team
+}
+
+// GetActiveTiers returns the active tiers for all traits for a team.
+func (tts *TeamTraitState) GetActiveTiers() map[int]map[string]int {
+	return tts.activeTier
 }

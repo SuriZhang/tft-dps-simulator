@@ -9,6 +9,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/ecs"
 	"github.com/suriz/tft-dps-simulator/systems"
+	"github.com/suriz/tft-dps-simulator/managers"
 	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
 	traitsys "github.com/suriz/tft-dps-simulator/systems/traits"
@@ -25,7 +26,7 @@ type Simulation struct {
 	abilityCritSystem      *itemsys.AbilityCritSystem
 	dynamicTimeItemSystem  *itemsys.DynamicTimeItemSystem
 	traitCounterSystem *traitsys.TraitCounterSystem
-	dynamicEventTraitsSystem *traitsys.DynamicEventTraitSystem 
+	traitManager *managers.TraitManager 
 	// Add other systems as needed
 
 	config      SimulationConfig
@@ -60,7 +61,7 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	dynamicEventItemSystem := itemsys.NewDynamicEventItemSystem(world, eventBus)
 	dynamicTimeItemSystem := itemsys.NewDynamicTimeItemSystem(world, eventBus)
 	championActionSystem := systems.NewChampionActionSystem(world, eventBus)
-	dynamicEventTraitSystem := traitsys.NewDynamicEventTraitSystem(world, traitState, eventBus) 
+	traitManager := managers.NewTraitManager(world, traitState, eventBus)
 	traitCounterSystem := traitsys.NewTraitCounterSystem(world, traitState) 
 
 	// Register Event Handlers
@@ -71,7 +72,7 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	eventBus.RegisterHandler(spellCastSystem)
 	eventBus.RegisterHandler(statCalcSystem)
 	eventBus.RegisterHandler(dynamicTimeItemSystem)
-	eventBus.RegisterHandler(dynamicEventTraitSystem)
+	eventBus.RegisterHandler(traitManager)
 
 
 	sim := &Simulation{
@@ -83,7 +84,7 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 		abilityCritSystem:      abilityCritSystem,
 		dynamicTimeItemSystem:  dynamicTimeItemSystem,
 		traitCounterSystem:    traitCounterSystem,
-		dynamicEventTraitsSystem: dynamicEventTraitSystem,
+		traitManager: traitManager,
 		config:                 config,
 		currentTime:            0.0,
 		recordQueue:            make([]*eventsys.EventItem, 0),
@@ -103,7 +104,7 @@ func (s *Simulation) setupCombat() {
 	// update traits before abilitycrit system because some traits may affect abilitycrit
 	s.traitCounterSystem.UpdateCountsAndTiers() 
 	// Activate dynamic traits (e.g., Rapidfire) - requires trait implementation
-	s.dynamicEventTraitsSystem.ActivateTraits()
+	s.traitManager.ActivateTraits()
 
 	s.abilityCritSystem.Update() // For IE/JG check
 	s.baseStaticItemSystem.ApplyStaticItemsBonus()

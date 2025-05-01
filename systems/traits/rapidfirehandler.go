@@ -8,7 +8,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/components/traits"
 	"github.com/suriz/tft-dps-simulator/data"
 	"github.com/suriz/tft-dps-simulator/ecs"
-	eventsys "github.com/suriz/tft-dps-simulator/systems/events" // Keep for AttackLandedEvent
+	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 )
 
 // RapidfireHandler implements dynamic logic for the Rapidfire trait using a dedicated component.
@@ -18,7 +18,7 @@ type RapidfireHandler struct{}
 var _ TraitHandler = (*RapidfireHandler)(nil)
 
 func init() {
-	RegisterTraitHandler(data.Rapidfire, &RapidfireHandler{})
+	RegisterTraitHandler(data.TFT14_Rapidfire, &RapidfireHandler{})
 }
 
 // OnActivate adds the RapidfireEffect component to champions with the trait and applies static team bonus.
@@ -46,7 +46,7 @@ func (h *RapidfireHandler) OnActivate(teamID int, effect data.Effect, world *ecs
 		}
 
 		// Add RapidfireEffect component ONLY to champions with the Rapidfire trait
-		if traitComp, ok := world.GetTraits(entity); ok && traitComp.HasTrait(data.Rapidfire) {
+		if traitComp, ok := world.GetTraits(entity); ok && traitComp.HasTrait(data.TFT14_Rapidfire) {
 			if !world.HasComponent(entity, reflect.TypeOf(traits.RapidfireEffect{})) {
 				rapidfireEffect := traits.NewRapidfireEffect(maxStacks, asPerStack)
 				world.AddComponent(entity, rapidfireEffect)
@@ -94,6 +94,9 @@ func (h *RapidfireHandler) Handle(event interface{}, entity ecs.Entity, world *e
 		// Enqueue immediately at the current time
 		eventBus.Enqueue(recalcEvent, attackEvt.Timestamp)
 		log.Printf("RapidfireHandler: Enqueued RecalculateStatsEvent for Entity %d at t=%.4f", entity, attackEvt.Timestamp)
+	} else {
+		log.Printf("RapidfireHandler: Entity %d reached max stacks (%d). No further stack increment.",
+			entity, rapidfireEffect.GetMaxStacks())
 	}
 }
 

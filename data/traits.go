@@ -4,10 +4,8 @@ package data
 var Traits map[string]*Trait // traitName -> Trait
 
 const (
-	TFT14_Swift		 = "TFT14_Swift"
-	Rapidfire = "Rapidfire"
-	TFT14_Marksman = "TFT14_Marksman"
-	Marksman = "Marksman"
+	TFT14_Rapidfire = "Rapidfire"
+	TFT14_Marksman = "Marksman"
 )
 
 // GetTraitByName returns a trait by name or nil if not found

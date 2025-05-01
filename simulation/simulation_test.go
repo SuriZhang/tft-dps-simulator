@@ -1168,7 +1168,7 @@ var _ = Describe("Simulation", func() {
                 blueGolemPos.SetPosition(0, 1) 
 
                 // Get trait data to find the expected bonus
-                rapidfireData = data.GetTraitByApiName(data.TFT14_Swift)
+                rapidfireData = data.GetTraitByName(data.TFT14_Rapidfire)
                 Expect(rapidfireData).NotTo(BeNil())
                 // Find the bonus for tier 0 (2 units)
                 var foundBonus bool
@@ -1290,11 +1290,43 @@ var _ = Describe("Simulation", func() {
                 Expect(rfK2.GetCurrentBonusAS()).To(BeNumerically("~", expectedBonusASFromStack, 0.001), "RapidfireEffect bonus AS should be 4% after attack")
 
                 Expect(rfKog.GetCurrentBonusAS()).To(BeNumerically("~", expectedBonusASFromStack, 0.001), "RapidfireEffect bonus AS should be 4% after attack")
-
-                
-
             })
+            It("should not stack RapidfireEffects if max stacks reached", func() {
+                // Set up attack components for Kindred 1 and Kog'Maw
+                attackK1 := getAttack(world, kindred1)
+                attackK2 := getAttack(world, kindred2)
+                attackKog := getAttack(world, kogmaw)
 
+                attackK1.ResetBonuses()
+                attackK2.ResetBonuses()
+                attackKog.ResetBonuses()
+
+                sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(12.0)) 
+                sim.RunSimulation() 
+
+                Expect(attackK1.GetAttackCount()).To(Equal(11), "Kindred 1 should have attacked 11 times")
+                Expect(attackK2.GetAttackCount()).To(Equal(11), "Kindred 2 should have attacked 11 times")
+                Expect(attackKog.GetAttackCount()).To(Equal(11), "Kog'Maw should have attacked 11 times")
+
+                // Check if stacks were incremented correctly
+                rfK1, _ := world.GetRapidfireEffect(kindred1)
+                rfK2, _ := world.GetRapidfireEffect(kindred2)
+                rfKog, _ := world.GetRapidfireEffect(kogmaw)
+
+                Expect(rfK1.GetCurrentStacks()).To(Equal(10), "RapidfireEffect stacks should be 10 (max) after attack")
+                Expect(rfK2.GetCurrentStacks()).To(Equal(10), "RapidfireEffect stacks should be 10 (max) after attack") 
+                Expect(rfKog.GetCurrentStacks()).To(Equal(10), "RapidfireEffect stacks should be 10 (max) after attack")
+
+                // Check if bonus AS was applied correctly
+                expectedBonusASFromStack := 0.4 // 4% per stack * 10 stacks
+                Expect(rfK1.GetCurrentBonusAS()).To(BeNumerically("~", expectedBonusASFromStack, 0.001), "RapidfireEffect bonus AS should be 40% after attack")
+                Expect(attackK1.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedBonusASFromStack+0.1, 0.001), "RapidfireEffect bonus AS should be 50% after attack")
+                Expect(attackK1.GetFinalAttackSpeed()).To(BeNumerically("~", attackK1.GetBaseAttackSpeed() * (1.0 + expectedBonusASFromStack + 0.1), 0.001), "Final Attack Speed should be 1.5*Base AS after attack")
+
+                Expect(rfK2.GetCurrentBonusAS()).To(BeNumerically("~", expectedBonusASFromStack, 0.001), "RapidfireEffect bonus AS should be 40% after attack")
+
+                Expect(rfKog.GetCurrentBonusAS()).To(BeNumerically("~", expectedBonusASFromStack, 0.001), "RapidfireEffect bonus AS should be 40% after attack")
+            })
         }) // End Context("with Rapidfire Trait (2 units)")
 
     }) // End Describe("Trait System Integration")
