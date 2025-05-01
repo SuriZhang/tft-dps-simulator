@@ -4,6 +4,11 @@ import (
 	"strings"
 )
 
+const (
+	TeamPlayer = 0
+	TeamEnemy  = 1
+)
+
 // Team represents which team a champion belongs to
 type Team struct {
 	ID int // 0 for player team, 1 for enemy team

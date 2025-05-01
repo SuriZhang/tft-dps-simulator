@@ -18,34 +18,34 @@ func NewBaseStaticItemSystem(world *ecs.World) *BaseStaticItemSystem {
 	return &BaseStaticItemSystem{world: world}
 }
 
-// ApplyStats reads the ItemEffect component for relevant entities
+// ApplyStaticItemsBonus reads the ItemEffect component for relevant entities
 // and modifies their base stat components (Health, Attack, Mana, etc.)
 // based on the aggregated bonuses. This should be called after
 // ItemEffect has been calculated/updated (e.g., after adding/removing items).
 // Input: None (operates on the world state).
 // Output: None (modifies components directly).
-func (s *BaseStaticItemSystem) ApplyStats() {
+func (s *BaseStaticItemSystem) ApplyStaticItemsBonus() {
 	// Define the component types needed for this system
 	itemEffectType := reflect.TypeOf(items.ItemStaticEffect{})
 	entitiesWithItemEffect := s.world.GetEntitiesWithComponents(itemEffectType)
 
 	for _, entity := range entitiesWithItemEffect {
-		// Reset component bonuses BEFORE applying static item bonuses
-        if health, ok := s.world.GetHealth(entity); ok {
-            health.ResetBonuses()
-        }
-        if attack, ok := s.world.GetAttack(entity); ok {
-            attack.ResetBonuses()
-        }
-        if spell, ok := s.world.GetSpell(entity); ok {
-            spell.ResetBonuses()
-        }
-        if crit, ok := s.world.GetCrit(entity); ok {
-            crit.ResetBonuses()
-        }
-        if mana, ok := s.world.GetMana(entity); ok {
-            mana.ResetBonuses()
-        }
+		// // Reset component bonuses BEFORE applying static item bonuses
+        // if health, ok := s.world.GetHealth(entity); ok {
+        //     health.ResetBonuses()
+        // }
+        // if attack, ok := s.world.GetAttack(entity); ok {
+        //     attack.ResetBonuses()
+        // }
+        // if spell, ok := s.world.GetSpell(entity); ok {
+        //     spell.ResetBonuses()
+        // }
+        // if crit, ok := s.world.GetCrit(entity); ok {
+        //     crit.ResetBonuses()
+        // }
+        // if mana, ok := s.world.GetMana(entity); ok {
+        //     mana.ResetBonuses()
+        // }
 
 		itemEffect, _ := s.world.GetItemEffect(entity)
 
@@ -58,18 +58,6 @@ func (s *BaseStaticItemSystem) ApplyStats() {
 		// Apply to Defense (when Defense component exists)
 		// ...
 	}
-}
-
-// Update is the standard system update function called each simulation step.
-// For purely static item bonuses applied once via ApplyStats, this function
-// might be empty or not needed, unless stats need dynamic recalculation based
-// on changing conditions not related to item inventory changes.
-// Input: dt - The time delta since the last update step.
-// Output: None.
-func (s *BaseStaticItemSystem) Update(dt float64) {
-	// If stats need recalculating every frame/tick, call ApplyStats() here.
-	// For now, assume ApplyStats is called manually after item setup.
-
 }
 
 // --- Helper functions (Optional) ---

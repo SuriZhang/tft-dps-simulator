@@ -1,7 +1,14 @@
 package data
 
 // Global variable to store traits for quick lookup
-var Traits map[string]*Trait
+var Traits map[string]*Trait // traitName -> Trait
+
+const (
+	TFT14_Swift		 = "TFT14_Swift"
+	Rapidfire = "Rapidfire"
+	TFT14_Marksman = "TFT14_Marksman"
+	Marksman = "Marksman"
+)
 
 // GetTraitByName returns a trait by name or nil if not found
 func GetTraitByName(name string) *Trait {
@@ -9,6 +16,17 @@ func GetTraitByName(name string) *Trait {
 	trait, exists := Traits[name]
 	if exists {
 		return trait
+	}
+	return nil
+}
+
+// GetTraitByApiName returns a trait by API name or nil if not found
+func GetTraitByApiName(apiName string) *Trait {
+	// Case insensitive lookup could be added with strings.ToLower if needed
+	for _, trait := range Traits {
+		if trait.ApiName == apiName {
+			return trait
+		}
 	}
 	return nil
 }

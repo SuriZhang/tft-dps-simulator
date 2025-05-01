@@ -109,7 +109,7 @@ func main() {
 	// process Inifity Edge and Jeweled Gauntlet
 	abilityCritSystem.Update()
 	// apply item effects
-	baseStaticItemSystem.ApplyStats()
+	baseStaticItemSystem.ApplyStaticItemsBonus()
 
 	statCalculationSystem.ApplyStaticBonusStats()
 

@@ -11,6 +11,7 @@ import (
 	"github.com/suriz/tft-dps-simulator/systems"
 	eventsys "github.com/suriz/tft-dps-simulator/systems/events"
 	itemsys "github.com/suriz/tft-dps-simulator/systems/items"
+	traitsys "github.com/suriz/tft-dps-simulator/systems/traits"
 	"github.com/suriz/tft-dps-simulator/utils"
 )
 
@@ -18,21 +19,18 @@ import (
 type Simulation struct {
 	world    *ecs.World
 	eventBus eventsys.EventBus // Interface remains the same
-	// Keep system references if needed for setup or direct calls (less common now)
-	autoAttackSystem       *systems.AutoAttackSystem
-	damageSystem           *systems.DamageSystem
+	teamTraitState *traitsys.TeamTraitState 
 	statCalcSystem         *systems.StatCalculationSystem
 	baseStaticItemSystem   *itemsys.BaseStaticItemSystem
 	abilityCritSystem      *itemsys.AbilityCritSystem
 	dynamicTimeItemSystem  *itemsys.DynamicTimeItemSystem
-	spellCastSystem        *systems.SpellCastSystem
-	dynamicEventItemSystem *itemsys.DynamicEventItemSystem
+	traitCounterSystem *traitsys.TraitCounterSystem
+	dynamicEventTraitsSystem *traitsys.DynamicEventTraitSystem 
 	// Add other systems as needed
 
 	config      SimulationConfig
 	currentTime float64
-	recordQueue []*eventsys.EventItem // No longer needed, managed by eventBus
-	// No longer need eventQueue here if it's managed within the eventBus
+	recordQueue []*eventsys.EventItem 
 }
 
 // NewSimulation creates a new simulation with the given world and default config
@@ -49,6 +47,9 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	// Create Event Bus (which now includes the PriorityQueue)
 	eventBus := eventsys.NewSimpleBus()
 
+	// Create Trait State
+	traitState := traitsys.NewTeamTraitState()
+
 	// Create Systems, passing event bus where needed
 	autoAttackSystem := systems.NewAutoAttackSystem(world, eventBus)
 	damageSystem := systems.NewDamageSystem(world, eventBus)
@@ -59,6 +60,8 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	dynamicEventItemSystem := itemsys.NewDynamicEventItemSystem(world, eventBus)
 	dynamicTimeItemSystem := itemsys.NewDynamicTimeItemSystem(world, eventBus)
 	championActionSystem := systems.NewChampionActionSystem(world, eventBus)
+	dynamicEventTraitSystem := traitsys.NewDynamicEventTraitSystem(world, traitState, eventBus) 
+	traitCounterSystem := traitsys.NewTraitCounterSystem(world, traitState) 
 
 	// Register Event Handlers
 	eventBus.RegisterHandler(damageSystem)
@@ -68,19 +71,19 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	eventBus.RegisterHandler(spellCastSystem)
 	eventBus.RegisterHandler(statCalcSystem)
 	eventBus.RegisterHandler(dynamicTimeItemSystem)
-	// TODO: Register handlers for other systems that react to events (e.g., SpellCastSystem, AutoAttackSystem for recovery events, DynamicTimeItemSystem for timer events)
+	eventBus.RegisterHandler(dynamicEventTraitSystem)
+
 
 	sim := &Simulation{
 		world:                  world,
-		eventBus:               eventBus,         // Store the bus instance
-		autoAttackSystem:       autoAttackSystem, // Keep refs for now if needed during transition
-		damageSystem:           damageSystem,
+		eventBus:               eventBus,
+		teamTraitState:         traitState,
 		statCalcSystem:         statCalcSystem,
 		baseStaticItemSystem:   baseStaticItemSystem,
 		abilityCritSystem:      abilityCritSystem,
 		dynamicTimeItemSystem:  dynamicTimeItemSystem,
-		spellCastSystem:        spellCastSystem,
-		dynamicEventItemSystem: dynamicEventItemSystem,
+		traitCounterSystem:    traitCounterSystem,
+		dynamicEventTraitsSystem: dynamicEventTraitSystem,
 		config:                 config,
 		currentTime:            0.0,
 		recordQueue:            make([]*eventsys.EventItem, 0),
@@ -94,9 +97,16 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 // setupCombat runs initial setup and enqueues starting events.
 func (s *Simulation) setupCombat() {
 	fmt.Println("--- Running Initial Combat Setup ---")
+	// reset all champion bonuses to ensure a clean state
+
 	// Apply static bonuses first (devlog.md L281.2)
+	// update traits before abilitycrit system because some traits may affect abilitycrit
+	s.traitCounterSystem.UpdateCountsAndTiers() 
+	// Activate dynamic traits (e.g., Rapidfire) - requires trait implementation
+	s.dynamicEventTraitsSystem.ActivateTraits()
+
 	s.abilityCritSystem.Update() // For IE/JG check
-	s.baseStaticItemSystem.ApplyStats()
+	s.baseStaticItemSystem.ApplyStaticItemsBonus()
 	s.statCalcSystem.ApplyStaticBonusStats() // Calculate final stats based on static bonuses
 
 	// TODO: Implement other "before combat" steps from devlog.md (L279)
@@ -217,4 +227,9 @@ func (s *Simulation) SetConfig(config SimulationConfig) error {
 	}
 	s.config = config
 	return nil
+}
+
+// GetTeamTraitState returns the current trait state for the simulation
+func (s *Simulation) GetTeamTraitState() *traitsys.TeamTraitState {
+	return s.teamTraitState
 }

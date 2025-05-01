@@ -874,7 +874,7 @@ var _ = Describe("Simulation", func() {
         applyStaticStatsManually := func() {
             // Order matters, based on dependencies described in devlog/simulation setup
             abilityCritSystem.Update()                    // 1. Check for JG/IE (Reads ItemEffect populated by AddItemToChampion)
-            baseStaticItemSystem.ApplyStats()             // 2. Apply bonuses from ItemEffect to component Bonus fields
+            baseStaticItemSystem.ApplyStaticItemsBonus()             // 2. Apply bonuses from ItemEffect to component Bonus fields
             statCalculationSystem.ApplyStaticBonusStats() // 3. Calculate final stats based on updated component bonuses
         }
 
@@ -1084,6 +1084,8 @@ var _ = Describe("Simulation", func() {
             Expect(ok).To(BeTrue())
             Expect(effect.GetStacks()).To(Equal(0), "Initial stacks should be 0")
 
+            championSpell.ResetBonuses()
+
             // --- Run past first stack (e.g., 5.1s total) ---
             // Create a new sim instance with the same world but longer time
             sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(interval+0.1)) // Run up to 5.1s
@@ -1095,6 +1097,7 @@ var _ = Describe("Simulation", func() {
             Expect(championSpell.GetBonusAP()).To(BeNumerically("~", expectedBonusAPAfterStack1, 0.01), "Bonus AP should include 1 stack after the first interval")
             Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedFinalAPAfterStack1, 0.01), "Final AP should include 1 stack after the first interval")
 
+            championSpell.ResetBonuses()
             // --- Run past second stack (e.g., 10.1s total) ---
             sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(2*interval+0.1)) // Run up to 10.1s
             sim.RunSimulation() // Re-runs from t=0 up to 10.1s
@@ -1105,6 +1108,119 @@ var _ = Describe("Simulation", func() {
             Expect(championSpell.GetBonusAP()).To(BeNumerically("~", expectedBonusAPAfterStack2, 0.01), "Bonus AP should include 2 stacks after the second interval")
             Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedFinalAPAfterStack2, 0.01), "Final AP should include 2 stacks after the second interval")
         })
-    }) // End Describe("Item Effects Integration (Dynamic Time via RunSimulation)")
+    }) 
+    Describe("Trait System Integration", func() {
+        // Focus on how trait systems interact during setup and potentially during the run
+
+        var (
+            championFactory *factory.ChampionFactory
+            // Systems involved in trait processing (might be needed for manual checks if not relying solely on Simulation setup)
+            // traitCounterSystem     *traitsys.TraitCounterSystem
+            // traitStaticBonusSystem *traitsys.TraitStaticBonusSystem
+            // traitState             *traitsys.TeamTraitState // Might be hard to access directly from sim
+        )
+
+        BeforeEach(func() {
+            // Reset world and create basic components/systems for trait tests
+            world = ecs.NewWorld()
+            championFactory = factory.NewChampionFactory(world)
+            equipmentManager = managers.NewEquipmentManager(world) // Not needed unless items interact with traits
+
+            // Create instances of systems if needed for manual checks,
+            // otherwise rely on Simulation's internal creation.
+            // traitState = traitsys.NewTeamTraitState()
+            // traitCounterSystem = traitsys.NewTraitCounterSystem(world, traitState)
+            // traitStaticBonusSystem = traitsys.NewTraitStaticBonusSystem(world, traitState)
+            // statCalculationSystem = systems.NewStatCalculationSystem(world) // Needed to see final stats
+        })
+
+        Context("with Rapidfire Trait (2 units)", func() {
+            var (
+                kindred1, kindred2, kogmaw, shyvana ecs.Entity
+                rapidfireData              *data.Trait
+                expectedBonusAS            float64
+            )
+            BeforeEach(func() {
+                // Create champions with the Rapidfire trait for the player team
+                var err error
+                kindred1, err = championFactory.CreatePlayerChampion("TFT14_Kindred", 1) 
+                Expect(err).NotTo(HaveOccurred())
+                kindred2, err = championFactory.CreatePlayerChampion("TFT14_Kindred", 1)
+                Expect(err).NotTo(HaveOccurred())
+                kogmaw, err = championFactory.CreatePlayerChampion("TFT14_KogMaw", 1)
+                Expect(err).NotTo(HaveOccurred())
+                // Add a non-Rapidfire champion
+                shyvana, err = championFactory.CreatePlayerChampion("TFT14_Shyvana", 1) 
+                Expect(err).NotTo(HaveOccurred())
+
+                // Get trait data to find the expected bonus
+                rapidfireData = data.GetTraitByApiName(data.TFT14_Swift)
+                Expect(rapidfireData).NotTo(BeNil())
+                // Find the bonus for tier 0 (2 units)
+                var foundBonus bool
+                for _, effect := range rapidfireData.Effects {
+                    if effect.MinUnits == 2 { // Tier 0 threshold
+                        expectedBonusAS = effect.Variables["{b6739a03}"]// team bonus AS
+                        foundBonus = true
+                        break
+                    }
+                }
+                Expect(foundBonus).To(BeTrue(), "Could not find Rapidfire bonus for 2 units")
+                Expect(expectedBonusAS).To(BeNumerically("~", 0.1), "Expected team bonus AS should be 10%")
+
+                // Create the simulation - this runs setupCombat which includes trait counting and static bonus application
+                sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(0.1)) // Short time, only care about setup
+                Expect(sim).NotTo(BeNil())
+                // Note: setupCombat runs:
+                // 1. traitCounterSystem.UpdateCountsAndTiers()
+                // 2. abilityCritSystem.Update()
+                // 3. traitStaticBonusSystem.ApplyStaticTraitsBonus()
+                // 4. baseStaticItemSystem.ApplyStaticItemsBonus()
+                // 5. statCalcSystem.ApplyStaticBonusStats()
+            })
+            It("should correctly calculate TeamTraitState", func() {
+                // Check if the trait state was updated correctly
+                traitState := sim.GetTeamTraitState()
+                Expect(traitState).NotTo(BeNil(), "TraitState should not be nil")
+                // Check if Rapidfire trait is present and has the correct count
+                rapidfireCount := traitState.GetUnitCount(components.TeamPlayer, rapidfireData.Name)
+                Expect(rapidfireCount).To(Equal(2), "Rapidfire trait count should be 2")
+                // Check if the trait tier is correct
+                rapidfireTier := traitState.GetActiveTier(components.TeamPlayer, rapidfireData.Name)
+                Expect(rapidfireTier).To(Equal(0), "Rapidfire trait tier should be 0 (2 units)")
+            })
+
+            It("should apply the correct static Attack Speed bonus to Rapidfire champions", func() {
+                // Get attack components AFTER simulation setup
+                attackK1 := getAttack(world, kindred1)
+                attackK2 := getAttack(world, kindred2)
+                attackKog := getAttack(world, kogmaw)
+
+                // Calculate expected final AS = BaseAS * (1 + TraitBonusAS)
+                expectedFinalASK1 := attackK1.GetBaseAttackSpeed() * (1.0 + expectedBonusAS)
+                expectedFinalASK2 := attackK2.GetBaseAttackSpeed() * (1.0 + expectedBonusAS)
+                expectedFinalASKog := attackKog.GetBaseAttackSpeed() * (1.0 + expectedBonusAS)
+
+                // Verify the BonusPercentAttackSpeed field directly
+                Expect(attackK1.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedBonusAS, 0.001), "Kindred 1 BonusPercentAttackSpeed should be Rapidfire bonus")
+                Expect(attackK2.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedBonusAS, 0.001), "Kindred 2 BonusPercentAttackSpeed should be Rapidfire bonus")
+                Expect(attackKog.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedBonusAS, 0.001), "Kog'Maw BonusPercentAttackSpeed should be Rapidfire bonus")
+
+                // Assert that the final attack speed reflects the trait bonus
+                Expect(attackK1.GetFinalAttackSpeed()).To(BeNumerically("~", expectedFinalASK1, 0.001), "Kindred 1 Final AS should include Rapidfire bonus")
+                Expect(attackK2.GetFinalAttackSpeed()).To(BeNumerically("~", expectedFinalASK2, 0.001), "Kindred 2 Final AS should include Rapidfire bonus")
+                Expect(attackKog.GetFinalAttackSpeed()).To(BeNumerically("~", expectedFinalASKog, 0.001), "Kog'Maw Final AS should include Rapidfire bonus")
+            })
+
+            It("should apply Rapidfire team bonus to non-Rapidfire champions", func() {
+                attackShyvana := getAttack(world, shyvana)
+
+                // Shyvana should also receive bonus AS from Rapidfire
+                Expect(attackShyvana.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedBonusAS, 0.001), "Shyvana BonusPercentAttackSpeed should be 10%")
+                Expect(attackShyvana.GetFinalAttackSpeed()).To(BeNumerically("~", attackShyvana.GetBaseAttackSpeed() * 1.1, 0.001), "Shyvana Final AS should be greater than Base AS")
+            })
+        }) // End Context("with Rapidfire Trait (2 units)")
+
+    }) // End Describe("Trait System Integration")
 
 }) // End Describe("Simulation")

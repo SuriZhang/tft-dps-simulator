@@ -7,6 +7,7 @@ import (
 
 	"github.com/suriz/tft-dps-simulator/components"
 	"github.com/suriz/tft-dps-simulator/components/items"
+	"github.com/suriz/tft-dps-simulator/components/traits"
 )
 
 // World contains all entities and their components, stored in type-specific maps.
@@ -32,6 +33,9 @@ type World struct {
 	QuicksilverEffects       map[Entity]*items.QuicksilverEffect
 	TitansResolveEffects     map[Entity]*items.TitansResolveEffect
 	GuinsoosRagebladeEffects map[Entity]*items.GuinsoosRagebladeEffect
+
+	// --- Trait Effect Components ---
+	RapidfireEffects  map[Entity]*traits.RapidfireEffect
 	// Add maps for other components defined in your components directory as needed:
 	// Defense      map[Entity]*components.Defense
 	// Buffs        map[Entity]*components.Buffs
@@ -60,6 +64,9 @@ func NewWorld() *World {
 		QuicksilverEffects:       make(map[Entity]*items.QuicksilverEffect),
 		TitansResolveEffects:     make(map[Entity]*items.TitansResolveEffect),
 		GuinsoosRagebladeEffects: make(map[Entity]*items.GuinsoosRagebladeEffect),
+
+		// --- Traits ---
+		RapidfireEffects: make(map[Entity]*traits.RapidfireEffect),
 		// Initialize other maps here...
 	}
 }
@@ -92,6 +99,8 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.QuicksilverEffects, e)
 	delete(w.TitansResolveEffects, e)
 	delete(w.GuinsoosRagebladeEffects, e)
+	// Traits
+	delete(w.RapidfireEffects, e)
 	// Delete from other maps here...
 }
 
@@ -179,6 +188,11 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.GuinsoosRagebladeEffects[e] = &c
 	case *items.GuinsoosRagebladeEffect:
 		w.GuinsoosRagebladeEffects[e] = c
+	// Traits
+	case traits.RapidfireEffect:
+		w.RapidfireEffects[e] = &c
+	case *traits.RapidfireEffect:
+		w.RapidfireEffects[e] = c
 	// Add cases for other component types here...
 	default:
 		// Use reflection to get the type name for the error message
@@ -247,6 +261,10 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		comp, ok := w.GuinsoosRagebladeEffects[e]
 		return comp, ok
+	// Traits
+	case reflect.TypeOf(traits.RapidfireEffect{}):
+		comp, ok := w.RapidfireEffects[e]
+		return comp, ok
 	// Add cases for other component types here...
 	default:
 		return nil, false
@@ -299,6 +317,9 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.TitansResolveEffects, e)
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		delete(w.GuinsoosRagebladeEffects, e)
+	// Traits
+	case reflect.TypeOf(traits.RapidfireEffect{}):
+		delete(w.RapidfireEffects, e)
 	// Add cases for other component types here...
 	default:
 		log.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
@@ -406,6 +427,9 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.TitansResolveEffects)
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		return len(w.GuinsoosRagebladeEffects)
+	// Traits
+	case reflect.TypeOf(traits.RapidfireEffect{}):
+		return len(w.RapidfireEffects)
 	// Add cases for other component types...
 	default:
 		return 0
@@ -505,6 +529,12 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		entities = make([]Entity, 0, len(w.GuinsoosRagebladeEffects))
 		for e := range w.GuinsoosRagebladeEffects {
+			entities = append(entities, e)
+		}
+	// Traits
+	case reflect.TypeOf(traits.RapidfireEffect{}):
+		entities = make([]Entity, 0, len(w.RapidfireEffects))
+		for e := range w.RapidfireEffects {
 			entities = append(entities, e)
 		}
 	// Add cases for other component types...
@@ -631,5 +661,11 @@ func (w *World) GetTitansResolveEffect(e Entity) (*items.TitansResolveEffect, bo
 // GetGuinsoosRagebladeEffect returns the GuinsoosRagebladeEffect component for an entity, type-safe.
 func (w *World) GetGuinsoosRagebladeEffect(e Entity) (*items.GuinsoosRagebladeEffect, bool) {
 	comp, ok := w.GuinsoosRagebladeEffects[e]
+	return comp, ok
+}
+
+// GetRapidfireEffect returns the RapidfireEffect component for an entity, type-safe.
+func (w *World) GetRapidfireEffect(e Entity) (*traits.RapidfireEffect, bool) {
+	comp, ok := w.RapidfireEffects[e]
 	return comp, ok
 }
