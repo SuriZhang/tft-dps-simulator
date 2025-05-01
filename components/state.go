@@ -10,14 +10,6 @@ const (
 	Idle                                         // Not performing any action (can overlap with CC/Stun)
 )
 
-var stateNames = map[ChampionActionState]string{
-	Casting:           "Casting",
-	AttackStartingUp:  "AttackStartingUp",
-	AttackCoolingDown: "AttackCoolingDown",
-	AttackRecovering:  "AttackRecovering",
-	Idle:              "Idle",
-}
-
 // State holds the current action state and status effects of a champion.
 type State struct {
 	// Status Effects
