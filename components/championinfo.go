@@ -6,14 +6,16 @@ type ChampionInfo struct {
 	Name      string
 	Cost      int
 	StarLevel int
+	role 	string
 }
 
 // NewIdentity creates an Identity component
-func NewChampionInfo(apiName string, name string, cost, starLevel int) ChampionInfo {
+func NewChampionInfo(apiName, name, role string, cost, starLevel int) ChampionInfo {
 	return ChampionInfo{
 		ApiName:   apiName,
 		Name:      name,
 		Cost:      cost,
+		role : role,
 		StarLevel: starLevel,
 	}
 }

@@ -110,6 +110,7 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 	infoComp := components.NewChampionInfo(
 		championData.ApiName,
 		championData.Name,
+		championData.Role,
 		championData.Cost,
 		starLevel,
 	)
