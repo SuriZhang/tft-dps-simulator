@@ -312,3 +312,44 @@ DONE Today:
 - [x] refactor DynamicTimeSystem to enqueue and handle events
 - [x] fix ChampionActionSystem to correctly enqueue AttackCooldownStartEvent based on champion state
 - [x] all tests passed
+
+## 20250501
+DONE Today:
+- [x] Traits system scaffold, traits are referenced by Name (instead oPf ApiName) in the simulation
+- [x] Rapidfire trait effects
+
+Next Step:
+1. implement one or two simple abilities to complete the first milestone of MVP
+2. refactor the code base to make it a proper web backend
+here is a checklist to guide the refactoring process, ordered roughly from lowest to highest workload:
+
+Setup & Dependencies:
+- [x] Add Fiber dependency (go get github.com/gofiber/fiber/v2) [new] [low]
+- [x] Add Redis client dependency (e.g., go get github.com/go-redis/redis/v8) [new] [low]
+- [ ]Create cmd/server/ directory [new] [low]
+- [x] Create internal/ directory [new] [low]
+- [ ]Create internal/api/, internal/service/, internal/store/ subdirectories [new] [low]
+- [x] Create basic Fiber app setup in main.go [new] [low]
+- [x] Implement Redis client initialization logic (e.g., in internal/store/ or main.go) [new] [low]
+- [ ] Move one-time data loading (data.InitializeChampions, etc.) from main.go to main.go [refactor] [low]
+- [ ] Ensure data loading happens only once on server start [refactor] [low]
+- [ ] Define SimulationSetup and ChampionConfig structs (likely in internal/store/ or a shared types package) [new] [low]
+- [ ] Define SimulationService struct signature in internal/service/ [new] [low]
+- [ ] Define basic API handler function signatures in internal/api/ [new] [low]
+- [ ] Instantiate store, service, handlers in main.go [new] [low]
+- [x] Add basic server start logic (app.Listen()) in main.go [new] [low]
+
+Core Logic Implementation & Refactoring:
+- [x] Move existing simulation packages (ecs, components, systems, simulation, managers, factory, data, utils) into internal/simcore/ [refactor] [medium]
+- [x] Update all import paths affected by the move to internal/simcore/ [refactor] [medium]
+- [ ] Implement SaveSimulationSetup function in internal/store/ (handle serialization, Redis SET) [new] [medium]
+- [ ] Implement GetSimulationSetup function in internal/store/ (handle Redis GET, deserialization) [new] [medium]
+- [ ] Implement request body/parameter parsing in API handlers [new] [medium]
+- [ ] Implement JSON response formatting in API handlers [new] [medium]
+- [ ] Implement basic error handling and HTTP status code responses in API handlers [new] [medium]
+- [x] Define Fiber routes in main.go connecting paths to API handlers [new] [medium]
+- Implement AddChampion method in SimulationService (call store, update setup) [new] [medium]
+- Implement AddItemToChampion method in SimulationService (call store, update setup) [new] [medium]
+- Implement ChangeChampionStarLevel method in SimulationService (call store, update setup) [new] [medium]
+- [ ] Refactor Simulation (in internal/simcore/simulation) to return structured results instead of printing [refactor] [medium]
+- [ ] Implement RunSimulation method in SimulationService (get setup, create world, use factory/managers, run sim, return results) [new] [high]
