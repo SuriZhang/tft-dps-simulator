@@ -111,8 +111,10 @@ func (s *Simulation) setupCombat() {
 
 	// TODO: Implement other "before combat" steps from devlog.md (L279)
 	// 1. Resolve start-of-combat effects (Items like Thief's Gloves - requires item implementation) (devlog.md L280)
+	
 	// 3. Enqueue time effects (e.g., Archangel's) - Requires DynamicTimeItemSystem refactor (devlog.md L282)
 	s.dynamicTimeItemSystem.EnqueueInitialEvents()
+	
 	// 4. Other special handlings (e.g., Overlord - requires trait implementation) (devlog.md L283)
 
 	// Enqueue first actions for all champions at t=0 (devlog.md L284)

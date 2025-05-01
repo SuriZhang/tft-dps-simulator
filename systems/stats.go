@@ -267,7 +267,7 @@ func (s *StatCalculationSystem) calculateSpellStats(entity ecs.Entity) {
 	// Spell Damage: Base + Bonus
 	calculatedSpellDamage := spell.GetBaseAP() + spell.GetBonusAP()
 	spell.SetFinalAP(calculatedSpellDamage)
-	log.Printf("Entity %d: BaseAP: %.2f, BonusAP: %.2f, FinalAP: %.2f", entity, spell.GetBaseAP(), spell.GetBonusAP(), calculatedSpellDamage)
+	// log.Printf("Entity %d: BaseAP: %.2f, BonusAP: %.2f, FinalAP: %.2f", entity, spell.GetBaseAP(), spell.GetBonusAP(), calculatedSpellDamage)
 }
 
 // applyHealthConsequences handles adjustments needed after health stats change.

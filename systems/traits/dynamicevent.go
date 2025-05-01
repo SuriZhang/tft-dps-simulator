@@ -45,7 +45,7 @@ func (s *DynamicEventTraitSystem) ActivateTraits() {
 
             handler, exists := GetTraitHandler(traitName)
             if !exists {
-				log.Printf("Warning: No handler found for trait '%s'", traitName)
+				log.Printf("DynamicEventTraitSystem (ActivateTraits): Warning: No handler found for trait '%s'", traitName)
                 continue
             }
 
@@ -53,7 +53,7 @@ func (s *DynamicEventTraitSystem) ActivateTraits() {
             traitData, exists := data.Traits[traitName]
             if exists && currentTierIndex < len(traitData.Effects) {
                 activeEffect := traitData.Effects[currentTierIndex]
-                log.Printf("  Activating dynamic event trait '%s' for Team %d (TierIndex %d)", traitName, teamID, currentTierIndex)
+                log.Printf("DynamicEventTraitSystem (ActivateTraits): Activating dynamic event trait '%s' for Team %d (TierIndex %d)", traitName, teamID, currentTierIndex)
                 // OnActivate is responsible for adding components or applying initial effects
                 // Pass eventBus if OnActivate needs it (optional, depends on trait needs)
                 handler.OnActivate(teamID, activeEffect, s.world)
@@ -86,16 +86,16 @@ func (s *DynamicEventTraitSystem) HandleEvent(event interface{}) {
     processedHandlers := make(map[string]struct{})
 
     for _, entity := range involvedEntities {
-        for traitApiName, handler := range TraitRegistry {
+        for traitName, handler := range TraitRegistry {
             // Check if the entity has the component associated with this trait.
             // Example for Rapidfire:
-            if traitApiName == "TFT14_Swift" { // TODO: Replace with a better mapping mechanism
+            if traitName == data.Rapidfire { // TODO: Replace with a better mapping mechanism
                 // Use the correct component type name 'RapidfireEffect'
                 if s.world.HasComponent(entity, reflect.TypeOf(traitcomps.RapidfireEffect{})) {
-                    if _, done := processedHandlers[traitApiName]; !done {
+                    if _, done := processedHandlers[traitName]; !done {
                         // Pass the event bus to the handler
                         handler.Handle(event, entity, s.world, s.eventBus)
-                        processedHandlers[traitApiName] = struct{}{}
+                        processedHandlers[traitName] = struct{}{}
                     }
                 }
             }

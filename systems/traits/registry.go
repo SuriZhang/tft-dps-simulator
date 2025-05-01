@@ -8,12 +8,12 @@ import (
 var TraitRegistry = make(map[string]TraitHandler)
 
 // RegisterTraitHandler registers a handler for a specific trait API name.
-func RegisterTraitHandler(traitApiName string, handler TraitHandler) {
-    if _, exists := TraitRegistry[traitApiName]; exists {
-        log.Printf("Warning: Overwriting existing trait handler for %s", traitApiName)
+func RegisterTraitHandler(traitName string, handler TraitHandler) {
+    if _, exists := TraitRegistry[traitName]; exists {
+        log.Printf("Warning: Overwriting existing trait handler for %s", traitName)
     }
-    TraitRegistry[traitApiName] = handler
-    log.Printf("Registered trait handler for %s", traitApiName)
+    TraitRegistry[traitName] = handler
+    log.Printf("Registered trait handler for %s", traitName)
 }
 
 // GetTraitHandler retrieves the handler for a specific trait API name.
