@@ -1,1 +1,230 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark Theme Colors based on reference image */
+    --background: 240 30% 12%; /* Deep dark blue/purple */
+    --foreground: 210 20% 95%; /* Light grey/blue text */
+
+    --card: 240 25% 18%; /* Panel background */
+    --card-foreground: 210 20% 95%;
+
+    --popover: 240 25% 18%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 270 70% 60%; /* Accent purple for primary actions */
+    --primary-foreground: 210 20% 95%;
+
+    --secondary: 240 20% 25%; /* Slightly lighter background elements */
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 240 20% 25%;
+    --muted-foreground: 240 10% 60%; /* Greyer text for less emphasis */
+
+    --accent: 210 80% 60%; /* Accent blue for highlights like traits */
+    --accent-foreground: 210 20% 95%;
+
+    --destructive: 0 70% 55%; /* Red for destructive actions */
+    --destructive-foreground: 210 20% 95%;
+
+    --border: 240 15% 30%; /* Subtle borders */
+    --input: 240 20% 25%;
+    --ring: 270 70% 60%; /* Focus ring color (primary) */
+
+    --radius: 0.5rem; /* Slightly smaller radius */
+
+    /* Custom colors */
+    --dark-bg: 240 30% 10%;
+    --panel-bg: 240 25% 15%;
+    --component-bg: 240 20% 20%;
+    --accent-purple: 270 70% 60%;
+    --accent-blue: 210 80% 60%;
+    --accent-gold: 45 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    /* Use the darkest background */
+    @apply bg-dark-bg text-foreground antialiased overflow-x-hidden;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+  
+  /* Hex grid styles */
+  .hex-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-gap: 5px;
+  }
+  
+  /* Hexagon styles */
+  .hexagon {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 115%; /* Ratio for proper hexagon shape */
+    @apply bg-component-bg; /* Use component background for hex cells */
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    transition: all 0.2s ease;
+  }
+  
+  .hexagon::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    @apply bg-background; /* Use main background for inner part */
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    z-index: 1;
+  }
+
+  .hexagon.is-active {
+    @apply bg-primary/50; /* Highlight active hex */
+  }
+
+  .hexagon.is-active::after {
+    @apply bg-primary/20;
+  }
+  
+  /* Champion styles */
+  .champion {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  
+  /* Champion stars */
+  .star {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    /* Use accent-gold for stars */
+    background: hsl(var(--accent-gold)); 
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  }
+  
+  /* Glowing effects */
+  .glow-text {
+    text-shadow: 0 0 8px theme('colors.primary.DEFAULT');
+  }
+  
+  .glow-border {
+    box-shadow: 0 0 8px theme('colors.primary.DEFAULT');
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 8px theme('colors.accent.DEFAULT');
+  }
+
+  /* Sidebar transitions */
+  .sidebar-transition {
+    transition: width 0.3s ease;
+  }
+  
+  /* Tooltip styles */
+  .tooltip {
+    @apply invisible absolute z-50 bg-card p-2 rounded-lg shadow-lg text-sm;
+    width: max-content;
+    max-width: 300px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  
+  .has-tooltip:hover .tooltip {
+    @apply visible;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Progress bar styles */
+  .progress-bar {
+    @apply h-1.5 rounded-full overflow-hidden;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .progress-fill {
+    @apply h-full transition-all;
+  }
+  
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+  
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 16px rgba(14, 165, 233, 0.3);
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent-purple/50 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-purple;
+  }
+  
+  /* Additional utility classes */
+  .glass-panel {
+    @apply bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg;
+  }
+
+  /* Update kbd styles */
+  kbd {
+    @apply px-2 py-1.5 text-xs font-semibold text-foreground bg-muted rounded-md border border-border;
+  }
+
+  /* Update Resizable Handle */
+  [data-orientation="vertical"] > [data-resize-handle] {
+    @apply w-1 bg-border/50 hover:bg-accent-purple transition-colors;
+  }
+  [data-orientation="horizontal"] > [data-resize-handle] {
+    @apply h-1 bg-border/50 hover:bg-accent-purple transition-colors;
+  }
+  [data-resize-handle][data-active=true] {
+     @apply bg-accent-purple;
+  }
+
+  /* General Panel Styling */
+  .panel {
+    @apply bg-card rounded-lg p-4 border border-border;
+  }
+
+  .panel-title {
+    @apply text-lg font-semibold mb-3 text-foreground;
+  }
+}
+
+.clip-hexagon {
+  clip-path: polygon(
+    25% 0%, 75% 0%,
+    100% 50%, 75% 100%,
+    25% 100%, 0% 50%
+  );
+  transform: rotate(90deg);
+}
