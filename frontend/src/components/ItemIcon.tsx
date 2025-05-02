@@ -13,7 +13,7 @@ interface ItemIconProps {
 
 const ItemIcon: React.FC<ItemIconProps> = ({ item, size = 'md', draggable = true }) => {
   const { dispatch, state } = useSimulator();
-  const isSelected = state.selectedItem?.id === item.id;
+  const isSelected = state.selectedItem?.apiName === item.apiName;
 
   const typeColors = {
     component: 'border-blue-400 bg-blue-800/30',

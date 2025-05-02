@@ -41,7 +41,7 @@ const MainBoard = () => {
 				</div>
 			</div>
 
-			<div className="w-[25%] flex h-full flex-col p-4 gap-4 bg-card rounded-r-lg">
+			<div className="w-[25%] flex flex-col p-4 gap-4 bg-card rounded-r-lg">
 				<DamageStatsPanel />
 				<AugmentPanel />
 			</div>

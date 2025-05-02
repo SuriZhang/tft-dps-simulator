@@ -63,7 +63,22 @@ function App() {
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </div>
+      </div>
+      {/* <div>
+      <button
+              onClick={fetchData}
+              className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
+            >
+              Fetch from Server
+            </button>
+
+            {message && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                <p className="text-gray-700">Server Response:</p>
+                <p className="text-gray-900 font-medium">{message}</p>
+              </div>
+            )}
+      </div> */}
 
       </BrowserRouter>
   )

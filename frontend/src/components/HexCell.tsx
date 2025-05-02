@@ -119,7 +119,7 @@ const HexCell : React.FC<HexCellProps> =({ row, col, champion } ) => {
 		<div className={cn("relative aspect-[1/1]", `col-start-${col} rows-start-${row}`)}>
 			<div
 				className={cn(
-					"w-[80px] h-[80px] inset-0 clip-hexagon border  shadow-md transition-all cursor-pointer",
+					"w-[80px] h-[80px] inset-0 clip-hexagon border shadow-md transition-all cursor-pointer",
 					getHexBackground(),
 					!champion && selectedChampion
 						? "border-primary border-2 hover:border-opacity-100"

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useSimulator } from '../context/SimulatorContext';
-import ChampionCard from './ChampionCard';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -73,10 +72,10 @@ const ChampionPool: React.FC = () => {
           className="mb-2 h-8 bg-muted border-none" // Adjusted style
         />
         {/* Use ScrollArea component */}
-        <ScrollArea className="flex-1 -mx-4">
-          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2"> {/* Adjusted grid/gap */}
+        <ScrollArea className="flex-1 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-12 "> 
             {filteredChampions.map((champion) => (
-              <ChampionIcon key={champion.id} champion={champion} />
+              <ChampionIcon key={champion.apiName} champion={champion} />
             ))}
           </div>
            {filteredChampions.length === 0 && (

@@ -57,7 +57,7 @@ const AugmentPanel: React.FC = () => {
                 )}
                 onClick={() => {
                   // Simple implementation - just cycles through augments
-                  const nextIndex = augments.findIndex(a => a.id === augment?.id) + 1;
+                  const nextIndex = augments.findIndex(a => a.apiName === augment?.apiName) + 1;
                   const nextAugment = augments[nextIndex % augments.length];
                   if (nextAugment) handleAugmentClick(nextAugment, slot);
                 }}
@@ -86,7 +86,7 @@ const AugmentPanel: React.FC = () => {
           <div className="grid grid-cols-3 gap-2">
             {augments.map((augment) => (
               <div
-                key={augment.id}
+                key={augment.apiName}
                 className={cn(
                   "p-2 rounded-md text-xs cursor-pointer",
                   tierColors[augment.tier]

@@ -13,7 +13,7 @@ interface ChampionIconProps {
 
 const ChampionIcon: React.FC<ChampionIconProps> = ({ champion, size = 'md', draggable = true }) => {
   const { dispatch, state } = useSimulator();
-  const isSelected = state.selectedChampion?.id === champion.id;
+  const isSelected = state.selectedChampion?.apiName === champion.apiName;
 
   const costColors = {
     1: 'border-gray-500 bg-gray-500/20',
@@ -48,7 +48,6 @@ const handleClick = () => {
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          {/* Use Avatar component */}
           <Avatar
             className={cn(
               'relative rounded-md border cursor-pointer transition-all duration-200 flex items-center justify-center',
@@ -61,10 +60,10 @@ const handleClick = () => {
             onClick={handleClick}
           >
             <AvatarImage src={champion.image} alt={champion.name} />
-            <AvatarFallback>{champion.name.substring(0, 1)}</AvatarFallback>
+            <AvatarFallback>{champion.name.substring(0, 4)}</AvatarFallback>
           </Avatar>
         </TooltipTrigger>
-        {/* Use TooltipContent */}
+
         <TooltipContent>
           <p className="font-bold">{champion.name}</p>
           <p className="text-xs text-muted-foreground">{champion.traits}</p>

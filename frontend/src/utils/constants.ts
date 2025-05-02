@@ -4,7 +4,7 @@ import { Champion, Item, Trait, Augment } from './types';
 // Mock champions data
 export const MOCK_CHAMPIONS: Champion[] = [
   {
-    id: 'zac',
+    apiName: 'zac',
     name: 'Zac',
     cost: 4,
     traits: ['Bruiser', 'Ooze'],
@@ -12,7 +12,7 @@ export const MOCK_CHAMPIONS: Champion[] = [
     stars: 1
   },
   {
-    id: 'poppy',
+    apiName: 'poppy',
     name: 'Poppy',
     cost: 1,
     traits: ['Yordle', 'Knight'],
@@ -20,19 +20,19 @@ export const MOCK_CHAMPIONS: Champion[] = [
     stars: 1
   },
   {
-    id: 'missfortune',
+    apiName: 'missfortune',
     name: 'Miss Fortune',
     cost: 5,
     traits: ['Gunslinger', 'Ace'],
     image: '/placeholder.svg',
     stars: 2,
     items: [
-      { id: 'ie', name: 'Infinity Edge', description: 'Critical strikes deal more damage', image: '/placeholder.svg', type: 'completed' },
-      { id: 'gs', name: 'Giant Slayer', description: 'Deal bonus damage to high health targets', image: '/placeholder.svg', type: 'completed' }
+      { apiName: 'ie', name: 'Infinity Edge', description: 'Critical strikes deal more damage', image: '/placeholder.svg', type: 'completed' },
+      { apiName: 'gs', name: 'Giant Slayer', description: 'Deal bonus damage to high health targets', image: '/placeholder.svg', type: 'completed' }
     ]
   },
   {
-    id: 'akali',
+    apiName: 'akali',
     name: 'Akali',
     cost: 4,
     traits: ['Assassin', 'Ninja'],
@@ -40,7 +40,7 @@ export const MOCK_CHAMPIONS: Champion[] = [
     stars: 1
   },
   {
-    id: 'ahri',
+    apiName: 'ahri',
     name: 'Ahri',
     cost: 5,
     traits: ['Spirit', 'Mage'],
@@ -48,7 +48,7 @@ export const MOCK_CHAMPIONS: Champion[] = [
     stars: 1
   },
   {
-    id: 'lux',
+    apiName: 'lux',
     name: 'Lux',
     cost: 3,
     traits: ['Sorcerer', 'Light'],
@@ -56,7 +56,7 @@ export const MOCK_CHAMPIONS: Champion[] = [
     stars: 1
   },
   {
-    id: 'yasuo',
+    apiName: 'yasuo',
     name: 'Yasuo',
     cost: 4,
     traits: ['Exile', 'Blademaster'],
@@ -64,7 +64,7 @@ export const MOCK_CHAMPIONS: Champion[] = [
     stars: 1
   },
   {
-    id: 'jinx',
+    apiName: 'jinx',
     name: 'Jinx',
     cost: 4,
     traits: ['Scrap', 'Gunslinger'],
@@ -76,42 +76,42 @@ export const MOCK_CHAMPIONS: Champion[] = [
 // Mock items data
 export const MOCK_ITEMS: Item[] = [
   {
-    id: 'bf',
+    apiName: 'bf',
     name: 'B.F. Sword',
     description: '+10 Attack Damage',
     image: '/placeholder.svg',
     type: 'component'
   },
   {
-    id: 'bow',
+    apiName: 'bow',
     name: 'Recurve Bow',
     description: '+10% Attack Speed',
     image: '/placeholder.svg',
     type: 'component'
   },
   {
-    id: 'rod',
+    apiName: 'rod',
     name: 'Needlessly Large Rod',
     description: '+10 Ability Power',
     image: '/placeholder.svg',
     type: 'component'
   },
   {
-    id: 'ie',
+    apiName: 'ie',
     name: 'Infinity Edge',
     description: 'Critical strikes deal more damage',
     image: '/placeholder.svg',
     type: 'completed'
   },
   {
-    id: 'gs',
+    apiName: 'gs',
     name: 'Giant Slayer',
     description: 'Deal bonus damage to high health targets',
     image: '/placeholder.svg',
     type: 'completed'
   },
   {
-    id: 'hoj',
+    apiName: 'hoj',
     name: 'Hand of Justice',
     description: 'Grants random bonuses each round',
     image: '/placeholder.svg',
@@ -122,7 +122,7 @@ export const MOCK_ITEMS: Item[] = [
 // Mock traits data
 export const MOCK_TRAITS: Trait[] = [
   {
-    id: 'virus',
+    apiName: 'virus',
     name: 'Virus',
     description: 'Infect enemies with a virus that deals damage over time',
     image: '/placeholder.svg',
@@ -135,7 +135,7 @@ export const MOCK_TRAITS: Trait[] = [
     style: 'border-orange-500'
   },
   {
-    id: 'bastion',
+    apiName: 'bastion',
     name: 'Bastion',
     description: 'Gain shields at the start of combat',
     image: '/placeholder.svg',
@@ -148,7 +148,7 @@ export const MOCK_TRAITS: Trait[] = [
     style: 'border-blue-500'
   },
   {
-    id: 'cyberboss',
+    apiName: 'cyberboss',
     name: 'Cyberboss',
     description: 'Deal bonus damage based on opponent health',
     image: '/placeholder.svg',
@@ -161,7 +161,7 @@ export const MOCK_TRAITS: Trait[] = [
     style: 'border-cyan-500'
   },
   {
-    id: 'dynamo',
+    apiName: 'dynamo',
     name: 'Dynamo',
     description: 'Generate energy over time, powering up abilities',
     image: '/placeholder.svg',
@@ -174,7 +174,7 @@ export const MOCK_TRAITS: Trait[] = [
     style: 'border-yellow-500'
   },
   {
-    id: 'syndicate',
+    apiName: 'syndicate',
     name: 'Syndicate',
     description: 'Gain lifesteal and spell vamp',
     image: '/placeholder.svg',
@@ -191,28 +191,28 @@ export const MOCK_TRAITS: Trait[] = [
 // Mock augments data
 export const MOCK_AUGMENTS: Augment[] = [
   {
-    id: 'rich-get-richer',
+    apiName: 'rich-get-richer',
     name: 'Rich Get Richer',
     description: 'Gain +10 gold now, but interest rate reduces to 0%',
     image: '/placeholder.svg',
     tier: 'silver'
   },
   {
-    id: 'cybernetic-implants',
+    apiName: 'cybernetic-implants',
     name: 'Cybernetic Implants',
     description: 'Champions with at least 1 item gain +150 Health and +15 Attack Damage',
     image: '/placeholder.svg',
     tier: 'gold'
   },
   {
-    id: 'celestial-blessing',
+    apiName: 'celestial-blessing',
     name: 'Celestial Blessing',
     description: 'All units gain 15% Omnivamp (healing for damage dealt)',
     image: '/placeholder.svg',
     tier: 'prismatic'
   },
   {
-    id: 'built-different',
+    apiName: 'built-different',
     name: 'Built Different',
     description: 'Champions without any traits active gain bonus health and attack speed',
     image: '/placeholder.svg',

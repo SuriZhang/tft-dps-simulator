@@ -115,7 +115,7 @@ const TraitTracker: React.FC = () => {
           
           return (
             <div 
-              key={trait.id}
+              key={trait.apiName}
               className={cn(
                 "p-3 rounded-md transition-all",
                 isActive ? "bg-gray-800/60 border " + trait.style : "bg-gray-800/30"

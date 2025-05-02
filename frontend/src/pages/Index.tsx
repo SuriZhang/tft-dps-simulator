@@ -1,7 +1,6 @@
 import React from "react";
 import { SimulatorProvider } from "../context/SimulatorContext";
 import MainBoard from "../components/MainBoard";
-import { Scroll } from "lucide-react";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 const Index = () => {

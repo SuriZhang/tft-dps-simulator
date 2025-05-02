@@ -1,6 +1,6 @@
 
 export interface Champion {
-  id: string;
+  apiName: string;
   name: string;
   cost: number;
   traits: string[];
@@ -10,7 +10,7 @@ export interface Champion {
 }
 
 export interface Item {
-  id: string;
+  apiName: string;
   name: string;
   description: string;
   image: string;
@@ -18,7 +18,7 @@ export interface Item {
 }
 
 export interface Trait {
-  id: string;
+  apiName: string;
   name: string;
   description: string;
   image: string;
@@ -33,7 +33,7 @@ export interface TraitBonus {
 }
 
 export interface Augment {
-  id: string;
+  apiName: string;
   name: string;
   description: string;
   image: string;
@@ -67,7 +67,7 @@ export type SimulatorAction =
   | { type: 'REMOVE_CHAMPION_FROM_BOARD'; position: BoardPosition }
   | { type: 'MOVE_CHAMPION'; from: BoardPosition; to: BoardPosition }
   | { type: 'ADD_ITEM_TO_CHAMPION'; item: Item; position: BoardPosition }
-  | { type: 'REMOVE_ITEM_FROM_CHAMPION'; itemId: string; position: BoardPosition }
+  | { type: 'REMOVE_ITEM_FROM_CHAMPION'; itemApiName: string; position: BoardPosition }
   | { type: 'SELECT_ITEM'; item: Item | undefined }
   | { type: 'SELECT_CHAMPION'; champion: Champion | undefined }
   | { type: 'STAR_UP_CHAMPION'; position: BoardPosition }

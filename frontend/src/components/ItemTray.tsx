@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Item } from '../utils/types';
 
 // Define item categories based on available type and potential naming conventions
-type ItemCategory = 'component' | 'craftable' | 'radiant' | 'ornn' | 'support' | 'other';
+type ItemCategory = 'all' | 'component' | 'craftable' | 'radiant' | 'ornn' | 'support' | 'other';
 
 const getItemCategory = (item: Item): ItemCategory => {
   // Use the existing 'type' field first
@@ -17,9 +17,9 @@ const getItemCategory = (item: Item): ItemCategory => {
     // Further differentiate completed items if possible (example using name patterns)
     // This is placeholder logic - adjust based on actual data/naming conventions
     const lowerName = item.name.toLowerCase();
-    if (lowerName.includes('(radiant)') || item.id.startsWith('TFT_Item_Radiant')) return 'radiant';
-    if (lowerName.includes('(ornn)') || item.id.startsWith('TFT_Item_Ornn')) return 'ornn';
-    if (lowerName.includes('(support)') || item.id.startsWith('TFT_Item_Support')) return 'support';
+    if (lowerName.includes('(radiant)') || item.apiName.startsWith('TFT_Item_Radiant')) return 'radiant';
+    if (lowerName.includes('(ornn)') || item.apiName.startsWith('TFT_Item_Ornn')) return 'ornn';
+    if (lowerName.includes('(support)') || item.apiName.startsWith('TFT_Item_Support')) return 'support';
     return 'craftable'; // Default completed items
   }
   if (item.type === 'special') {
@@ -40,21 +40,24 @@ const ItemTray: React.FC = () => {
   const { state } = useSimulator();
   const { items } = state;
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<ItemCategory>('craftable');
+  const [activeTab, setActiveTab] = useState<ItemCategory>('all');
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
       const nameMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const categoryMatch = getItemCategory(item) === activeTab;
+      // Only apply category filter if the active tab is NOT 'all'
+      const categoryMatch = activeTab === 'all' ? true : getItemCategory(item) === activeTab;
       return nameMatch && categoryMatch;
     });
   }, [items, searchTerm, activeTab]);
 
   // Define tab order and filter out categories with no items
   const availableCategories = useMemo(() => {
-    const allCats: ItemCategory[] = ['craftable', 'radiant', 'ornn', 'support', 'component', 'other'];
+    // Start with 'all'
+    const allCats: ItemCategory[] = ['all', 'craftable', 'radiant', 'ornn', 'support', 'component', 'other'];
     const presentCats = new Set(items.map(getItemCategory));
-    return allCats.filter(cat => presentCats.has(cat));
+    // Filter other categories based on presence, but always keep 'all'
+    return allCats.filter(cat => cat === 'all' || presentCats.has(cat));
   }, [items]);
 
   // Adjust active tab if the current one becomes unavailable
@@ -68,19 +71,20 @@ const ItemTray: React.FC = () => {
     <Card className="h-full flex flex-col border-none bg-transparent shadow-none">
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ItemCategory)} className="flex flex-col flex-1">
         <div className="flex justify-between items-center px-4 pt-4 pb-2"> {/* Container for TabsList and Search */}
-          <TabsList className="bg-muted">
-            {availableCategories.map(category => (
-              <TabsTrigger key={category} value={category} className="capitalize text-xs px-3 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground">
-                {/* Improved Naming */}
-                {category === 'craftable' ? 'Craftable' :
-                 category === 'ornn' ? 'Ornn' :
-                 category === 'support' ? 'Support' :
-                 category === 'radiant' ? 'Radiant' :
-                 category === 'component' ? 'Components' :
-                 'Other'}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <TabsList className="bg-muted">
+        {availableCategories.map(category => (
+          <TabsTrigger key={category} value={category} className="capitalize text-xs px-3 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground">
+            {/* Improved Naming */}
+            {category === 'all' ? 'All' : // Add condition for 'all'
+             category === 'craftable' ? 'Craftable' :
+             category === 'ornn' ? 'Ornn' :
+             category === 'support' ? 'Support' :
+             category === 'radiant' ? 'Radiant' :
+             category === 'component' ? 'Components' :
+             'Other'}
+          </TabsTrigger>
+        ))}
+      </TabsList>
           <Input
             type="text"
             placeholder="Search items..."
@@ -95,7 +99,7 @@ const ItemTray: React.FC = () => {
             <ScrollArea className="h-full px-4 pb-4">
               <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 {filteredItems.map((item) => (
-                  <ItemIcon key={item.id} item={item} size="sm" />
+                  <ItemIcon key={item.apiName} item={item} size="sm" />
                 ))}
               </div>
               {filteredItems.length === 0 && (

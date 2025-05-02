@@ -167,13 +167,13 @@ function simulatorReducer(state: SimulatorState, action: SimulatorAction): Simul
     }
     
     case 'REMOVE_ITEM_FROM_CHAMPION': {
-      const { itemId, position } = action;
+      const { itemApiName: itemId, position } = action;
       
       const updatedBoardChampions = state.boardChampions.map(c => {
         if (c.position.row === position.row && c.position.col === position.col && c.items) {
           return {
             ...c,
-            items: c.items.filter(item => item.id !== itemId)
+            items: c.items.filter(item => item.apiName !== itemId)
           };
         }
         return c;
