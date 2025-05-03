@@ -34,16 +34,11 @@ const ChampionPool: React.FC = () => {
   }, [champions]);
 
   return (
-    // Use Card component - Make card transparent
     <Card className="h-full flex flex-col border-none bg-transparent shadow-none">
-      {/* Use CardHeader */}
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-        {/* Use CardTitle */}
         <CardTitle className="text-base font-semibold">
           Champions
-        </CardTitle>{" "}
-        {/* Adjusted size */}
-        {/* Filter buttons/tabs can go here - simplified for now */}
+        </CardTitle>
         <div className="flex items-center space-x-1">
           {[1, 2, 3, 4, 5].map((cost) => (
             <Button

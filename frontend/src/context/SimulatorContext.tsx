@@ -319,20 +319,61 @@ function updateTraits(
   boardChampions: BoardChampion[],
   traits: Trait[],
 ): Trait[] {
-  // Count champions per trait
+  // Count unique champions per trait
   const traitCounts: { [key: string]: number } = {};
+  const traitContributors: { [key: string]: Set<string> } = {}; // Track unique champions by apiName
 
   boardChampions.forEach((champion) => {
     champion.traits.forEach((traitName) => {
-      traitCounts[traitName] = (traitCounts[traitName] || 0) + 1;
+      // Initialize set if not exists
+      if (!traitContributors[traitName]) {
+        traitContributors[traitName] = new Set();
+      }
+
+      // Only count unique champions for each trait
+      if (!traitContributors[traitName].has(champion.apiName)) {
+        traitContributors[traitName].add(champion.apiName);
+        traitCounts[traitName] = (traitCounts[traitName] || 0) + 1;
+      }
     });
   });
 
-  // Update trait active values
-  return traits.map((trait) => ({
-    ...trait,
-    active: traitCounts[trait.name] || 0,
-  }));
+  // Update trait active values and styles based on effects
+  return traits.map((trait) => {
+    const active = traitCounts[trait.name] || 0;
+
+    // Find active effect for styling
+    let style = "";
+    if (active > 0) {
+      const activeEffect = trait.effects
+        .sort((a, b) => b.minUnits - a.minUnits) // Sort by descending minUnits
+        .find((effect) => active >= effect.minUnits);
+
+      if (activeEffect) {
+        // Map effect style to CSS class based on style number
+        switch (activeEffect.style) {
+          case 1:
+            style = "border-orange-700";
+            break; // Bronze
+          case 2:
+            style = "border-gray-400";
+            break; // Silver
+          case 3:
+            style = "border-yellow-500";
+            break; // Gold
+          case 4:
+            style = "border-purple-500";
+            break; // Prismatic
+        }
+      }
+    }
+
+    return {
+      ...trait,
+      active,
+      style,
+    };
+  });
 }
 
 // Provider component

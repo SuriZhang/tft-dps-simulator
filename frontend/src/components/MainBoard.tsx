@@ -5,8 +5,6 @@ import ItemTray from "./ItemTray";
 import AugmentPanel from "./AugmentPanel";
 import ControlBar from "./ControlBar";
 import DamageStatsPanel from "./DamageStatsPanel";
-// Removed Resizable imports
-import { ScrollArea } from "./ui/scroll-area";
 
 const MainBoard = () => {
   return (
@@ -14,9 +12,7 @@ const MainBoard = () => {
       <div className="flex flex-col h-screen w-[75%] p-4 gap-4 bg-card rounded-l-lg">
         <div className="flex h-[60%]">
           <div className="w-[25%] flex h-full flex-col p-2 gap-2 bg-card rounded-l-lg">
-            <ScrollArea>
               <TraitTracker />
-            </ScrollArea>
           </div>
 
           <div className="w-[75%] h-full flex flex-col items-center px-4">
@@ -30,9 +26,7 @@ const MainBoard = () => {
             <ChampionPool />
           </div>
           <div className="h-full w-[40%]">
-            {/* <ScrollArea className="h-full"> */}
             <ItemTray />
-            {/* </ScrollArea> */}
           </div>
         </div>
       </div>
