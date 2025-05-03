@@ -1,10 +1,9 @@
-
 // Define interfaces for the structure of the set data JSON
 export interface Set {
   mutator: string;
   name: string;
   number: number;
-  champions: any[]; 
+  champions: any[];
   items: string[]; // Replace 'any' with a specific Item type if available
   augments: string[]; // Replace 'any' with a specific Augment type if available
   traits: any[]; // Replace 'any' with a specific Trait type if available
@@ -30,10 +29,10 @@ export interface Item {
   apiName: string;
   associatedTraits?: string[];
   composition?: string[]; // Array of item API names
-  desc: string; 
+  desc: string;
   effects?: Record<string, any>; // Using 'any' for flexibility as effect values vary
   from?: string[]; // Array of item API names
-  icon: string; 
+  icon: string;
   id?: number; // mostly null
   incompatibleTraits?: string[];
   name: string;
@@ -54,8 +53,8 @@ export interface Trait {
 export interface TraitEffect {
   maxUnits: number;
   minUnits: number;
-  style: number
-  variables : Record<string, any>; 
+  style: number;
+  variables: Record<string, any>;
 }
 
 export interface BoardPosition {
@@ -82,16 +81,32 @@ export interface SimulatorState {
   error?: string; // Add error state
 }
 
-export type SimulatorAction = 
-  | { type: 'ADD_CHAMPION_TO_BOARD'; champion: Champion; position: BoardPosition }
-  | { type: 'REMOVE_CHAMPION_FROM_BOARD'; position: BoardPosition }
-  | { type: 'MOVE_CHAMPION'; from: BoardPosition; to: BoardPosition }
-  | { type: 'ADD_ITEM_TO_CHAMPION'; item: Item; position: BoardPosition }
-  | { type: 'REMOVE_ITEM_FROM_CHAMPION'; itemApiName: string; position: BoardPosition }
-  | { type: 'SELECT_ITEM'; item: Item | undefined }
-  | { type: 'SELECT_CHAMPION'; champion: Champion | undefined }
-  | { type: 'STAR_UP_CHAMPION'; position: BoardPosition }
-  | { type: 'SELECT_AUGMENT'; augment: Item; index: number }
-  | { type: 'CLEAR_BOARD' }
-  | { type: 'SET_LOADED_DATA'; payload: { champions: Champion[]; traits: Trait[]; items: Item[]; augments: Item[] } } // Add action for loading data
-  | { type: 'SET_LOADING_ERROR'; error: string }; // Add action for loading error
+export type SimulatorAction =
+  | {
+      type: "ADD_CHAMPION_TO_BOARD";
+      champion: Champion;
+      position: BoardPosition;
+    }
+  | { type: "REMOVE_CHAMPION_FROM_BOARD"; position: BoardPosition }
+  | { type: "MOVE_CHAMPION"; from: BoardPosition; to: BoardPosition }
+  | { type: "ADD_ITEM_TO_CHAMPION"; item: Item; position: BoardPosition }
+  | {
+      type: "REMOVE_ITEM_FROM_CHAMPION";
+      itemApiName: string;
+      position: BoardPosition;
+    }
+  | { type: "SELECT_ITEM"; item: Item | undefined }
+  | { type: "SELECT_CHAMPION"; champion: Champion | undefined }
+  | { type: "STAR_UP_CHAMPION"; position: BoardPosition }
+  | { type: "SELECT_AUGMENT"; augment: Item; index: number }
+  | { type: "CLEAR_BOARD" }
+  | {
+      type: "SET_LOADED_DATA";
+      payload: {
+        champions: Champion[];
+        traits: Trait[];
+        items: Item[];
+        augments: Item[];
+      };
+    } // Add action for loading data
+  | { type: "SET_LOADING_ERROR"; error: string }; // Add action for loading error

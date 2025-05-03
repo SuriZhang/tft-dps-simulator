@@ -49,20 +49,20 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     /* Use the darkest background */
     @apply bg-dark-bg text-foreground antialiased overflow-x-hidden;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
-  
+
   /* Hex grid styles */
   .hex-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     grid-gap: 5px;
   }
-  
+
   /* Hexagon styles */
   .hexagon {
     position: relative;
@@ -73,9 +73,9 @@
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
     transition: all 0.2s ease;
   }
-  
+
   .hexagon::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 2px;
     left: 2px;
@@ -93,7 +93,7 @@
   .hexagon.is-active::after {
     @apply bg-primary/20;
   }
-  
+
   /* Champion styles */
   .champion {
     position: absolute;
@@ -106,35 +106,46 @@
     justify-content: center;
     z-index: 2;
   }
-  
+
   /* Champion stars */
   .star {
     position: absolute;
     width: 10px;
     height: 10px;
     /* Use accent-gold for stars */
-    background: hsl(var(--accent-gold)); 
-    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    background: hsl(var(--accent-gold));
+    clip-path: polygon(
+      50% 0%,
+      61% 35%,
+      98% 35%,
+      68% 57%,
+      79% 91%,
+      50% 70%,
+      21% 91%,
+      32% 57%,
+      2% 35%,
+      39% 35%
+    );
   }
-  
+
   /* Glowing effects */
   .glow-text {
-    text-shadow: 0 0 8px theme('colors.primary.DEFAULT');
+    text-shadow: 0 0 8px theme("colors.primary.DEFAULT");
   }
-  
+
   .glow-border {
-    box-shadow: 0 0 8px theme('colors.primary.DEFAULT');
+    box-shadow: 0 0 8px theme("colors.primary.DEFAULT");
   }
-  
+
   .glow-accent {
-    box-shadow: 0 0 8px theme('colors.accent.DEFAULT');
+    box-shadow: 0 0 8px theme("colors.accent.DEFAULT");
   }
 
   /* Sidebar transitions */
   .sidebar-transition {
     transition: width 0.3s ease;
   }
-  
+
   /* Tooltip styles */
   .tooltip {
     @apply invisible absolute z-50 bg-card p-2 rounded-lg shadow-lg text-sm;
@@ -142,53 +153,55 @@
     max-width: 300px;
     opacity: 0;
     transform: translateY(5px);
-    transition: opacity 0.2s, transform 0.2s;
+    transition:
+      opacity 0.2s,
+      transform 0.2s;
   }
-  
+
   .has-tooltip:hover .tooltip {
     @apply visible;
     opacity: 1;
     transform: translateY(0);
   }
-  
+
   /* Progress bar styles */
   .progress-bar {
     @apply h-1.5 rounded-full overflow-hidden;
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   .progress-fill {
     @apply h-full transition-all;
   }
-  
+
   /* Card hover effects */
   .card-hover {
     @apply transition-all duration-200;
   }
-  
+
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 0 16px rgba(14, 165, 233, 0.3);
   }
-  
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   ::-webkit-scrollbar-track {
     @apply bg-muted rounded-full;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     @apply bg-accent-purple/50 rounded-full;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-accent-purple;
   }
-  
+
   /* Additional utility classes */
   .glass-panel {
     @apply bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg;
@@ -206,8 +219,8 @@
   [data-orientation="horizontal"] > [data-resize-handle] {
     @apply h-1 bg-border/50 hover:bg-accent-purple transition-colors;
   }
-  [data-resize-handle][data-active=true] {
-     @apply bg-accent-purple;
+  [data-resize-handle][data-active="true"] {
+    @apply bg-accent-purple;
   }
 
   /* General Panel Styling */
@@ -221,10 +234,6 @@
 }
 
 .clip-hexagon {
-  clip-path: polygon(
-    25% 0%, 75% 0%,
-    100% 50%, 75% 100%,
-    25% 100%, 0% 50%
-  );
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   transform: rotate(90deg);
 }

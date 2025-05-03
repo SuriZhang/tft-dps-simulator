@@ -1,10 +1,11 @@
 # Random thoughts and learnings along the way
 
 ## 20250412
-What is ECS (Entity-Component-System)?  
-ECS is an architectural pattern commonly used in game engines and simulations. Instead of modeling objects with inheritance (OOP), it decouples data (components) from behavior (systems).  
 
-Here’s how it breaks down:  
+What is ECS (Entity-Component-System)?  
+ECS is an architectural pattern commonly used in game engines and simulations. Instead of modeling objects with inheritance (OOP), it decouples data (components) from behavior (systems).
+
+Here’s how it breaks down:
 
 Entity: A unique ID or container (e.g., a champion)
 
@@ -32,16 +33,20 @@ Read about ECS: https://www.richardlord.net/blog/ecs/what-is-an-entity-framework
 space station game ECS in practice: https://docs.spacestation14.com/en/robust-toolbox/ecs.html
 
 DONE Today:
+
 - [x] set up project scaffold
 - [x] implemented data parsing logic
 - [x] implemented basic auto attack system
 
 TODO:
+
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something
 - [ ] traits, augments, items, spell cast
 
 ## 20250413
+
 Goal:
+
 - implement simple items
 
 handling items:
@@ -70,68 +75,83 @@ Here's a breakdown:
 
 1. systems/items/static should holds the logic for all items that only modifies static champion stats. this is easy.
 2. passive dynamic effects items: there are two sub-categories,
-    one for the time-dependent effect items (in description it should be "gain X every X seconds"). examples are quick silver, evenshroud, archangel's staff, and adaptive helmet for back two rows  
-    another category is the simple effect is triggered on some events (gain X when attacking or taking damge).e xamples are titan's resolve., adaptive helmet for the front two rows  
+   one for the time-dependent effect items (in description it should be "gain X every X seconds"). examples are quick silver, evenshroud, archangel's staff, and adaptive helmet for back two rows  
+   another category is the simple effect is triggered on some events (gain X when attacking or taking damge).e xamples are titan's resolve., adaptive helmet for the front two rows
 3. complex tiggered effects that has impact on the simulation timeline. e.g. guiunsoo's regebald (it stacks attackspeed and the attackspeed at t+1 should be based on attackspeed at time t)
 
 DONE Today:
+
 - [x] implemented base static item system
 
 TODO:
+
 - [ ] implement StatCalculationSystem to calcluate bonus component stats and update final stats
 - [x] maybe refactor item related code from championfactory to itemfactory.
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something
 
 ## 20250414
+
 Goal: implement IE & JG
 
 IE & JG's effect are the same, unique to all other items.
 
 DONE Today:
+
 - [x] implement StatCalculationSystem to calcluate bonus component stats and update final stats
 - [x] implement logic for handling IE & JG
 
 TODO:
+
 - [x] think about the edge case when a champion wears more than 1 IE and/or JG at the same time
 - [ ] clean up main.go, wrap the auto attack testing code to another function or something
 - [x] write tests
 
 ## 20250415-0416
+
 Lessons learned from debugging IE/JG edge cases:  
 To prevent minor errors being ignored and causing me more problem in the future, I'll need to write tests.
 
 DONE Today:
+
 - [x] fixed IE & JG logic when a champion wears more than 1 item that can cause their ability to crit.
 - [x] added tests!!
 - [x] clean up main.go, wrap the logic and simulation config to `/simulation` directory
 
 TODO:
+
 - [ ] implement QickSilver and Archagel's Staff
 
 ## 20250417
-DONE Today: 
+
+DONE Today:
+
 - [x] implemented QuickSilver and Archangels Staff, along with all DynamicTime item system.
 - [x] Added Spell components, currently not completed, but stores Archagel's bonus AP. will add more details when it comes to implementing the champion Ability/Spell
 
 TODO:
+
 - [ ] implement logic when two component items are added, they form a composition item according to the formula --> not in MVP
 - [ ] implement game event systems, sets up scaffold for DynamicEvent-typed items
 - [ ] implement DynamicEvent items
 
 ## 20250418
+
 Debug...
 
 DONE Today:
+
 - [x] Set up event system scaffold
 - [x] Added more tests, and make sure they all passed...
 - [x] Correctly updated dynamic time items bonus in simulation loops
 
 TODO:
+
 - [ ] implement very basic spell cast system, to prepare us for more item effects
 - [ ] implement DynamicEvent items
 - [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
 
 ## 20250419
+
 Simplifed Spell Cast cool down handling:
 the term "cooldown" in TFT usually refers to the time after the spell animation finishes before the next spell can be cast. The period where the champion is locked out of auto-attacking is the cast animation time or cast lockout.
 
@@ -155,19 +175,21 @@ Recommendation:
 
 Given the complexity of true cast times, let's proceed with the simplified approach for now. We can refine it later if needed by adding a dedicated CastTime or AnimationLockout field to the Spell component.
 
-
 Might be buggy later (revisit later): when handling the edge cases where a champion died jsut before they about to cast a spell or auto attack.
 
 DONE Today:
+
 - [x] implement very basic spell cast system, to prepare us for more item effects
 - [x] implement DynamicEvent items system
 - [x] implement Titan's Resolve
 
 TODO:
+
 - [ ] implement Adaptive Helmet
 - [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
 
 ## 20250420
+
 Goal: implement Guinsoo's Rageblade
 
 Added attack and cast startup and recovery fields, though we dont have data yet, all default to 0. This may cause some logic refinement but let's move on for now.
@@ -196,17 +218,20 @@ It then resets attack.SetAttackStartupEndTime(-1.0) to mark the landing as proce
 Note to self: in auto attack system, the logic for checking CC/interuption during startup is already added (but commented out)
 
 DONE Today:
+
 - [x] added Rageblade
 - [x] revamped auto attack system to include startup and recovery times, make sure all tests passed
 - [x] when calculating damange, use the finalAD at damage calculation time, instead of at attack landed time
 - [x] add mana gain for entity taking damage
 
 TODO:
+
 - [ ] add spell cast startup and recovery into the actual spellcast system
 - [ ] revisit logic for mana gain when champion taking damage, this should depend on if the champion's mana is locked during cast (also mana gain from other sources)
 - [ ] implement logic when two component items are added, they form a composition item according to the formula --> deprioritized, not in MVP
 
 ## 20250426
+
 Revamped Architecture design to address some edge cases and current flaws:
 Buff/Debuff system (for a champion unit):
 
@@ -231,23 +256,23 @@ Damage Statistics:
 Champion State: should record the state of the champion at time t of the simulation
 
 - possible states are:
-    - isUnderStun (independent from the rest, because a champion can be under Stun but still spelling)
-    - isCasting
-    - isAttackStartingUp
-    - isAttackRecovering
-    - isAttackCoolingDown
-    - isIdle (must be under Stun)
+  - isUnderStun (independent from the rest, because a champion can be under Stun but still spelling)
+  - isCasting
+  - isAttackStartingUp
+  - isAttackRecovering
+  - isAttackCoolingDown
+  - isIdle (must be under Stun)
 - we should also store the start time and (expected) duration of the state
 
 Champion Action Handler
 
 champion state at any simulation time t:
 
- → check is stun? 
+→ check is stun?
 
     →Y: pass, do nothing until stun is over
 
-        → N: check is full mana? 
+        → N: check is full mana?
 
             → Y: check isAttackRecovering?
 
@@ -263,7 +288,7 @@ champion state at any simulation time t:
 
 Champion Action Cycle breakdown:
 
-(1) targeting → (2) attack startup → (3) check if mana full1? → (4) no: trigger AttackFiredEvent → (5) attack recovery → (6) check if mana full2? → (7) no: attack CD → go to (1) 
+(1) targeting → (2) attack startup → (3) check if mana full1? → (4) no: trigger AttackFiredEvent → (5) attack recovery → (6) check if mana full2? → (7) no: attack CD → go to (1)
 
 at any mana full check, if yes → (a) spell cast start up (has a higher priority than CC) → (b) trigger SpellCastEvent → (c) spell cast recovery → (d) check attack CD is over? → yes: go to (1)/ no: go to (7) to wait until remaining attack CD is over
 
@@ -276,54 +301,62 @@ Event structure:
 Simulation Steps:
 
 - before combat:
-    1. resolve starting-of-combat effects, including
-        1. handle item gain, e.g., Thief’s Gloves, Sponging (Combat start: Up to 6 champions with 1 or fewer items gain a copy of a random completed item from the nearest itemized ally.)
-        2. any static item/augments/traits effects
-        3. enqueue time effects (e.g., archangel’s staff AP gain every 5s in combat, should enqueue at t=5, t-10, t=15, etc)
-        4. other special handlings (e.g., S14 Overlord: The Overlord takes a bite out of the unit in the hex behind him, dealing 40% of their max Health as true damage. He gains 40% of their Health and 25% of their Attack Damage.)
+  1. resolve starting-of-combat effects, including
+     1. handle item gain, e.g., Thief’s Gloves, Sponging (Combat start: Up to 6 champions with 1 or fewer items gain a copy of a random completed item from the nearest itemized ally.)
+     2. any static item/augments/traits effects
+     3. enqueue time effects (e.g., archangel’s staff AP gain every 5s in combat, should enqueue at t=5, t-10, t=15, etc)
+     4. other special handlings (e.g., S14 Overlord: The Overlord takes a bite out of the unit in the hex behind him, dealing 40% of their max Health as true damage. He gains 40% of their Health and 25% of their Attack Damage.)
 - at t=0, enqueue all champion’s first action (auto attack or cast)
 - simulation start:
-    ```
-    while (! combatEnds) {
-    
-    1. evt = EventQueue.dequeue()
-    2. set simulation time = evt.Timestamp
-    3. handleEvent(evt)
-        1. resolve event
-        2. enqueue subsequent event (when enqueuing new events to the EventQueue, find it’s position using evt.EnqueueTimestamp)
-    4. save evt to RecordQueue (if evt should be saved to help replay/analyze the combat when simulation is over, types of event should be saved TBD)
-    }
-    
-    combatEnds: 1. simulation time passed 30s; 2. one team has no alive champion units
-    ```
+  ```
+  while (! combatEnds) {
+
+  1. evt = EventQueue.dequeue()
+  2. set simulation time = evt.Timestamp
+  3. handleEvent(evt)
+      1. resolve event
+      2. enqueue subsequent event (when enqueuing new events to the EventQueue, find it’s position using evt.EnqueueTimestamp)
+  4. save evt to RecordQueue (if evt should be saved to help replay/analyze the combat when simulation is over, types of event should be saved TBD)
+  }
+
+  combatEnds: 1. simulation time passed 30s; 2. one team has no alive champion units
+  ```
 
 DONE Today:
+
 - [x] adapt new event-driven simulation design
 - [x] refactored event system
 
 TODO:
+
 - [ ] refactor DynamicTimeSystem to enqueue and handle events
 - [ ] fix ChampionActionSystem to correctly enqueue AttackCooldownStartEvent based on champion state
 - [ ] fix SimulationTests (currently failing 8 tests)
 
 ## 20250427
+
 DONE Today:
+
 - [x] major event-driven refactor is done!!
 - [x] refactor DynamicTimeSystem to enqueue and handle events
 - [x] fix ChampionActionSystem to correctly enqueue AttackCooldownStartEvent based on champion state
 - [x] all tests passed
 
 ## 20250501
+
 DONE Today:
+
 - [x] Traits system scaffold, traits are referenced by Name (instead oPf ApiName) in the simulation
 - [x] Rapidfire trait effects
 
 Next Step:
+
 1. implement one or two simple abilities to complete the first milestone of MVP
 2. refactor the code base to make it a proper web backend
-here is a checklist to guide the refactoring process, ordered roughly from lowest to highest workload:
+   here is a checklist to guide the refactoring process, ordered roughly from lowest to highest workload:
 
 Setup & Dependencies:
+
 - [x] Add Fiber dependency (go get github.com/gofiber/fiber/v2) [new] [low]
 - [x] Add Redis client dependency (e.g., go get github.com/go-redis/redis/v8) [new] [low]
 - [ ]Create cmd/server/ directory [new] [low]
@@ -340,6 +373,7 @@ Setup & Dependencies:
 - [x] Add basic server start logic (app.Listen()) in main.go [new] [low]
 
 Core Logic Implementation & Refactoring:
+
 - [x] Move existing simulation packages (ecs, components, systems, simulation, managers, factory, data, utils) into internal/simcore/ [refactor] [medium]
 - [x] Update all import paths affected by the move to internal/simcore/ [refactor] [medium]
 - [ ] Implement SaveSimulationSetup function in internal/store/ (handle serialization, Redis SET) [new] [medium]
@@ -353,3 +387,43 @@ Core Logic Implementation & Refactoring:
 - Implement ChangeChampionStarLevel method in SimulationService (call store, update setup) [new] [medium]
 - [ ] Refactor Simulation (in internal/simcore/simulation) to return structured results instead of printing [refactor] [medium]
 - [ ] Implement RunSimulation method in SimulationService (get setup, create world, use factory/managers, run sim, return results) [new] [high]
+
+## 20250502-0503
+
+Mainly focused on getting the frontend up and look nice.
+
+Future TODOs (nice-to-have frontend animations using Animejs):
+
+1. Champion Drag-and-Drop animations
+
+- Animate champion icons smoothly snapping to the board grid with a slight "bounce" effect.
+
+- Add scaling or glow transitions on hover, drag start, and drop.
+
+2. Trait Activation Animation
+   When a trait becomes active, show:
+
+- A glowing pulse on the synergy tracker bar.
+
+- A quick expanding-ring or lightwave animation on the champion avatars that contribute to the trait.
+
+3. Stat Panel & Tooltip Reveal
+
+- Fade in tooltips with anime.js when hovering champions or items.
+
+- Slide stat panels or damage breakdowns into view with ease-in curves.
+
+DONE:
+
+- [x] Frontend Scaffold (main layout, core components)
+- [x] Data loading from json
+
+WIP:
+
+- [ ] simulation endpoints (frontend + backend)
+- [ ] frontend trait activation
+
+TODO:
+
+- [ ] frontend champion, item tooltip polishing
+- [ ] frontend icon images download + rendering

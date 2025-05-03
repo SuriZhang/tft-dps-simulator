@@ -1,10 +1,20 @@
-import React from 'react';
-import { useSimulator } from '../context/SimulatorContext';
-import { cn } from '../lib/utils';
-import { Button } from './ui/button'; // Import Button
-import { Switch } from './ui/switch';
-import { Label } from './ui/label';
-import { RotateCcw, Download, Upload, Trash2, Settings, Info, Share2, Copy, UploadCloud } from 'lucide-react'; // Import necessary icons
+import React from "react";
+import { useSimulator } from "../context/SimulatorContext";
+import { cn } from "../lib/utils";
+import { Button } from "./ui/button"; // Import Button
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
+import {
+  RotateCcw,
+  Download,
+  Upload,
+  Trash2,
+  Settings,
+  Info,
+  Share2,
+  Copy,
+  UploadCloud,
+} from "lucide-react"; // Import necessary icons
 
 const ControlBar: React.FC = () => {
   const { state, dispatch } = useSimulator();
@@ -17,14 +27,14 @@ const ControlBar: React.FC = () => {
 
   // Handle clear board action
   const handleClearBoard = () => {
-    dispatch({ type: 'CLEAR_BOARD' });
+    dispatch({ type: "CLEAR_BOARD" });
   };
 
   // Placeholder handlers
-  const handleShare = () => console.log('Share TBD');
-  const handleCopyCode = () => console.log('Copy Code TBD');
-  const handleImportCode = () => console.log('Import Code TBD');
-  const handleSettings = () => console.log('Settings TBD');
+  const handleShare = () => console.log("Share TBD");
+  const handleCopyCode = () => console.log("Copy Code TBD");
+  const handleImportCode = () => console.log("Import Code TBD");
+  const handleSettings = () => console.log("Settings TBD");
 
   // Update global state when switch changes (if applicable)
   const handleUseSkinsChange = (checked: boolean) => {
@@ -46,7 +56,6 @@ const ControlBar: React.FC = () => {
     setPositioningMode(checked);
     // dispatch({ type: 'SET_POSITIONING_MODE', payload: checked });
   };
-
 
   return (
     <div className="bg-card rounded-lg shadow-lg p-4 mb-4">
@@ -99,7 +108,12 @@ const ControlBar: React.FC = () => {
               onCheckedChange={handleUseSkinsChange}
               aria-label="Use champion skins"
             />
-            <Label htmlFor="use-skins-switch" className="text-sm text-gray-300 cursor-pointer">Use Skins</Label>
+            <Label
+              htmlFor="use-skins-switch"
+              className="text-sm text-gray-300 cursor-pointer"
+            >
+              Use Skins
+            </Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch
@@ -108,7 +122,12 @@ const ControlBar: React.FC = () => {
               onCheckedChange={handleMouseHoverInfoChange}
               aria-label="Enable mouse hover information"
             />
-            <Label htmlFor="mouse-hover-switch" className="text-sm text-gray-300 cursor-pointer">Hover Info</Label>
+            <Label
+              htmlFor="mouse-hover-switch"
+              className="text-sm text-gray-300 cursor-pointer"
+            >
+              Hover Info
+            </Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch
@@ -117,7 +136,12 @@ const ControlBar: React.FC = () => {
               onCheckedChange={handleShowNamesChange}
               aria-label="Show champion names"
             />
-            <Label htmlFor="show-names-switch" className="text-sm text-gray-300 cursor-pointer">Show Names</Label>
+            <Label
+              htmlFor="show-names-switch"
+              className="text-sm text-gray-300 cursor-pointer"
+            >
+              Show Names
+            </Label>
           </div>
           <div className="flex items-center space-x-2">
             <Switch
@@ -126,12 +150,22 @@ const ControlBar: React.FC = () => {
               onCheckedChange={handlePositioningModeChange}
               aria-label="Enable positioning mode"
             />
-            <Label htmlFor="positioning-mode-switch" className="text-sm text-gray-300 cursor-pointer">Positioning Mode</Label>
+            <Label
+              htmlFor="positioning-mode-switch"
+              className="text-sm text-gray-300 cursor-pointer"
+            >
+              Positioning Mode
+            </Label>
           </div>
           {/* Use Button for Settings */}
-           <Button variant="ghost" size="icon" onClick={handleSettings} title="Settings">
-             <Settings className="h-5 w-5 text-gray-400" />
-           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSettings}
+            title="Settings"
+          >
+            <Settings className="h-5 w-5 text-gray-400" />
+          </Button>
         </div>
       </div>
     </div>

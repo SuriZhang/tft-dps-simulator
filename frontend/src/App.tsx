@@ -1,18 +1,18 @@
-import { useState } from 'react'
+import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [message, setMessage] = useState<string>('')
+  const [count, setCount] = useState(0);
+  const [message, setMessage] = useState<string>("");
 
   const fetchData = () => {
     fetch(`http://localhost:${import.meta.env.VITE_PORT}/`)
-      .then(response => response.text())
-      .then(data => setMessage(data))
-      .catch(error => console.error('Error fetching data:', error))
-  }
+      .then((response) => response.text())
+      .then((data) => setMessage(data))
+      .catch((error) => console.error("Error fetching data:", error));
+  };
 
   return (
     // <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -34,7 +34,7 @@ function App() {
     //         >
     //           Count is {count}
     //         </button>
-            
+
     //         <button
     //           onClick={fetchData}
     //           className="block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition-colors"
@@ -57,12 +57,12 @@ function App() {
     //   </div>
     // </div>
     <BrowserRouter>
-        <div className="min-h-screen bg-background text-foreground">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+      <div className="min-h-screen bg-background text-foreground">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </div>
       {/* <div>
       <button
@@ -79,9 +79,8 @@ function App() {
               </div>
             )}
       </div> */}
-
-      </BrowserRouter>
-  )
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

@@ -1,14 +1,12 @@
-
-import { Champion, Item, Trait, TFTSetData, Set } from './types'; // Import Set type
+import { Champion, Item, Trait, TFTSetData, Set } from "./types"; // Import Set type
 
 // Remove the local Set interface definition
 
 interface RawGameData {
-    items: Item[]; // The raw array can contain both
-    setData: Set[];
-    // Add other top-level fields from the JSON if needed
+  items: Item[]; // The raw array can contain both
+  setData: Set[];
+  // Add other top-level fields from the JSON if needed
 }
-
 
 /**
  * Loads and filters set data (champions, traits) from a JSON file based on a target mutator.
@@ -16,7 +14,10 @@ interface RawGameData {
  * @param targetMutator - The mutator string to filter by.
  * @returns A promise that resolves with the filtered set data or rejects with an error.
  */
-export async function loadSetDataFromFile(filePath: string, targetMutator: string): Promise<TFTSetData> {
+export async function loadSetDataFromFile(
+  filePath: string,
+  targetMutator: string,
+): Promise<TFTSetData> {
   try {
     const response = await fetch(filePath);
     if (!response.ok) {
@@ -26,26 +27,36 @@ export async function loadSetDataFromFile(filePath: string, targetMutator: strin
     const fullData: RawGameData = await response.json();
 
     if (!fullData || !Array.isArray(fullData.setData)) {
-        throw new Error("Invalid set data format: 'setData' array not found or not an array.");
+      throw new Error(
+        "Invalid set data format: 'setData' array not found or not an array.",
+      );
     }
 
-    const filteredSetData = fullData.setData.filter(set => set.mutator === targetMutator);
+    const filteredSetData = fullData.setData.filter(
+      (set) => set.mutator === targetMutator,
+    );
 
     if (filteredSetData.length === 0) {
-      const availableMutators = fullData.setData.map(set => set.mutator);
-      const mutatorsStr = availableMutators.length > 0 ? ` Available mutators: ${availableMutators.join(', ')}` : '';
-      throw new Error(`No data with mutator '${targetMutator}' found.${mutatorsStr}`);
+      const availableMutators = fullData.setData.map((set) => set.mutator);
+      const mutatorsStr =
+        availableMutators.length > 0
+          ? ` Available mutators: ${availableMutators.join(", ")}`
+          : "";
+      throw new Error(
+        `No data with mutator '${targetMutator}' found.${mutatorsStr}`,
+      );
     }
 
-    console.log(filteredSetData)
+    console.log(filteredSetData);
 
     // Return the data structure containing only the filtered sets
     // Ensure champions and traits are included
     return { setData: filteredSetData };
-
   } catch (error) {
     console.error("Error loading or parsing set data:", error);
-    throw new Error(`Error loading set data from ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Error loading set data from ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -56,7 +67,9 @@ export async function loadSetDataFromFile(filePath: string, targetMutator: strin
  * @param filePath - The path to the JSON file.
  * @returns A promise that resolves with an object containing separate arrays for items and augments, or rejects with an error.
  */
-export async function loadItemsAndAugmentsFromFile(filePath: string): Promise<Item[]> {
+export async function loadItemsAndAugmentsFromFile(
+  filePath: string,
+): Promise<Item[]> {
   try {
     const response = await fetch(filePath);
     if (!response.ok) {
@@ -66,15 +79,18 @@ export async function loadItemsAndAugmentsFromFile(filePath: string): Promise<It
     const data: { items: Item[] } = await response.json();
 
     if (!data || !Array.isArray(data.items)) {
-        throw new Error("Invalid item/augment data format: 'items' array not found or not an array.");
+      throw new Error(
+        "Invalid item/augment data format: 'items' array not found or not an array.",
+      );
     }
 
-    const allEntries = data.items as Item[]; 
-    return allEntries
-
+    const allEntries = data.items as Item[];
+    return allEntries;
   } catch (error) {
     console.error("Error loading or parsing item/augment data:", error);
-    throw new Error(`Error loading item/augment data from ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Error loading item/augment data from ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -84,7 +100,6 @@ export async function loadAugmentDataFromFile(filePath: string): Promise<Augment
     // ... (old code removed)
 }
 */
-
 
 // // Mock champions data
 // export const MOCK_CHAMPIONS: Champion[] = [
