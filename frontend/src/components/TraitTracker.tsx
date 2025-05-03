@@ -30,7 +30,6 @@ const getHighestActiveTier = (trait: Trait): keyof typeof traitTierColors => {
   if (trait.active === 0) return 'inactive';
 
   const activeEffect = getActiveEffect(trait);
-  console.log(activeEffect);
   if (!activeEffect) return 'inactive';
 
   // Map the effect style to a tier
@@ -103,9 +102,9 @@ const TraitTracker: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden flex flex-col p-4 pt-0">
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 p-0 overflow-hidden">
           {!hasChampions && "Add champions to activate traits"}
-          <ScrollArea className="flex-1 h-full mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
+          <ScrollArea className="flex-1 h-full mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 mr-0">
             <div className="space-y-3 pr-2">
               {sortedTraits.map((trait) => {
                 const activeEffect = getActiveEffect(trait);
