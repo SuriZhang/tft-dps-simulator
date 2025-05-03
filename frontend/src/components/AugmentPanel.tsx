@@ -71,9 +71,18 @@ const AugmentPanel: React.FC = () => {
                   }}
                 >
                   {augment ? (
-                    <div className="flex flex-col">
-                      <div className="text-sm font-bold">{augment.name}</div>
-                      <div className="text-xs">{augment.desc}</div>
+                    <div className="flex items-start space-x-2">
+                      {augment.icon && (
+                        <img
+                          src={`/tft-augment/${augment.icon}`}
+                          alt={augment.name}
+                          className="w-8 h-8 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex flex-col">
+                        <div className="text-sm font-bold">{augment.name}</div>
+                        <div className="text-xs">{augment.desc}</div>
+                      </div>
                     </div>
                   ) : (
                     <div className="h-12 flex items-center justify-center text-sm text-gray-500">
@@ -98,7 +107,7 @@ const AugmentPanel: React.FC = () => {
                 <div
                   key={augment.apiName}
                   className={cn(
-                    "p-2 rounded-md text-xs cursor-pointer",
+                    "p-2 rounded-md text-xs cursor-pointer flex items-center space-x-1",
                     tierColors.silver, // TODO: fix, Default to silver for all augments
                   )}
                   onClick={() => {
@@ -110,7 +119,14 @@ const AugmentPanel: React.FC = () => {
                     handleAugmentClick(augment, slotToUse);
                   }}
                 >
-                  {augment.name}
+                  {augment.icon && (
+                    <img
+                      src={`/tft-augment/${augment.icon}`}
+                      alt=""
+                      className="w-4 h-4 object-cover"
+                    />
+                  )}
+                  <span>{augment.name}</span>
                 </div>
               ))}
             </div>

@@ -26,11 +26,11 @@ const initialState: SimulatorState = {
   traits: [],
   augments: [],
   selectedAugments: [],
-  gold: 50,
-  level: 7,
+  gold: 0, // Start with 0 gold (no champions)
+  level: 2, // Start at base level 2 (no champions)
   selectedItem: undefined,
   selectedChampion: undefined,
-  loading: true, // Set initial loading state to true
+  loading: true,
   error: undefined,
 };
 
@@ -60,6 +60,8 @@ function simulatorReducer(
         augments,
         loading: false,
         error: undefined,
+        gold: 0, // Start with 0 gold (no champions)
+        level: 2, // Start at base level 2 (no champions)
       };
     }
     case "SET_LOADING_ERROR": {
@@ -90,16 +92,17 @@ function simulatorReducer(
         items: [],
       };
 
+      const updatedBoardChampions = [...state.boardChampions, boardChampion];
+
       // Update traits based on added champion
-      const updatedTraits = updateTraits(
-        [...state.boardChampions, boardChampion],
-        state.traits,
-      );
+      const updatedTraits = updateTraits(updatedBoardChampions, state.traits);
 
       return {
         ...state,
-        boardChampions: [...state.boardChampions, boardChampion],
+        boardChampions: updatedBoardChampions,
         traits: updatedTraits,
+        gold: calculateTotalGold(updatedBoardChampions),
+        level: calculateLevel(updatedBoardChampions),
       };
     }
 
@@ -117,6 +120,8 @@ function simulatorReducer(
         ...state,
         boardChampions: updatedBoardChampions,
         traits: updatedTraits,
+        gold: calculateTotalGold(updatedBoardChampions),
+        level: calculateLevel(updatedBoardChampions),
       };
     }
 
@@ -182,6 +187,7 @@ function simulatorReducer(
       return {
         ...state,
         boardChampions: updatedBoardChampions,
+        // Moving champions doesn't change gold or level
       };
     }
 
@@ -277,6 +283,9 @@ function simulatorReducer(
       return {
         ...state,
         boardChampions: updatedBoardChampions,
+        gold: calculateTotalGold(updatedBoardChampions),
+        // Level doesn't change on star up, but included for consistency
+        level: calculateLevel(updatedBoardChampions),
       };
     }
 
@@ -306,6 +315,8 @@ function simulatorReducer(
           ...trait,
           active: 0,
         })),
+        gold: 0, // Reset gold to 0 when board is cleared
+        level: 2, // Reset level to base level 2 when board is cleared
       };
     }
 
@@ -349,6 +360,22 @@ function updateTraits(
   });
 }
 
+// Helper function to calculate total gold based on champions' cost and star level
+function calculateTotalGold(boardChampions: BoardChampion[]): number {
+  return boardChampions.reduce((total, champion) => {
+    // Cost multiplier based on star level: 1★ = 1x, 2★ = 3x, 3★ = 9x
+    const starMultiplier =
+      champion.stars === 1 ? 1 : champion.stars === 2 ? 3 : 9;
+    return total + champion.cost * starMultiplier;
+  }, 0);
+}
+
+// Helper function to calculate level based on number of champions
+function calculateLevel(boardChampions: BoardChampion[]): number {
+  // Base level is 2, each champion adds +1, max level is 9
+  return Math.min(9, 2 + boardChampions.length);
+}
+
 // Provider component
 export function SimulatorProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(simulatorReducer, initialState);
@@ -368,21 +395,83 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
 
         const allChampions =
           (setDataResult.setData[0]?.champions as Champion[]) || [];
-        const champions = allChampions.filter(
-          (champion) =>
-            champion.apiName && champion.apiName.startsWith(targetPrefix),
-        );
-        const traits = setDataResult.setData[0]?.traits || [];
+        const champions = allChampions
+          .filter(
+            (champion) =>
+              champion.apiName && champion.apiName.startsWith(targetPrefix),
+          )
+          .map((champion) => {
+            if (champion.squareIcon && champion.icon) {
+              const squareIconFileName = champion.squareIcon
+                .split("/")
+                .pop()
+                ?.replace(".tex", ".png");
+              const iconFileName = champion.icon
+                .split("/")
+                .pop()
+                ?.replace(/\.TFT_Set\d+\.tex$/, ".png");
+              return {
+                ...champion,
+                squareIcon: squareIconFileName,
+                icon: iconFileName,
+              };
+            }
+            return champion;
+          }) as Champion[];
+
+        const traits =
+          setDataResult.setData[0]?.traits.map((trait) => {
+            if (trait.icon) {
+              const iconFileName = trait.icon
+                .split("/")
+                .pop()
+                ?.replace(".tex", ".png");
+              return {
+                ...trait,
+                icon: iconFileName,
+              };
+            }
+            return trait;
+          }) || [];
 
         const setActiveItems = setDataResult.setData[0]?.items || [];
         const setActiveAugments = setDataResult.setData[0]?.augments || [];
 
-        const items = itemsAndAugmenets.filter((item) =>
-          setActiveItems.includes(item.apiName),
-        ) as Item[];
-        const augments = itemsAndAugmenets.filter((item) =>
-          setActiveAugments.includes(item.apiName),
-        ) as Item[];
+        const items = itemsAndAugmenets
+          .filter(
+            (item) =>
+              setActiveItems.includes(item.apiName) &&
+              item.apiName.startsWith("TFT_Item_"),
+          )
+          .map((item) => {
+            if (item.icon) {
+              const iconFileName = item.icon
+                .split("/")
+                .pop()
+                ?.replace(/\.TFT_Set\d+\.tex$/, ".png");
+              return {
+                ...item,
+                icon: iconFileName,
+              };
+            }
+            return item;
+          }) as Item[];
+
+        const augments = itemsAndAugmenets
+          .filter((item) => setActiveAugments.includes(item.apiName))
+          .map((augment) => {
+            if (augment.icon) {
+              const iconFileName = augment.icon
+                .split("/")
+                .pop()
+                ?.replace(".tex", ".png");
+              return {
+                ...augment,
+                icon: iconFileName,
+              };
+            }
+            return augment;
+          }) as Item[];
 
         console.log("Loaded data:", { champions, traits, items, augments });
 

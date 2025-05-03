@@ -11,11 +11,11 @@ const MainBoard = () => {
     <div className="flex h-[90%]">
       <div className="flex flex-col h-screen w-[75%] p-4 gap-4 bg-card rounded-l-lg">
         <div className="flex h-[60%]">
-          <div className="w-[25%] flex h-full flex-col p-2 gap-2 bg-card rounded-l-lg">
-              <TraitTracker />
+          <div className="w-[30%] flex h-full flex-col p-2 gap-2 bg-card rounded-l-lg">
+            <TraitTracker />
           </div>
 
-          <div className="w-[75%] h-full flex flex-col items-center px-4">
+          <div className="w-[70%] h-full flex flex-col items-center px-4">
             <ControlBar />
             <HexBoard />
           </div>

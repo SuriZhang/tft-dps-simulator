@@ -308,6 +308,7 @@ Simulation Steps:
      4. other special handlings (e.g., S14 Overlord: The Overlord takes a bite out of the unit in the hex behind him, dealing 40% of their max Health as true damage. He gains 40% of their Health and 25% of their Attack Damage.)
 - at t=0, enqueue all champion’s first action (auto attack or cast)
 - simulation start:
+
   ```
   while (! combatEnds) {
 
@@ -417,6 +418,7 @@ DONE:
 
 - [x] Frontend Scaffold (main layout, core components)
 - [x] Data loading from json
+- [x] wrote script to download champion square icons from community dragon
 
 WIP:
 
@@ -426,4 +428,3 @@ WIP:
 TODO:
 
 - [ ] frontend champion, item tooltip polishing
-- [ ] frontend icon images download + rendering

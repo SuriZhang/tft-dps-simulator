@@ -51,7 +51,20 @@ const HexBoard = () => {
           variant="outline"
           className=" bg-primary/20 text-primary hover:bg-primary/30"
         >
-          <Play className="h-4 w-4" /> Start Combat
+          <div
+            className="h-6 w-6 mr-2 bg-primary"
+            style={{
+              WebkitMaskImage: "url(./TFTM_ModeIcon_Normal.png)",
+              maskImage: "url(./TFTM_ModeIcon_Normal.png)",
+              WebkitMaskSize: "contain",
+              maskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+              maskPosition: "center",
+            }}
+          ></div>
+          Start Combat
         </Button>
       </div>
     </div>

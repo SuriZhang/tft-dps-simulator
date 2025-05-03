@@ -12,7 +12,7 @@ const Index = () => {
       <div className="min-h-screen bg-dark-bg text-foreground flex flex-col">
         <ScrollArea>
           {/* Main container adjusted for flex column */}
-          <div className="flex-1 max-w-[1800px] w-full mx-auto p-4 pt-2 flex flex-col">
+          <div className="flex-1 max-w-[1800px] w-full mx-auto p-4 px-6 md:px-8 lg:px-12 xl:px-24 pt-2 flex flex-col">
             <div className="my-4 p-3 rounded-lg bg-muted text-center text-xl font-bold text-muted-foreground shrink-0">
               TFT Simulator
             </div>

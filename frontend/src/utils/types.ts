@@ -21,6 +21,7 @@ export interface Champion {
   cost: number;
   traits: string[];
   icon: string;
+  squareIcon: string;
   stars?: 1 | 2 | 3;
   items?: Item[];
 }

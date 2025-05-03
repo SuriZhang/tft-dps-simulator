@@ -5,7 +5,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { SlidersHorizontal } from "lucide-react";
-import ChampionIcon from "./ChampionIncon";
+import ChampionIcon from "./ChampionIcon";
 
 const ChampionPool: React.FC = () => {
   const { state } = useSimulator();
@@ -16,29 +16,29 @@ const ChampionPool: React.FC = () => {
 
   const filteredChampions = useMemo(() => {
     return champions.filter((champion) => {
-      const nameMatch = champion?.name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      // Check if search term matches champion name or any trait
+      const searchTermLower = searchTerm.toLowerCase();
+      const nameMatch = champion?.name?.toLowerCase().includes(searchTermLower);
+      const traitMatch = champion.traits.some((trait) =>
+        trait.toLowerCase().includes(searchTermLower),
+      );
+
+      // Apply cost filter
       const costMatch = filterCost === null || champion.cost === filterCost;
-      const traitMatch =
+
+      // Apply trait filter dropdown (separate from search)
+      const traitFilterMatch =
         filterTrait === null || champion.traits.includes(filterTrait);
-      return nameMatch && costMatch && traitMatch;
+
+      // Show champions that match by name OR trait AND match the filters
+      return (nameMatch || traitMatch) && costMatch && traitFilterMatch;
     });
   }, [champions, searchTerm, filterCost, filterTrait]);
-
-  // Extract unique traits for filtering
-  const uniqueTraits = useMemo(() => {
-    const traits = new Set<string>();
-    champions.forEach((c) => c.traits.forEach((t) => traits.add(t)));
-    return Array.from(traits).sort();
-  }, [champions]);
 
   return (
     <Card className="h-full flex flex-col border-none bg-transparent shadow-none">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-        <CardTitle className="text-base font-semibold">
-          Champions
-        </CardTitle>
+        <CardTitle className="text-base font-semibold">Champions</CardTitle>
         <div className="flex items-center space-x-1">
           {[1, 2, 3, 4, 5].map((cost) => (
             <Button

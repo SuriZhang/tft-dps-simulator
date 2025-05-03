@@ -72,10 +72,7 @@ const ItemIcon: React.FC<ItemIconProps> = ({
             onDragStart={handleDragStart}
             onClick={handleClick}
           >
-            <AvatarImage
-              src={item.icon || "/placeholder.svg"}
-              alt={item.name}
-            />
+            <AvatarImage src={`/tft-item/${item.icon}`} alt={item.name} />
             <AvatarFallback className="text-xs">
               {item.name.substring(0, 5)}
             </AvatarFallback>

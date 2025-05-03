@@ -73,7 +73,10 @@ const ChampionIcon: React.FC<ChampionIconProps> = ({
             onDragStart={handleDragStart}
             onClick={handleClick}
           >
-            <AvatarImage src={champion.icon} alt={champion.name} />
+            <AvatarImage
+              src={`/tft-square-icons/${champion.squareIcon.toLowerCase()}`}
+              alt={champion.name}
+            />
             <AvatarFallback>{champion.name.substring(0, 4)}</AvatarFallback>
           </Avatar>
         </TooltipTrigger>
