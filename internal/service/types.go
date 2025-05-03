@@ -1,0 +1,60 @@
+package service
+
+// BoardPosition matches frontend/src/utils/types.ts
+type BoardPosition struct {
+	Row int `json:"row"`
+	Col int `json:"col"`
+}
+
+// Item matches frontend/src/utils/types.ts (simplified for simulation input)
+type Item struct {
+	ApiName string `json:"id"` // Use ApiName as identifier
+	// Name, Description, Image, Type might not be strictly needed for the simulation input
+	// if the core simulation logic can look them up by ID from its loaded data.
+	// Let's keep it simple for now and assume ID is sufficient.
+}
+
+// BoardChampion matches frontend/src/utils/types.ts (simplified for simulation input)
+type BoardChampion struct {
+	ApiName  string        `json:"apiName"` // Use ApiName as identifier
+	Stars    int           `json:"stars"` // Default to 1 if missing? Frontend uses 1 | 2 | 3
+	Items    []Item        `json:"items"`
+	Position BoardPosition `json:"position"`
+	// Name, Cost, Traits, Image might not be needed if ID is sufficient for lookup.
+}
+
+// RunSimulationRequest is the expected request body structure
+type RunSimulationRequest struct {
+	BoardChampions []BoardChampion `json:"boardChampions"`
+	// We could add other context later if needed, like selected Augments
+	// SelectedAugments []Augment `json:"selectedAugments"`
+}
+
+// DamageStats holds the damage breakdown for a champion
+type DamageStats struct {
+	TotalDamage           float64 `json:"totalDamage"`
+	DamagePerSecond       float64 `json:"dps"`
+	TotalADDamage         float64 `json:"totalADDamage"`
+	TotalAPDamage         float64 `json:"totalAPDamage"`
+	TotalTrueDamage       float64 `json:"totalTrueDamage"`
+	TotalAutoAttackCounts int     `json:"totalAutoAttackCounts"`
+	TotalSpellCastCounts  int     `json:"totalSpellCastCounts"`
+	// Could add more breakdown later:
+	// AutoAttackDamage float64 `json:"autoAttackDamage"`
+	// SpellDamage      float64 `json:"spellDamage"`
+	// TrueDamage       float64 `json:"trueDamage"`
+}
+
+// ChampionSimulationResult holds the results for a single champion
+type ChampionSimulationResult struct {
+	ChampionApiName  string      `json:"championApiName"` // Match the ApiName sent in the request
+	DamageStats DamageStats `json:"damageStats"`
+}
+
+// RunSimulationResponse is the structure of the response body
+type RunSimulationResponse struct {
+	Results []ChampionSimulationResult `json:"results"`
+	// Could add overall simulation info later:
+	// SimulationDuration float64 `json:"simulationDuration"`
+	// WinnerTeam         int     `json:"winnerTeam"` // e.g., 0 or 1
+}

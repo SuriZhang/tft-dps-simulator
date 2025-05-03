@@ -1,28 +1,28 @@
-
-import React, { createContext, useReducer, useContext, ReactNode } from 'react';
+import React, { createContext, useReducer, useContext, ReactNode, useEffect } from 'react';
 import { 
   Champion, 
   BoardPosition, 
   Item, 
   SimulatorState, 
   SimulatorAction, 
-  Augment, 
   BoardChampion, 
   Trait 
 } from '../utils/types';
-import { MOCK_CHAMPIONS, MOCK_ITEMS, MOCK_TRAITS, MOCK_AUGMENTS } from '../utils/constants';
+import { loadSetDataFromFile, loadItemsAndAugmentsFromFile } from '../utils/constants';
 
 const initialState: SimulatorState = {
-  champions: MOCK_CHAMPIONS,
+  champions: [], // Start with empty data
   boardChampions: [],
-  items: MOCK_ITEMS,
-  traits: MOCK_TRAITS,
-  augments: MOCK_AUGMENTS,
+  items: [],
+  traits: [],
+  augments: [],
   selectedAugments: [],
   gold: 50,
   level: 7,
   selectedItem: undefined,
-  selectedChampion: undefined
+  selectedChampion: undefined,
+  loading: true, // Set initial loading state to true
+  error: undefined
 };
 
 // Create context
@@ -34,6 +34,25 @@ const SimulatorContext = createContext<{
 // Reducer function
 function simulatorReducer(state: SimulatorState, action: SimulatorAction): SimulatorState {
   switch (action.type) {
+    case 'SET_LOADED_DATA': { // Handle loading success
+      const { champions, traits, items, augments } = action.payload;
+      return {
+        ...state,
+        champions,
+        traits: traits.map(trait => ({ ...trait, active: 0 })), // Initialize active count
+        items,
+        augments,
+        loading: false,
+        error: undefined
+      };
+    }
+    case 'SET_LOADING_ERROR': { // Handle loading error
+        return {
+            ...state,
+            loading: false,
+            error: action.error
+        };
+    }
     case 'ADD_CHAMPION_TO_BOARD': {
       const { champion, position } = action;
       
@@ -247,7 +266,7 @@ function simulatorReducer(state: SimulatorState, action: SimulatorAction): Simul
       return {
         ...state,
         boardChampions: [],
-        traits: state.traits.map(trait => ({
+        traits: state.traits.map(trait => ({ // Reset active counts on clear
           ...trait,
           active: 0
         }))
@@ -280,6 +299,44 @@ function updateTraits(boardChampions: BoardChampion[], traits: Trait[]): Trait[]
 // Provider component
 export function SimulatorProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(simulatorReducer, initialState);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const dataFilePath = './en_us_14.1b.json'; // Assuming this file contains all needed data
+        const targetMutator = 'TFTSet14'; // Example Mutator - Adjust if needed
+        const targetPrefix = 'TFT14_'; // Example prefix for champions
+        
+        // Load all data concurrently
+        const [setDataResult, itemsAndAugmenets] = await Promise.all([
+          loadSetDataFromFile(dataFilePath, targetMutator),
+          loadItemsAndAugmentsFromFile(dataFilePath), // Adjust path as needed
+        ]);
+
+        const allChampions = setDataResult.setData[0]?.champions as Champion[]|| [];
+        const champions = allChampions.filter(champion => champion.apiName && champion.apiName.startsWith(targetPrefix));
+        const traits = setDataResult.setData[0]?.traits || [];
+
+        const setActiveItems = setDataResult.setData[0]?.items || [];
+        const setActiveAugments = setDataResult.setData[0]?.augments || [];
+
+        const items = itemsAndAugmenets.filter(item => setActiveItems.includes(item.apiName)) as Item[];
+        const augments = itemsAndAugmenets.filter(item => setActiveAugments.includes(item.apiName)) as Item[];
+
+        console.log("Loaded data:", { champions, traits, items, augments });
+      
+        dispatch({ 
+          type: 'SET_LOADED_DATA', 
+          payload: { champions, traits, items, augments } 
+        });
+      } catch (err) {
+        console.error("Failed to load simulator data:", err);
+        dispatch({ type: 'SET_LOADING_ERROR', error: err instanceof Error ? err.message : String(err) });
+      }
+    };
+
+    fetchData();
+  }, []);
   
   return (
     <SimulatorContext.Provider value={{ state, dispatch }}>

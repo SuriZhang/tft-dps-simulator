@@ -51,21 +51,21 @@ const ItemIcon: React.FC<ItemIconProps> = ({ item, size = 'md', draggable = true
             className={cn(
               'relative rounded-md border cursor-pointer transition-all duration-200 flex items-center justify-center',
               sizeClasses[size],
-              typeColors[item.type],
+              // typeColors[item.type],
               isSelected ? 'ring-2 ring-accent shadow-lg shadow-accent/20' : 'hover:scale-105'
             )}
             draggable={draggable}
             onDragStart={handleDragStart}
             onClick={handleClick}
           >
-            <AvatarImage src={item.image || '/placeholder.svg'} alt={item.name} />
-            <AvatarFallback>{item.name.substring(0, 1)}</AvatarFallback>
+            <AvatarImage src={item.icon || '/placeholder.svg'} alt={item.name} />
+            <AvatarFallback className='text-xs'>{item.name.substring(0, 5)}</AvatarFallback>
           </Avatar>
         </TooltipTrigger>
         {/* Use TooltipContent */}
         <TooltipContent>
           <p className="font-bold">{item.name}</p>
-          <p className="text-xs text-muted-foreground">{item.description}</p>
+          <p className="text-xs text-muted-foreground">{item.desc}</p>
           {/* {item.stats && (
             <div className="mt-1 text-xs">
               {Object.entries(item.stats).map(([stat, value]) => (

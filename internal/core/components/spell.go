@@ -169,8 +169,8 @@ func (s *Spell) ResetBonuses() {
 	// Do not reset Vars, they are loaded from data
 }
 
-// GetSpellCount returns the number of times the spell has been cast.
-func (s *Spell) GetSpellCount() int {
+// GetCastCount returns the number of times the spell has been cast.
+func (s *Spell) GetCastCount() int {
 	return s.castCount
 }
 

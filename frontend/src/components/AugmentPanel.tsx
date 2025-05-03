@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'; // Import 
 import { Separator } from './ui/separator'; // Import Separator
 import { Plus } from 'lucide-react'; // Import Plus icon
 import { ScrollArea } from './ui/scroll-area';
+import { Item } from '../utils/types'; // Import Item type
 
 const AugmentPanel: React.FC = () => {
   const { state, dispatch } = useSimulator();
@@ -17,7 +18,7 @@ const AugmentPanel: React.FC = () => {
     prismatic: 'border-cyan-400 bg-cyan-900/30 text-cyan-300',
   };
 
-  const handleAugmentClick = (augment: typeof augments[0], slot: number) => {
+  const handleAugmentClick = (augment: Item, slot: number) => {
     dispatch({
       type: 'SELECT_AUGMENT',
       augment,
@@ -51,9 +52,9 @@ const AugmentPanel: React.FC = () => {
                 key={`slot-${slot}`}
                 className={cn(
                   "p-2 rounded-lg border cursor-pointer",
-                  augment
-                    ? tierColors[augment.tier]
-                    : "border-dashed border-gray-600 bg-gray-800/20"
+                  // augment
+                  //   ? tierColors[augment.tier]
+                  //   : "border-dashed border-gray-600 bg-gray-800/20"
                 )}
                 onClick={() => {
                   // Simple implementation - just cycles through augments
@@ -65,7 +66,7 @@ const AugmentPanel: React.FC = () => {
                 {augment ? (
                   <div className="flex flex-col">
                     <div className="text-sm font-bold">{augment.name}</div>
-                    <div className="text-xs">{augment.description}</div>
+                    <div className="text-xs">{augment.desc}</div>
                   </div>
                 ) : (
                   <div className="h-12 flex items-center justify-center text-sm text-gray-500">
@@ -89,7 +90,7 @@ const AugmentPanel: React.FC = () => {
                 key={augment.apiName}
                 className={cn(
                   "p-2 rounded-md text-xs cursor-pointer",
-                  tierColors[augment.tier]
+                  tierColors.silver, // TODO: fix, Default to silver for all augments
                 )}
                 onClick={() => {
                   // Find first empty slot or overwrite last one

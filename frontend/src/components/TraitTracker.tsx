@@ -1,12 +1,7 @@
 import React from 'react';
 import { useSimulator } from '../context/SimulatorContext';
 import { cn } from '../lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'; // Import Card components
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'; // Import Tooltip components
-import { Badge } from './ui/badge'; // Import Badge
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'; // Import Avatar components
-import { Info } from 'lucide-react'; // Import icon
-import { Trait, TraitBonus } from '../utils/types'; // Import the types
+import { Trait, TraitEffect } from '../utils/types'; // Import the types
 
 // Define colors for trait tiers
 const traitTierColors = {
@@ -19,24 +14,24 @@ const traitTierColors = {
 
 // Function to determine the highest active tier
 const getHighestActiveTier = (trait: Trait): keyof typeof traitTierColors => {
-  if (trait.active === 0) return 'inactive';
+  // if (trait.active === 0) return 'inactive';
 
-  const sortedBonuses = [...trait.bonuses].sort((a, b) => b.count - a.count);
-  const activeBonus = sortedBonuses.find(bonus => bonus.count <= trait.active);
+  // const sortedBonuses = [...trait.effects].sort((a, b) => b.count - a.count);
+  // const activeBonus = sortedBonuses.find(bonus => bonus.count <= trait.active);
 
-  if (!activeBonus) return 'inactive'; // Should not happen if active > 0
+  // if (!activeBonus) return 'inactive'; // Should not happen if active > 0
 
-  // Determine tier based on bonus count thresholds (example, adjust based on actual game tiers)
-  // This requires knowing the max possible count for each tier
-  // For simplicity, let's map based on the number of bonuses achieved
-  const bonusIndex = sortedBonuses.findIndex(b => b.count === activeBonus.count);
-  const totalBonuses = sortedBonuses.length;
+  // // Determine tier based on bonus count thresholds (example, adjust based on actual game tiers)
+  // // This requires knowing the max possible count for each tier
+  // // For simplicity, let's map based on the number of bonuses achieved
+  // const bonusIndex = sortedBonuses.findIndex(b => b.count === activeBonus.count);
+  // const totalBonuses = sortedBonuses.length;
 
-  // Simple tier assignment based on index (adjust logic as needed)
-  if (totalBonuses <= 1) return 'bronze'; // Or maybe gold if it's the only tier
-  if (bonusIndex === 0) return totalBonuses > 2 ? 'prismatic' : 'gold'; // Highest tier
-  if (bonusIndex === 1) return totalBonuses > 2 ? 'gold' : 'silver';
-  if (bonusIndex === 2) return 'silver';
+  // // Simple tier assignment based on index (adjust logic as needed)
+  // if (totalBonuses <= 1) return 'bronze'; // Or maybe gold if it's the only tier
+  // if (bonusIndex === 0) return totalBonuses > 2 ? 'prismatic' : 'gold'; // Highest tier
+  // if (bonusIndex === 1) return totalBonuses > 2 ? 'gold' : 'silver';
+  // if (bonusIndex === 2) return 'silver';
   return 'bronze'; // Lowest active tier
 };
 
@@ -62,17 +57,17 @@ const TraitTracker: React.FC = () => {
   });
 
   // Find the activated bonus for a trait
-  const getActiveBonus = (trait: Trait): TraitBonus | undefined => {
+  const getActiveEffect = (trait: Trait): TraitEffect | undefined => {
     if (trait.active === 0) return undefined;
 
-    // Find the highest bonus that's activated
-    return [...trait.bonuses]
-      .sort((a, b) => b.count - a.count)
-      .find(bonus => bonus.count <= trait.active);
-  };
+  // Find the highest bonus that's activated
+  // TODO: Implement logic to find the highest activated bonus based on trait.active and trait.effects
+  const sortedEffects = [...trait.effects].sort((a, b) => b.minUnits - a.minUnits); // Sort descending by count needed
+  return sortedEffects.find(effect => trait.active >= effect.minUnits);
+};
 
-  const getTraitTierStyle = (count: number, bonuses: { count: number }[], activeCount: number): string => {
-    let style = 'text-gray-500'; // Default inactive/unreached
+const getTraitTierStyle = (count: number, bonuses: { count: number }[], activeCount: number): string => {
+  let style = 'text-gray-500'; // Default inactive/unreached
     let highestAchieved = -1;
     bonuses.forEach(b => {
         if (activeCount >= b.count) {
@@ -109,9 +104,9 @@ const TraitTracker: React.FC = () => {
       
       <div className="space-y-3">
         {sortedTraits.map(trait => {
-          const activeBonus = getActiveBonus(trait);
+          const activeEffect = getActiveEffect(trait);
           const isActive = trait.active > 0;
-          const nextBonus = trait.bonuses.find(bonus => bonus.count > trait.active);
+          // const nextBonus = trait.bonuses.find(bonus => bonus.count > trait.active);
           
           return (
             <div 
@@ -139,29 +134,29 @@ const TraitTracker: React.FC = () => {
                 </div>
                 
                 {/* Progress to next bonus */}
-                {nextBonus && (
+                {/* {nextBonus && (
                   <div className="text-xs text-gray-400">
                     {trait.active}/{nextBonus.count}
                   </div>
-                )}
+                )} */}
               </div>
               
               {/* Active bonus effect */}
-              {activeBonus && (
+              {activeEffect && (
                 <div className="mt-1 text-xs text-primary">
-                  {activeBonus.effect}
+                  "get extra bonus" 
                 </div>
               )}
               
               {/* Progress bar to next bonus */}
-              {nextBonus && (
+              {/* {nextBonus && (
                 <div className="mt-2 progress-bar">
                   <div 
                     className="progress-fill bg-primary"
                     style={{ width: `${Math.min(100, (trait.active / nextBonus.count) * 100)}%` }}
                   ></div>
                 </div>
-              )}
+              )} */}
             </div>
           );
         })}

@@ -12,24 +12,8 @@ type ItemCategory = 'all' | 'component' | 'craftable' | 'radiant' | 'ornn' | 'su
 
 const getItemCategory = (item: Item): ItemCategory => {
   // Use the existing 'type' field first
-  if (item.type === 'component') return 'component';
-  if (item.type === 'completed') {
-    // Further differentiate completed items if possible (example using name patterns)
-    // This is placeholder logic - adjust based on actual data/naming conventions
-    const lowerName = item.name.toLowerCase();
-    if (lowerName.includes('(radiant)') || item.apiName.startsWith('TFT_Item_Radiant')) return 'radiant';
-    if (lowerName.includes('(ornn)') || item.apiName.startsWith('TFT_Item_Ornn')) return 'ornn';
-    if (lowerName.includes('(support)') || item.apiName.startsWith('TFT_Item_Support')) return 'support';
-    return 'craftable'; // Default completed items
-  }
-  if (item.type === 'special') {
-    // Categorize special items (e.g., Emblems, Tactician's Crown)
-    // Placeholder logic - adjust as needed
-     const lowerName = item.name.toLowerCase();
-    if (lowerName.includes('emblem')) return 'other'; // Or a specific 'emblem' category?
-    if (lowerName.includes('crown')) return 'other';
-    return 'other';
-  }
+  if (item.tags?.includes("component")) return 'component';
+  if (item.tags?.includes("{7ea41d13}")) return 'craftable'; // composition
 
   // Fallback category
   return 'other';
@@ -44,7 +28,7 @@ const ItemTray: React.FC = () => {
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-      const nameMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const nameMatch = item?.name?.toLowerCase().includes(searchTerm.toLowerCase());
       // Only apply category filter if the active tab is NOT 'all'
       const categoryMatch = activeTab === 'all' ? true : getItemCategory(item) === activeTab;
       return nameMatch && categoryMatch;

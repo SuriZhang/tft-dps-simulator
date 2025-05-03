@@ -59,7 +59,7 @@ const handleClick = () => {
             onDragStart={handleDragStart}
             onClick={handleClick}
           >
-            <AvatarImage src={champion.image} alt={champion.name} />
+            <AvatarImage src={champion.icon} alt={champion.name} />
             <AvatarFallback>{champion.name.substring(0, 4)}</AvatarFallback>
           </Avatar>
         </TooltipTrigger>

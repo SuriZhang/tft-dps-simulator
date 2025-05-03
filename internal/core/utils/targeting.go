@@ -38,7 +38,7 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 	}
 
 	var closestEnemy ecs.Entity
-	closestDistSq := math.MaxFloat64
+	closestDistSq := math.MaxInt32 
 	foundTarget := false
 
 	for _, target := range potentialTargets {
@@ -73,7 +73,7 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 	return closestEnemy, foundTarget
 }
 
-func DistSq(x1, y1, x2, y2 float64) float64 {
+func DistSq(x1, y1, x2, y2 int) int {
 	dx := x2 - x1
 	dy := y2 - y1
 	return dx*dx + dy*dy

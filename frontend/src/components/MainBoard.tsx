@@ -27,13 +27,13 @@ const MainBoard = () => {
 
 				<div className="h-[40%] flex flex-row gap-4 bg-panel-bg p-2">
 					{/* ChampionPool takes available space */}
-					<div className="flex-1 h-full min-w-[300px]">
+					<div className="h-full w-[60%]">
 						<ScrollArea className="h-full">
 							<ChampionPool />
 						</ScrollArea>
 					</div>
 					{/* ItemTray takes available space */}
-					<div className="flex-1 h-full min-w-[300px]">
+					<div className="h-full w-[40%]">
 						<ScrollArea className="h-full">
 							<ItemTray />
 						</ScrollArea>

@@ -16,7 +16,7 @@ const ChampionPool: React.FC = () => {
 
   const filteredChampions = useMemo(() => {
     return champions.filter(champion => {
-      const nameMatch = champion.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const nameMatch = champion?.name?.toLowerCase().includes(searchTerm.toLowerCase());
       const costMatch = filterCost === null || champion.cost === filterCost;
       const traitMatch = filterTrait === null || champion.traits.includes(filterTrait);
       return nameMatch && costMatch && traitMatch;
@@ -73,7 +73,7 @@ const ChampionPool: React.FC = () => {
         />
         {/* Use ScrollArea component */}
         <ScrollArea className="flex-1 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0">
-          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-x-12 "> 
+          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 "> 
             {filteredChampions.map((champion) => (
               <ChampionIcon key={champion.apiName} champion={champion} />
             ))}

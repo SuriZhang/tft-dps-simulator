@@ -1,43 +1,61 @@
 
+// Define interfaces for the structure of the set data JSON
+export interface Set {
+  mutator: string;
+  name: string;
+  number: number;
+  champions: any[]; 
+  items: string[]; // Replace 'any' with a specific Item type if available
+  augments: string[]; // Replace 'any' with a specific Augment type if available
+  traits: any[]; // Replace 'any' with a specific Trait type if available
+  // Add other fields present in the 'Set' object if needed
+}
+
+export interface TFTSetData {
+  setData: Set[];
+  // Add other top-level fields from the JSON if needed
+}
+
 export interface Champion {
   apiName: string;
   name: string;
   cost: number;
   traits: string[];
-  image: string;
+  icon: string;
   stars?: 1 | 2 | 3;
   items?: Item[];
 }
 
 export interface Item {
   apiName: string;
+  associatedTraits?: string[];
+  composition?: string[]; // Array of item API names
+  desc: string; 
+  effects?: Record<string, any>; // Using 'any' for flexibility as effect values vary
+  from?: string[]; // Array of item API names
+  icon: string; 
+  id?: number; // mostly null
+  incompatibleTraits?: string[];
   name: string;
-  description: string;
-  image: string;
-  type: 'component' | 'completed' | 'special';
+  tags?: string[];
+  unique: boolean;
 }
 
 export interface Trait {
   apiName: string;
   name: string;
-  description: string;
-  image: string;
-  bonuses: TraitBonus[];
+  desc: string;
+  icon: string;
+  effects: TraitEffect[];
   active: number;
   style?: string;
 }
 
-export interface TraitBonus {
-  count: number;
-  effect: string;
-}
-
-export interface Augment {
-  apiName: string;
-  name: string;
-  description: string;
-  image: string;
-  tier: 'silver' | 'gold' | 'prismatic';
+export interface TraitEffect {
+  maxUnits: number;
+  minUnits: number;
+  style: number
+  variables : Record<string, any>; 
 }
 
 export interface BoardPosition {
@@ -54,12 +72,14 @@ export interface SimulatorState {
   boardChampions: BoardChampion[];
   items: Item[];
   traits: Trait[];
-  augments: Augment[];
-  selectedAugments: Augment[];
+  augments: Item[];
+  selectedAugments: Item[];
   gold: number;
   level: number;
   selectedItem?: Item;
   selectedChampion?: Champion;
+  loading: boolean; // Add loading state
+  error?: string; // Add error state
 }
 
 export type SimulatorAction = 
@@ -71,5 +91,7 @@ export type SimulatorAction =
   | { type: 'SELECT_ITEM'; item: Item | undefined }
   | { type: 'SELECT_CHAMPION'; champion: Champion | undefined }
   | { type: 'STAR_UP_CHAMPION'; position: BoardPosition }
-  | { type: 'SELECT_AUGMENT'; augment: Augment; index: number }
-  | { type: 'CLEAR_BOARD' };
+  | { type: 'SELECT_AUGMENT'; augment: Item; index: number }
+  | { type: 'CLEAR_BOARD' }
+  | { type: 'SET_LOADED_DATA'; payload: { champions: Champion[]; traits: Trait[]; items: Item[]; augments: Item[] } } // Add action for loading data
+  | { type: 'SET_LOADING_ERROR'; error: string }; // Add action for loading error

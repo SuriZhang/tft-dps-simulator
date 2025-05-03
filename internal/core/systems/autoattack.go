@@ -155,7 +155,7 @@ func (s *AutoAttackSystem) handleAttackFired(evt eventsys.AttackFiredEvent) {
 		distSq := utils.DistSq(attackerPos.GetX(), attackerPos.GetY(), targetPos.GetX(), targetPos.GetY())
 		rangeSq := math.Pow(float64(attack.GetFinalRange()), 2)
 
-		if distSq <= rangeSq {
+		if distSq <= int(rangeSq) {
 			landedEvent := eventsys.AttackLandedEvent{
 				Source:     attacker,
 				Target:     target,
