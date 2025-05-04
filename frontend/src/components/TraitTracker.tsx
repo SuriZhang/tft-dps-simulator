@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
 import { Trait, TraitEffect } from "../utils/types";
@@ -63,11 +63,27 @@ const getHighestActiveTier = (trait: Trait): keyof typeof traitTierColors => {
 };
 
 const TraitTracker: React.FC = () => {
-  const { state } = useSimulator();
+  const { state, setHoveredTrait } = useSimulator();
   const { traits, boardChampions } = state;
+  const [localHoveredTrait, setLocalHoveredTrait] = useState<string>("");
 
   // Only show traits when there are champions on board
   const hasChampions = boardChampions.length > 0;
+
+  // Handle trait hover
+  const handleTraitMouseEnter = (traitName: string) => {
+    setLocalHoveredTrait(traitName);
+    if (setHoveredTrait) {
+      setHoveredTrait(traitName);
+    }
+  };
+
+  const handleTraitMouseLeave = () => {
+    setLocalHoveredTrait("");
+    if (setHoveredTrait) {
+      setHoveredTrait("");
+    }
+  };
 
   // Sort traits: active first, then by name
   const sortedTraits = [...traits]
@@ -151,7 +167,13 @@ const TraitTracker: React.FC = () => {
                             ? "bg-gray-800/60 border-2 rounded-md " +
                                 traitTierColors[getHighestActiveTier(trait)]
                             : "bg-gray-800/30 rounded-md",
+                          localHoveredTrait === trait.name &&
+                            "ring-2 ring-primary ring-opacity-70",
                         )}
+                        onMouseEnter={() =>
+                          handleTraitMouseEnter(trait.name)
+                        }
+                        onMouseLeave={handleTraitMouseLeave}
                       >
                         <AccordionTrigger
                           className={cn(

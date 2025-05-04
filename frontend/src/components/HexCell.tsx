@@ -20,7 +20,17 @@ interface HexCellProps {
 const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   const position: BoardPosition = { row, col };
   const { state, dispatch } = useSimulator();
-  const { selectedChampion, selectedItem } = state;
+  const { selectedChampion, selectedItem, hoveredTrait } = state;
+
+  // Check if the champion has the hovered trait - add debugging to see values
+  const hasHoveredTrait =
+    champion &&
+    hoveredTrait &&
+    champion.traits &&
+    champion.traits.some((trait) => {
+      // Case-insensitive comparison or normalized comparison
+      return trait.toLowerCase() === hoveredTrait.toLowerCase();
+    });
 
   const getHexBackground = () => {
     let base = "bg-gray-900/40 border border-gray-700/30";
@@ -120,15 +130,13 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
     }
   };
 
-  if (champion) {
-    console.log(champion);
-  }
-
   return (
     <div
       className={cn(
         "relative aspect-[1/1]",
         `col-start-${col} rows-start-${row}`,
+        // Move the ring styling here to the OUTER container instead
+        hasHoveredTrait && "z-10",
       )}
     >
       {/* Stars positioned outside the hexagon but visually on top */}
@@ -159,6 +167,20 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         </div>
       )}
 
+      {/* Add a visible ring effect on the outer div when trait is matched */}
+      {hasHoveredTrait && (
+        <div
+          className="absolute inset-0 rounded-md ring-3 ring-primary animate-pulse"
+          style={{
+            width: "90px",
+            height: "90px",
+            left: "-5px",
+            top: "-5px",
+            zIndex: 5,
+          }}
+        ></div>
+      )}
+
       <div
         className={cn(
           "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
@@ -169,6 +191,10 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
           champion && selectedItem
             ? "border-accent border-3 hover:border-opacity-100"
             : "",
+          // Remove the ring styling from here
+          // hasHoveredTrait && "ring-3 ring-primary ring-offset-1 ring-offset-transparent z-10",
+          // Keep the opacity effect
+          hoveredTrait && champion && !hasHoveredTrait && "opacity-40",
         )}
         title={`Row ${row}, Col ${col}`}
         onClick={handleCellClick}
@@ -176,6 +202,11 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         onDrop={handleDrop}
         data-position={`${position.row}-${position.col}`}
       >
+        {/* If champion has the hovered trait, add a glow effect */}
+        {hasHoveredTrait && (
+          <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
+        )}
+
         {champion && (
           <ContextMenu>
             <ContextMenuTrigger asChild>
@@ -191,7 +222,6 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                       src={`/tft-champion/${champion.icon.toLowerCase()}`}
                       alt={champion.name}
                       className="w-full h-full object-cover rotate-[-90deg]"
-                      style={{ objectPosition: "60% 45%" }}
                       title={champion.name}
                     />
                   </div>

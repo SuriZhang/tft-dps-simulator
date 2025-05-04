@@ -80,6 +80,7 @@ export interface SimulatorState {
   selectedChampion?: Champion;
   loading: boolean; // Add loading state
   error?: string; // Add error state
+  hoveredTrait?: string,
 }
 
 export type SimulatorAction =

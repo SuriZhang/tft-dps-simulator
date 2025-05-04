@@ -4,6 +4,7 @@ import React, {
   useContext,
   ReactNode,
   useEffect,
+  useState,
 } from "react";
 import {
   Champion,
@@ -32,16 +33,21 @@ const initialState: SimulatorState = {
   selectedChampion: undefined,
   loading: true,
   error: undefined,
+  hoveredTrait: "",
 };
 
-// Create context
-const SimulatorContext = createContext<
-  | {
-      state: SimulatorState;
-      dispatch: React.Dispatch<SimulatorAction>;
-    }
-  | undefined
->(undefined);
+// Define the context shape
+interface SimulatorContextValue {
+  state: SimulatorState;
+  dispatch: React.Dispatch<SimulatorAction>;
+  setHoveredTrait: (trait: string) => void;
+  // ...other methods
+}
+
+// Create the context with a default value
+const SimulatorContext = createContext<SimulatorContextValue | undefined>(
+  undefined,
+);
 
 // Reducer function
 function simulatorReducer(
@@ -321,25 +327,27 @@ function simulatorReducer(
     }
     case "SET_CHAMPION_STAR_LEVEL": {
       // First, create the updated boardChampions array
-      const updatedBoardChampions = state.boardChampions.map((boardChampion) => {
-        if (
-          boardChampion &&
-          boardChampion.position.row === action.position.row &&
-          boardChampion.position.col === action.position.col
-        ) {
-          return {
-            ...boardChampion,
-            stars: action.level as 1 | 2 | 3, // Cast to the correct type (1, 2, or 3)
-          };
-        }
-        return boardChampion;
-      });
-    
+      const updatedBoardChampions = state.boardChampions.map(
+        (boardChampion) => {
+          if (
+            boardChampion &&
+            boardChampion.position.row === action.position.row &&
+            boardChampion.position.col === action.position.col
+          ) {
+            return {
+              ...boardChampion,
+              stars: action.level as 1 | 2 | 3, // Cast to the correct type (1, 2, or 3)
+            };
+          }
+          return boardChampion;
+        },
+      );
+
       // Then use the updated array for gold and level calculations
       return {
         ...state,
         boardChampions: updatedBoardChampions,
-        gold: calculateTotalGold(updatedBoardChampions), 
+        gold: calculateTotalGold(updatedBoardChampions),
         level: calculateLevel(updatedBoardChampions),
       };
     }
@@ -401,8 +409,25 @@ function calculateLevel(boardChampions: BoardChampion[]): number {
 }
 
 // Provider component
-export function SimulatorProvider({ children }: { children: ReactNode }) {
+export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [state, dispatch] = useReducer(simulatorReducer, initialState);
+  const [hoveredTrait, setHoveredTraitValue] = useState<string>("");
+
+  // Combine the reducer state with the hoveredTrait state
+  const combinedState = {
+    ...state,
+    hoveredTrait,
+  };
+
+  // Create the context value
+  const value: SimulatorContextValue = {
+    state: combinedState,
+    dispatch,
+    setHoveredTrait: (trait: string) => setHoveredTraitValue(trait),
+    // ...other methods
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -422,7 +447,9 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
         const champions = allChampions
           .filter(
             (champion) =>
-              champion.apiName && champion.apiName.startsWith(targetPrefix) && !champion.apiName.includes("NPC"),
+              champion.apiName &&
+              champion.apiName.startsWith(targetPrefix) &&
+              !champion.apiName.includes("NPC"),
           )
           .map((champion) => {
             if (champion.squareIcon && champion.icon) {
@@ -433,7 +460,7 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
               const iconFileName = champion.icon
                 .split("/")
                 .pop()
-                ?.replace(".tex", ".png")
+                ?.replace(".tex", ".png");
               return {
                 ...champion,
                 squareIcon: squareIconFileName,
@@ -471,11 +498,11 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
           )
           .map((item) => {
             if (item.icon) {
-                const iconFileName = item.icon
+              const iconFileName = item.icon
                 .split("/")
                 .pop()
                 ?.replace(/(?:\.TFT_Set\d+)?\.tex$/, ".png");
-              
+
               return {
                 ...item,
                 icon: iconFileName,
@@ -519,11 +546,11 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SimulatorContext.Provider value={{ state, dispatch }}>
+    <SimulatorContext.Provider value={value}>
       {children}
     </SimulatorContext.Provider>
   );
-}
+};
 
 // Custom hook for using the simulator context
 export function useSimulator() {
