@@ -48,7 +48,7 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 func main() {
 	// 1. Load Game Data
 	log.Println("Loading game data...")
-	dataDir := "../../assets"
+	dataDir := "./assets"
 	fileName := "en_us_14.1b.json"
 	filePath := filepath.Join(dataDir, fileName)
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")

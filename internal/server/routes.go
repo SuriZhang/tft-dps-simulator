@@ -16,7 +16,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 		AllowOrigins:     "*", // Allow requests from your frontend origin
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
 		AllowHeaders:     "Accept,Authorization,Content-Type,X-CSRF-Token", // Ensure Content-Type is allowed
-		AllowCredentials: true,                                            // Set to true if needed, adjust AllowOrigins accordingly
+		AllowCredentials: false,                                            // Set to true if needed, adjust AllowOrigins accordingly
 		MaxAge:           300,
 	}))
 
@@ -25,7 +25,30 @@ func (s *FiberServer) RegisterFiberRoutes() {
 
 	// Simulation routes
 	simulationGroup := apiV1.Group("/simulation")
-	simulationGroup.Post("/run", s.HandleRunSimulation) // Register the new handler
+	
+	// Use real implementation
+	simulationGroup.Post("/run", s.HandleRunSimulation)
+	
+	// Add mock endpoint for testing
+	simulationGroup.Post("/mock-run", func(c *fiber.Ctx) error {
+		// Parse request just to validate it (optional)
+		var req service.RunSimulationRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Cannot parse request body",
+			})
+		}
+		
+		 // Call the MockRunSimulation service method instead of duplicating response logic
+		resp, err := s.simService.MockRunSimulation(req.BoardChampions)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Mock simulation failed: %v", err),
+			})
+		}
+		
+		return c.Status(fiber.StatusOK).JSON(resp)
+	})
 
 	// Existing routes (keep them if needed, or move under API group)
 	s.App.Get("/", s.HelloWorldHandler)

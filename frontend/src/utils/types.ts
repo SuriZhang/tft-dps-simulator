@@ -80,7 +80,23 @@ export interface SimulatorState {
   selectedChampion?: Champion;
   loading: boolean; // Add loading state
   error?: string; // Add error state
-  hoveredTrait?: string,
+  hoveredTrait?: string;
+  simulationResults?: ChampionSimulationResult[]; // Add simulation results
+}
+
+export interface DamageStats {
+  totalDamage: number;
+  dps: number;
+  totalADDamage: number;
+  totalAPDamage: number;
+  totalTrueDamage: number;
+  totalAutoAttackCounts: number;
+  totalSpellCastCounts: number;
+}
+
+export interface ChampionSimulationResult {
+  championApiName: string;
+  damageStats: DamageStats;
 }
 
 export type SimulatorAction =
@@ -112,4 +128,5 @@ export type SimulatorAction =
       };
   }
   | { type: "SET_CHAMPION_STAR_LEVEL"; position: BoardPosition; level: number }
-  | { type: "SET_LOADING_ERROR"; error: string }; // Add action for loading error
+  | { type: "SET_LOADING_ERROR"; error: string }
+  | { type: "SET_SIMULATION_RESULTS"; payload: ChampionSimulationResult[] }; // New action type

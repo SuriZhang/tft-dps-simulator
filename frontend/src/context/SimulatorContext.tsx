@@ -34,6 +34,7 @@ const initialState: SimulatorState = {
   loading: true,
   error: undefined,
   hoveredTrait: "",
+  simulationResults: [],
 };
 
 // Define the context shape
@@ -351,6 +352,13 @@ function simulatorReducer(
         level: calculateLevel(updatedBoardChampions),
       };
     }
+
+    case "SET_SIMULATION_RESULTS":
+      console.log("Reducer received simulation results:", action.payload);
+      return {
+        ...state,
+        simulationResults: action.payload,
+      };
 
     default:
       return state;
