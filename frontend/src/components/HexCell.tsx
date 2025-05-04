@@ -65,8 +65,15 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
       console.log("Champion", champion);
     }
   };
-  const handleStarUp = () =>
-    champion && dispatch({ type: "STAR_UP_CHAMPION", position });
+
+  const handleSetStarLevel = (level: number) => () => {
+    champion &&
+      dispatch({
+        type: "SET_CHAMPION_STAR_LEVEL",
+        position,
+        level,
+      });
+  };
 
   const handleRemove = () =>
     champion && dispatch({ type: "REMOVE_CHAMPION_FROM_BOARD", position });
@@ -113,6 +120,10 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
     }
   };
 
+  if (champion) {
+    console.log(champion);
+  }
+
   return (
     <div
       className={cn(
@@ -122,13 +133,13 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
     >
       <div
         className={cn(
-          "w-[80px] h-[80px] inset-0 clip-hexagon border shadow-md transition-all cursor-pointer",
+          "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all cursor-pointer",
           getHexBackground(),
           !champion && selectedChampion
-            ? "border-primary border-2 hover:border-opacity-100"
+            ? "border-primary border-3 hover:border-opacity-100"
             : "",
           champion && selectedItem
-            ? "border-accent border-2 hover:border-opacity-100"
+            ? "border-accent border-3 hover:border-opacity-100"
             : "",
         )}
         title={`Row ${row}, Col ${col}`}
@@ -141,59 +152,71 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
           <ContextMenu>
             <ContextMenuTrigger asChild>
               <div
-                className="absolute w-full h-full flex flex-col items-center justify-center rotate-[-90deg]"
+                className="absolute w-full h-full"
                 draggable
                 onDragStart={handleDragStart}
               >
-                {/* cost‐tint background */}
-                {/* <div
-									className={cn(
-										"absolute inset-0 opacity-50",
-										champion.cost === 1 && "bg-gray-500",
-										champion.cost === 2 && "bg-green-500",
-										champion.cost === 3 && "bg-blue-500",
-										champion.cost === 4 && "bg-purple-500",
-										champion.cost === 5 && "bg-amber-500"
-									)}
-								/> */}
-
-                {/* name */}
-                <p className="z-10 text-xs font-bold text-white">
-                  {champion.name}
-                </p>
-
-                {/* stars */}
-                <div className="absolute bottom-0 left-0 w-full flex justify-center gap-0.5 z-20">
-                  {Array.from({
-                    length: champion.stars || 1,
-                  }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="star bg-warning w-2.5 h-2.5"
-                      title={`${champion.stars || 1}★`}
+                {/* Background champion image/name */}
+                {champion.icon ? (
+                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={`/tft-champion/${champion.icon.toLowerCase()}`}
+                      alt={champion.name}
+                      className="w-full h-full object-cover rotate-[-90deg]"
+                      style={{ objectPosition: "60% 45%" }}
+                      title={champion.name}
                     />
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-xs font-bold text-white">
+                      {champion.name}
+                    </p>
+                  </div>
+                )}
 
-                {/* items */}
-                {champion && champion.items && champion.items.length > 0 && (
-                  <div className="top-1 left-0 w-full flex justify-center gap-0.5 z-20">
-                    {champion.items.map((item: Item, i: number) => (
-                      <div
-                        key={i}
-                        className="w-3 h-3 rounded-sm bg-yellow-500"
-                        title={item.name}
+                {/* Overlay elements (stars and items) */}
+                <div className="absolute w-full h-full flex flex-col items-center justify-center rotate-[-90deg]">
+                  <div className="absolute top-1 w-full flex justify-center gap-0 z-20">
+                    {champion.stars && Array.from({ length : champion.stars }).map((_, i) => (
+                      <Star
+                      key={i}
+                      fill="yellow"
+                      className="h-4 w-4 text-yellow-400"
                       />
                     ))}
                   </div>
-                )}
+
+                  {/* items at the bottom */}
+                  {champion.items && champion.items.length > 0 && (
+                    <div className="absolute bottom-2 w-full flex justify-center gap-0.5 z-20">
+                      {champion.items.map((item: Item, i: number) => (
+                        <img
+                          key={i}
+                          src={`/tft-item/${item.icon}`}
+                          alt={item.name}
+                          className="w-4 h-4 rounded-sm object-cover border-2"
+                          title={item.name}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </ContextMenuTrigger>
 
             <ContextMenuContent>
-              <ContextMenuItem onClick={handleStarUp}>
+              <ContextMenuItem onClick={handleSetStarLevel(1)}>
                 <Star className="mr-2 h-4 w-4" />
-                Star Up ({champion.stars || 1}★)
+                1-Star
+              </ContextMenuItem>
+              <ContextMenuItem onClick={handleSetStarLevel(2)}>
+                <Star className="mr-2 h-4 w-4" />
+                2-Star
+              </ContextMenuItem>
+              <ContextMenuItem onClick={handleSetStarLevel(3)}>
+                <Star className="mr-2 h-4 w-4" />
+                3-Star
               </ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem

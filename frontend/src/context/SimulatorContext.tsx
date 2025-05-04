@@ -319,6 +319,30 @@ function simulatorReducer(
         level: 2, // Reset level to base level 2 when board is cleared
       };
     }
+    case "SET_CHAMPION_STAR_LEVEL": {
+      // First, create the updated boardChampions array
+      const updatedBoardChampions = state.boardChampions.map((boardChampion) => {
+        if (
+          boardChampion &&
+          boardChampion.position.row === action.position.row &&
+          boardChampion.position.col === action.position.col
+        ) {
+          return {
+            ...boardChampion,
+            stars: action.level as 1 | 2 | 3, // Cast to the correct type (1, 2, or 3)
+          };
+        }
+        return boardChampion;
+      });
+    
+      // Then use the updated array for gold and level calculations
+      return {
+        ...state,
+        boardChampions: updatedBoardChampions,
+        gold: calculateTotalGold(updatedBoardChampions), 
+        level: calculateLevel(updatedBoardChampions),
+      };
+    }
 
     default:
       return state;
@@ -409,7 +433,7 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
               const iconFileName = champion.icon
                 .split("/")
                 .pop()
-                ?.replace(/\.TFT_Set\d+\.tex$/, ".png");
+                ?.replace(".tex", ".png")
               return {
                 ...champion,
                 squareIcon: squareIconFileName,
@@ -441,14 +465,17 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
           .filter(
             (item) =>
               setActiveItems.includes(item.apiName) &&
-              item.apiName.startsWith("TFT_Item_"),
+              item.apiName.startsWith("TFT_Item_") &&
+              !item?.apiName?.startsWith("TFT_Item_Grant") &&
+              !item?.apiName?.includes("Anvil"),
           )
           .map((item) => {
             if (item.icon) {
-              const iconFileName = item.icon
+                const iconFileName = item.icon
                 .split("/")
                 .pop()
-                ?.replace(/\.TFT_Set\d+\.tex$/, ".png");
+                ?.replace(/(?:\.TFT_Set\d+)?\.tex$/, ".png");
+              
               return {
                 ...item,
                 icon: iconFileName,

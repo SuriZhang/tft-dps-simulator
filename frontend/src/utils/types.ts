@@ -109,5 +109,6 @@ export type SimulatorAction =
         items: Item[];
         augments: Item[];
       };
-    } // Add action for loading data
+  }
+  | { type: "SET_CHAMPION_STAR_LEVEL"; position: BoardPosition; level: number }
   | { type: "SET_LOADING_ERROR"; error: string }; // Add action for loading error
