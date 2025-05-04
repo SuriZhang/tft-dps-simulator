@@ -131,6 +131,34 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         `col-start-${col} rows-start-${row}`,
       )}
     >
+      {/* Stars positioned outside the hexagon but visually on top */}
+      {champion && champion.stars && (
+        <div className="absolute top-1 left-0 w-full flex justify-center gap-0.5 z-30">
+          {Array.from({ length: champion.stars }).map((_, i) => (
+            <Star
+              key={i}
+              fill="yellow"
+              className="h-4 w-4 text-yellow-400 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Items positioned outside the hexagon at the bottom */}
+      {champion && champion.items && champion.items.length > 0 && (
+        <div className="absolute bottom-1 left-0 w-full flex justify-center gap-0.5 z-30">
+          {champion.items.map((item: Item, i: number) => (
+            <img
+              key={i}
+              src={`/tft-item/${item.icon}`}
+              alt={item.name}
+              className="w-5 h-5 object-cover rounded-sm border border-gray-800 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
+              title={item.name}
+            />
+          ))}
+        </div>
+      )}
+
       <div
         className={cn(
           "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all cursor-pointer",
@@ -157,7 +185,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                 onDragStart={handleDragStart}
               >
                 {/* Background champion image/name */}
-                {champion.icon ? (
+                {champion.icon && (
                   <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     <img
                       src={`/tft-champion/${champion.icon.toLowerCase()}`}
@@ -167,40 +195,11 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                       title={champion.name}
                     />
                   </div>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-xs font-bold text-white">
-                      {champion.name}
-                    </p>
-                  </div>
                 )}
-
-                {/* Overlay elements (stars and items) */}
-                <div className="absolute w-full h-full flex flex-col items-center justify-center rotate-[-90deg]">
-                  <div className="absolute top-1 w-full flex justify-center gap-0 z-20">
-                    {champion.stars && Array.from({ length : champion.stars }).map((_, i) => (
-                      <Star
-                      key={i}
-                      fill="yellow"
-                      className="h-4 w-4 text-yellow-400"
-                      />
-                    ))}
-                  </div>
-
-                  {/* items at the bottom */}
-                  {champion.items && champion.items.length > 0 && (
-                    <div className="absolute bottom-2 w-full flex justify-center gap-0.5 z-20">
-                      {champion.items.map((item: Item, i: number) => (
-                        <img
-                          key={i}
-                          src={`/tft-item/${item.icon}`}
-                          alt={item.name}
-                          className="w-4 h-4 rounded-sm object-cover border-2"
-                          title={item.name}
-                        />
-                      ))}
-                    </div>
-                  )}
+                <div className="absolute inset-0 flex items-center justify-center rotate-[-90deg]">
+                  <p className="text-sm font-semibold text-white">
+                    {champion.name}
+                  </p>
                 </div>
               </div>
             </ContextMenuTrigger>
