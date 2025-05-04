@@ -1,33 +1,22 @@
 import React from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  Legend,
-  CartesianGrid,
-} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Separator } from "./ui/separator"; // Add Separator import
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
+  Tooltip,
   TooltipTrigger,
+  TooltipContent,
 } from "./ui/tooltip";
 import { Info } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 
-const damageStatsPanel = () => {
+const DamageStatsPanel = () => {
   const { state } = useSimulator();
   const { simulationResults, boardChampions } = state;
 
-  console.log("Simulation Results:", simulationResults);
-
-  // Format data for the stacked bar chart
+  // Format data for the damage display
   const chartData = React.useMemo(() => {
     if (!simulationResults) return [];
 
@@ -44,7 +33,9 @@ const damageStatsPanel = () => {
         return {
           name,
           apiName: result.championApiName,
-          // Access properties with correct lowercase naming
+          icon: champion?.icon,
+          cost: champion?.cost || 1,
+          stars: champion?.stars || 1,
           AD: result.damageStats.totalADDamage,
           AP: result.damageStats.totalAPDamage,
           True: result.damageStats.totalTrueDamage,
@@ -57,59 +48,11 @@ const damageStatsPanel = () => {
       .sort((a, b) => b.total - a.total);
   }, [simulationResults, boardChampions]);
 
-  console.log("Chart Data:", chartData);
-
-  // Custom tooltip for the stacked bar chart
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background border border-border p-3 rounded-md shadow-md">
-          <p className="font-bold text-lg mb-1">{label}</p>
-          <p className="text-sm mb-2">DPS: {data.dps.toFixed(1)}</p>
-
-          <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <span className="flex items-center">
-                <div className="w-3 h-3 bg-red-500 mr-2"></div>
-                Physical:
-              </span>
-              <span className="font-medium">{data.AD}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="flex items-center">
-                <div className="w-3 h-3 bg-blue-500 mr-2"></div>
-                Magic:
-              </span>
-              <span className="font-medium">{data.AP}</span>
-            </div>
-
-            <div className="flex justify-between items-center">
-              <span className="flex items-center">
-                <div className="w-3 h-3 bg-purple-500 mr-2"></div>
-                True:
-              </span>
-              <span className="font-medium">{data.True}</span>
-            </div>
-
-            <div className="flex justify-between items-center border-t border-border pt-1 mt-1">
-              <span>Total:</span>
-              <span className="font-bold">{data.total}</span>
-            </div>
-          </div>
-
-          <div className="mt-2 text-xs text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Auto Attacks: {data.autoAttacks}</span>
-              <span>Spell Casts: {data.spellCasts}</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
+  // Calculate the maximum damage for proper scaling
+  const maxDamage = React.useMemo(() => {
+    if (!chartData.length) return 0;
+    return Math.max(...chartData.map((champ) => champ.total));
+  }, [chartData]);
 
   return (
     <Card className="mb-4">
@@ -127,8 +70,11 @@ const damageStatsPanel = () => {
         </TooltipProvider>
       </CardHeader>
 
-      <CardContent>
-        <ScrollArea className="h-[400px] pr-4">
+      {/* Add separator between header and content */}
+      <Separator className="bg-gray-700 border" />
+
+      <CardContent className="p-3">
+        <ScrollArea className="h-[400px]">
           {!simulationResults || simulationResults.length === 0 ? (
             <div className="text-center text-muted-foreground italic py-8">
               {boardChampions.length === 0
@@ -136,137 +82,163 @@ const damageStatsPanel = () => {
                 : "Run a simulation to see damage statistics."}
             </div>
           ) : (
-            <>
-              <div className="h-[300px] mb-8">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <RechartsTooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar
-                      dataKey="AD"
-                      stackId="a"
-                      fill="#ef4444"
-                      name="Physical"
-                    />
-                    <Bar dataKey="AP" stackId="a" fill="#3b82f6" name="Magic" />
-                    <Bar
-                      dataKey="True"
-                      stackId="a"
-                      fill="#8b5cf6"
-                      name="True"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="space-y-4 mt-8">
-                <h3 className="font-semibold text-lg">Detailed Stats</h3>
-                {chartData.map((champion, i) => {
-                  // Find champion details to get cost and stars
-                  const boardChampion = boardChampions.find(
-                    (c) => c.apiName === champion.apiName,
-                  );
-                  const cost = boardChampion?.cost || 1;
-                  const stars = boardChampion?.stars || 1;
-
-                  return (
-                    <div
-                      key={i}
-                      className="border border-border rounded-lg p-3"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
+            <div className="space-y-3">
+              {chartData.map((champion, i) => (
+                <TooltipProvider key={i}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-3 relative cursor-pointer">
+                        {/* Champion portrait with stars - updated to match image 2 */}
+                        <div className="flex-shrink-0 relative">
                           <div
-                            className={cn(
-                              "w-6 h-6 rounded-full flex items-center justify-center mr-2",
-                              getCostColor(cost),
-                            )}
+                            className={`w-12 h-12 border ${getBorderColor(champion.cost)} rounded-sm p-0.5 bg-gray-900 relative overflow-hidden`}
                           >
-                            <span className="text-xs font-bold">{cost}</span>
-                          </div>
-                          <span className="font-medium">{champion.name}</span>
-                          <div className="flex ml-2">
-                            {Array.from({ length: stars }).map((_, i) => (
+                            {champion.icon ? (
+                              <img
+                                src={`/tft-champion/${champion.icon.toLowerCase()}`}
+                                alt={champion.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
                               <div
-                                key={i}
-                                className="w-3 h-3 bg-warning ml-0.5"
+                                className={`w-full h-full ${getBgColor(champion.cost)} flex items-center justify-center`}
+                              >
+                                {champion.name.charAt(0)}
+                              </div>
+                            )}
+
+                            {/* Stars below the champion portrait - styled like image 2 */}
+                            <div className="absolute bottom-0 left-0 right-0 flex justify-center bg-black bg-opacity-50 py-0.5">
+                              {Array.from({ length: champion.stars }).map(
+                                (_, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-2 h-2 bg-yellow-400 mx-0.5"
+                                    style={{
+                                      clipPath:
+                                        "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
+                                    }}
+                                  />
+                                ),
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Damage bar and info - updated to match image 1 */}
+                        <div className="flex-grow">
+                          <div className="flex justify-between mb-1">
+                            <div className="text-sm font-medium">
+                              {champion.name}
+                            </div>
+                            <div className="text-sm font-bold">
+                              {Math.round(champion.total)}
+                            </div>
+                          </div>
+
+                          <div className="h-4 bg-gray-800 rounded-sm w-full overflow-hidden relative">
+                            {/* Bar segments with dynamic width based on damage percentage */}
+                            <div
+                              className="absolute h-full bg-orange-500"
+                              style={{
+                                width: `${(champion.total / maxDamage) * 100}%`,
+                              }}
+                            >
+                              {/* Inside the orange bar, we'll position the blue and white segments */}
+                              <div
+                                className="absolute h-full bg-blue-500 right-0"
                                 style={{
-                                  clipPath:
-                                    "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
+                                  width: `${(champion.AP / champion.total) * 100}%`,
                                 }}
                               />
-                            ))}
+                              <div
+                                className="absolute h-full bg-white right-0"
+                                style={{
+                                  width: `${(champion.True / champion.total) * 100}%`,
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-semibold">
-                            {champion.total} damage
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {champion.dps} DPS
-                          </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="p-3 w-[220px] bg-gray-900 border-gray-700"
+                    >
+                      <div className="font-bold text-lg mb-2">
+                        {champion.name}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-400">DPS</span>
+                          <span className="font-semibold text-white">
+                            {champion.dps.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-400">
+                            Total Damage
+                          </span>
+                          <span className="font-semibold text-white">
+                            {champion.total.toFixed(0)}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex h-6 rounded-md overflow-hidden bg-secondary mb-1">
-                        {champion.total > 0 && (
-                          <>
-                            <div
-                              className="bg-red-500 h-full"
-                              style={{
-                                width: `${(champion.AD / champion.total) * 100}%`,
-                              }}
-                              title={`Physical: ${champion.AD}`}
-                            />
-                            <div
-                              className="bg-blue-500 h-full"
-                              style={{
-                                width: `${(champion.AP / champion.total) * 100}%`,
-                              }}
-                              title={`Magic: ${champion.AP}`}
-                            />
-                            <div
-                              className="bg-purple-500 h-full"
-                              style={{
-                                width: `${(champion.True / champion.total) * 100}%`,
-                              }}
-                              title={`True: ${champion.True}`}
-                            />
-                          </>
-                        )}
+                      <div className="space-y-1.5 mb-3">
+                        <div className="flex justify-between">
+                          <span className="flex items-center text-gray-200">
+                            <div className="w-3 h-3 bg-orange-500 mr-2"></div>
+                            Physical
+                          </span>
+                          <span className="font-medium text-white">
+                            {champion.AD.toFixed(0)}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between">
+                          <span className="flex items-center text-gray-200">
+                            <div className="w-3 h-3 bg-blue-500 mr-2"></div>
+                            Magic
+                          </span>
+                          <span className="font-medium text-white">
+                            {champion.AP.toFixed(0)}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between">
+                          <span className="flex items-center text-gray-200">
+                            <div className="w-3 h-3 bg-white mr-2"></div>
+                            True
+                          </span>
+                          <span className="font-medium text-white">
+                            {champion.True.toFixed(0)}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <div className="flex space-x-3">
-                          <span className="flex items-center">
-                            <div className="w-2 h-2 bg-red-500 mr-1"></div>
-                            {champion.AD}
-                          </span>
-                          <span className="flex items-center">
-                            <div className="w-2 h-2 bg-blue-500 mr-1"></div>
-                            {champion.AP}
-                          </span>
-                          <span className="flex items-center">
-                            <div className="w-2 h-2 bg-purple-500 mr-1"></div>
-                            {champion.True}
+                      <div className="border-t border-gray-700 pt-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Auto Attacks:</span>
+                          <span className="font-medium text-white">
+                            {champion.autoAttacks}
                           </span>
                         </div>
-                        <div>
-                          Auto: {champion.autoAttacks} / Spell:{" "}
-                          {champion.spellCasts}
+
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Spell Casts:</span>
+                          <span className="font-medium text-white">
+                            {champion.spellCasts}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+            </div>
           )}
         </ScrollArea>
       </CardContent>
@@ -274,22 +246,40 @@ const damageStatsPanel = () => {
   );
 };
 
-// Function to get champion cost color
-const getCostColor = (cost: number) => {
+// Function to get champion border color based on cost
+const getBorderColor = (cost: number) => {
   switch (cost) {
     case 1:
-      return "bg-gray-500 text-white";
+      return "border-gray-500";
     case 2:
-      return "bg-green-500 text-white";
+      return "border-green-500";
     case 3:
-      return "bg-blue-500 text-white";
+      return "border-blue-500";
     case 4:
-      return "bg-purple-500 text-white";
+      return "border-purple-500";
     case 5:
-      return "bg-amber-500 text-white";
+      return "border-amber-500";
     default:
-      return "bg-gray-500 text-white";
+      return "border-gray-500";
   }
 };
 
-export default damageStatsPanel;
+// Function to get champion background color based on cost
+const getBgColor = (cost: number) => {
+  switch (cost) {
+    case 1:
+      return "bg-gray-700";
+    case 2:
+      return "bg-green-900";
+    case 3:
+      return "bg-blue-900";
+    case 4:
+      return "bg-purple-900";
+    case 5:
+      return "bg-amber-900";
+    default:
+      return "bg-gray-700";
+  }
+};
+
+export default DamageStatsPanel;

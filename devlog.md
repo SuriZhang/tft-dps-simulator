@@ -389,7 +389,7 @@ Core Logic Implementation & Refactoring:
 - [ ] Refactor Simulation (in internal/simcore/simulation) to return structured results instead of printing [refactor] [medium]
 - [ ] Implement RunSimulation method in SimulationService (get setup, create world, use factory/managers, run sim, return results) [new] [high]
 
-## 20250502-0503
+## 20250502-0504
 
 Mainly focused on getting the frontend up and look nice.
 
@@ -419,12 +419,16 @@ DONE:
 - [x] Frontend Scaffold (main layout, core components)
 - [x] Data loading from json
 - [x] wrote script to download champion square icons from community dragon
+- [x] frontend trait activation
+- [x] mock simulation endpoints, triggered by clicking combat start button, damage stats panel implemented
 
 WIP:
-
-- [ ] simulation endpoints (frontend + backend)
-- [ ] frontend trait activation
+- [ ] basic run simulation endpoints
+- 
 
 TODO:
 
-- [ ] frontend champion, item tooltip polishing
+- [ ] frontend: champion, item, trait tooltip polishing, properly parse html tags in the description/effects
+- [ ] endpoint: add champion to board (show champion stats, trait activation)
+- [ ] endpoint: add item to champion (show updated champion stats)
+- [ ] endpoint: advanced run simulation endpoint, show time sequence data
