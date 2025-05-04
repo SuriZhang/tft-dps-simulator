@@ -2,9 +2,7 @@ import React from "react";
 import HexCell from "./HexCell";
 import { BOARD_ROWS, BOARD_COLS } from "../utils/constants";
 import { useSimulator } from "../context/SimulatorContext";
-import { cn } from "../lib/utils";
 import { Button } from "./ui/button";
-import { Play, Plus } from "lucide-react";
 
 const HexBoard = () => {
   const { state } = useSimulator();
@@ -12,14 +10,20 @@ const HexBoard = () => {
 
   const hexWidth = 80; // Match the width in HexCell.tsx
   const hexHeight = hexWidth * (Math.sqrt(3) / 2); // Calculate height for point-topped hex
-  const verticalSpacing = hexHeight * 1;
+
+  // Add spacing between cells (adjust this value to control spacing)
+  const spacing = 7; // Spacing in pixels
+
+  // Adjust spacing calculations
+  const horizontalSpacing = hexWidth + spacing;
+  const verticalSpacing = hexHeight + 0.5*spacing;
 
   return (
     <div className="relative w-full h-full p-4 bg-indigo-950/20 shadow-inner">
       <div
         className="relative mx-auto"
         style={{
-          width: `${BOARD_COLS * hexWidth + hexWidth / 2}px`,
+          width: `${BOARD_COLS * horizontalSpacing + hexWidth / 2}px`,
           height: `${BOARD_ROWS * verticalSpacing + hexHeight / 4}px`,
         }}
       >
@@ -29,9 +33,9 @@ const HexBoard = () => {
               (c) => c.position.row === row && c.position.col === col,
             );
 
-            // Calculate position for honeycomb layout
-            const xOffset = (row % 2) * (hexWidth / 2);
-            const left = col * hexWidth + xOffset;
+            // Calculate position for honeycomb layout with spacing
+            const xOffset = (row % 2) * (horizontalSpacing / 2);
+            const left = col * horizontalSpacing + xOffset;
             const top = row * verticalSpacing;
 
             return (
@@ -46,7 +50,7 @@ const HexBoard = () => {
           }),
         )}
       </div>
-      <div className="absolute bottom-4 right-4">
+      <div className="absolute bottom-1 right-4">
         <Button
           variant="outline"
           className=" bg-primary/20 text-primary hover:bg-primary/30"

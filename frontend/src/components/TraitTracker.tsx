@@ -281,7 +281,7 @@ const TraitTracker: React.FC = () => {
       </CardContent>
       <CardFooter>
         {/* Gold counter */}
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-2 flex items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
               <span className="text-black font-bold">{state.gold}</span>

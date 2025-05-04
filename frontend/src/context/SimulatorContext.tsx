@@ -422,7 +422,7 @@ export function SimulatorProvider({ children }: { children: ReactNode }) {
         const champions = allChampions
           .filter(
             (champion) =>
-              champion.apiName && champion.apiName.startsWith(targetPrefix),
+              champion.apiName && champion.apiName.startsWith(targetPrefix) && !champion.apiName.includes("NPC"),
           )
           .map((champion) => {
             if (champion.squareIcon && champion.icon) {

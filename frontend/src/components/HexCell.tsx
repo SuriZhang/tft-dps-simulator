@@ -161,7 +161,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
 
       <div
         className={cn(
-          "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all cursor-pointer",
+          "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
           getHexBackground(),
           !champion && selectedChampion
             ? "border-primary border-3 hover:border-opacity-100"
@@ -196,11 +196,11 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                     />
                   </div>
                 )}
-                <div className="absolute inset-0 flex items-center justify-center rotate-[-90deg]">
+                {/* <div className="absolute inset-0 flex items-center justify-center rotate-[-90deg]">
                   <p className="text-sm font-semibold text-white">
                     {champion.name}
                   </p>
-                </div>
+                </div> */}
               </div>
             </ContextMenuTrigger>
 

@@ -15,24 +15,30 @@ const ChampionPool: React.FC = () => {
   const [filterTrait, setFilterTrait] = useState<string | null>(null);
 
   const filteredChampions = useMemo(() => {
-    return champions.filter((champion) => {
-      // Check if search term matches champion name or any trait
-      const searchTermLower = searchTerm.toLowerCase();
-      const nameMatch = champion?.name?.toLowerCase().includes(searchTermLower);
-      const traitMatch = champion.traits.some((trait) =>
-        trait.toLowerCase().includes(searchTermLower),
-      );
+    return champions
+      .filter((champion) => {
+        // Check if search term matches champion name or any trait
+        const searchTermLower = searchTerm.toLowerCase();
+        const nameMatch = champion?.name
+          ?.toLowerCase()
+          .includes(searchTermLower);
+        const traitMatch = champion.traits.some((trait) =>
+          trait.toLowerCase().includes(searchTermLower),
+        );
 
-      // Apply cost filter
-      const costMatch = filterCost === null || champion.cost === filterCost;
+        // Apply cost filter
+        const costMatch = filterCost === null || champion.cost === filterCost;
 
-      // Apply trait filter dropdown (separate from search)
-      const traitFilterMatch =
-        filterTrait === null || champion.traits.includes(filterTrait);
+        // Apply trait filter dropdown (separate from search)
+        const traitFilterMatch =
+          filterTrait === null || champion.traits.includes(filterTrait);
+        
 
-      // Show champions that match by name OR trait AND match the filters
-      return (nameMatch || traitMatch) && costMatch && traitFilterMatch;
-    });
+        // Show champions that match by name OR trait AND match the filters
+        return (nameMatch || traitMatch) && costMatch && traitFilterMatch &&
+          champion.cost <= 6 && !champion.apiName.includes("Summon"); // exclude trait spawns
+      })
+      .sort((a, b) => a.cost - b.cost); // Sort by cost (ascending)
   }, [champions, searchTerm, filterCost, filterTrait]);
 
   return (
