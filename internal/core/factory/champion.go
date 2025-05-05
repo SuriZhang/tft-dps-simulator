@@ -150,6 +150,11 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 		return 0, fmt.Errorf("failed to add State component to %s: %w", championData.Name, err)
 	}
 
+	err = cf.world.AddComponent(entity, components.NewDamageStats())
+	if err != nil {
+		return 0, fmt.Errorf("failed to add DamageStats component to %s: %w", championData.Name, err)
+	}
+
 	// If we reached here, all essential components were added successfully
 	return entity, nil
 }

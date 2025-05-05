@@ -11,14 +11,6 @@ const HexBoard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
-  // const fetchData = () => {
-  //   fetch(`http://localhost:${import.meta.env.VITE_PORT}/`)
-  //     .then((response) => response.text())
-  //     .then((data) => setMessage(data))
-  //     .catch((error) => console.error("Error fetching data:", error));
-  // };
-
   // Function to handle the combat simulation
   const handleStartCombat = async () => {
     // Reset state
@@ -28,7 +20,7 @@ const HexBoard = () => {
     try {
       // Call the mock endpoint
       const response = await fetch(
-        `http://localhost:${import.meta.env.VITE_PORT}/api/v1/simulation/mock-run`,
+        `http://localhost:${import.meta.env.VITE_PORT}/api/v1/simulation/run`,
         {
           method: "POST",
           headers: {
@@ -44,6 +36,16 @@ const HexBoard = () => {
           }),
         },
       );
+
+      // console request body
+      console.log("Request body:", {
+        boardChampions: boardChampions.map((champion) => ({
+          apiName: champion.apiName,
+          stars: champion.stars,
+          position: champion.position,
+          items: champion.items || [],
+        })),
+      });
 
       if (!response.ok) {
         throw new Error(`Server responded with status: ${response.status}`);

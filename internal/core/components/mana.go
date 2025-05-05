@@ -98,5 +98,5 @@ func (m *Mana) IsFull() bool {
 }
 
 func (m *Mana) CanCastSpell() bool {
-	return m.Current > m.Max && m.Max != 0.0
+	return m.Current >= m.Max && m.Max != 0.0
 }

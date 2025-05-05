@@ -1,5 +1,9 @@
 package service
 
+import (
+    "tft-dps-simulator/internal/core/components"
+)
+
 // MockRunSimulation returns a fixed dummy response regardless of input
 func (s *SimulationService) MockRunSimulation(requestChampions []BoardChampion) (*RunSimulationResponse, error) {
     // Create dummy response
@@ -7,7 +11,7 @@ func (s *SimulationService) MockRunSimulation(requestChampions []BoardChampion) 
         Results: []ChampionSimulationResult{
             {
                 ChampionApiName: "TFT14_Jax",
-                DamageStats: DamageStats{
+                DamageStats: components.DamageStats{
                     TotalDamage:           3500.0,
                     DamagePerSecond:       116.67,
                     TotalADDamage:         2200.0,
@@ -19,7 +23,7 @@ func (s *SimulationService) MockRunSimulation(requestChampions []BoardChampion) 
             },
             {
                 ChampionApiName: "TFT14_KogMaw",
-                DamageStats: DamageStats{
+                DamageStats: components.DamageStats{
                     TotalDamage:           4200.0,
                     DamagePerSecond:       140.0,
                     TotalADDamage:         2800.0,

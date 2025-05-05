@@ -1,5 +1,9 @@
 package service
 
+import (
+	"tft-dps-simulator/internal/core/components"
+)
+
 // BoardPosition matches frontend/src/utils/types.ts
 type BoardPosition struct {
 	Row int `json:"row"`
@@ -8,7 +12,7 @@ type BoardPosition struct {
 
 // Item matches frontend/src/utils/types.ts (simplified for simulation input)
 type Item struct {
-	ApiName string `json:"id"` // Use ApiName as identifier
+	ApiName string `json:"apiName"` // Use ApiName as identifier
 	// Name, Description, Image, Type might not be strictly needed for the simulation input
 	// if the core simulation logic can look them up by ID from its loaded data.
 	// Let's keep it simple for now and assume ID is sufficient.
@@ -30,25 +34,10 @@ type RunSimulationRequest struct {
 	// SelectedAugments []Augment `json:"selectedAugments"`
 }
 
-// DamageStats holds the damage breakdown for a champion
-type DamageStats struct {
-	TotalDamage           float64 `json:"totalDamage"`
-	DamagePerSecond       float64 `json:"dps"`
-	TotalADDamage         float64 `json:"totalADDamage"`
-	TotalAPDamage         float64 `json:"totalAPDamage"`
-	TotalTrueDamage       float64 `json:"totalTrueDamage"`
-	TotalAutoAttackCounts int     `json:"totalAutoAttackCounts"`
-	TotalSpellCastCounts  int     `json:"totalSpellCastCounts"`
-	// Could add more breakdown later:
-	// AutoAttackDamage float64 `json:"autoAttackDamage"`
-	// SpellDamage      float64 `json:"spellDamage"`
-	// TrueDamage       float64 `json:"trueDamage"`
-}
-
 // ChampionSimulationResult holds the results for a single champion
 type ChampionSimulationResult struct {
 	ChampionApiName  string      `json:"championApiName"` // Match the ApiName sent in the request
-	DamageStats DamageStats `json:"damageStats"`
+	DamageStats components.DamageStats `json:"damageStats"`
 }
 
 // RunSimulationResponse is the structure of the response body

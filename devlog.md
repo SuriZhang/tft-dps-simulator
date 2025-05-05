@@ -414,6 +414,174 @@ Future TODOs (nice-to-have frontend animations using Animejs):
 
 - Slide stat panels or damage breakdowns into view with ease-in curves.
 
+State Management between frontend, backend and database
+TFT Simulator State Management Architecture
+Here's a diagram showing how the frontend, backend, and Redis database interact to maintain synchronized state:
+
+```
+┌─────────────────────────────────────────┐       ┌─────────────────────────────────────────┐       ┌─────────────────────────┐
+│                FRONTEND                 │       │                BACKEND                  │       │        REDIS DB          │
+│     (React with SimulatorContext)       │       │          (Go Fiber API)                │       │                         │
+├─────────────────────────────────────────┤       ├─────────────────────────────────────────┤       ├─────────────────────────┤
+│                                         │       │                                         │       │                         │
+│  ┌─────────────┐     ┌─────────────┐    │       │  ┌─────────────┐     ┌─────────────┐    │       │  ┌─────────────────┐    │
+│  │   State     │     │   Actions   │    │       │  │   Handlers  │     │  Services   │    │       │  │ Session:{id}:   │    │
+│  │ Management  │◄───►│ & Reducers  │    │       │  │ (API Route) │◄───►│             │    │       │  │     board       │    │
+│  └─────────────┘     └─────────────┘    │       │  └─────────────┘     └──────┬──────┘    │       │  └─────────────────┘    │
+│         │                   ▲           │       │         ▲                   │           │       │          ▲               │
+│         │                   │           │       │         │                   │           │       │          │               │
+│         ▼                   │           │       │         │                   │           │       │          │               │
+│  ┌─────────────┐            │           │       │         │                   ▼           │       │  ┌─────────────────┐    │
+│  │  React UI   │────────────┘           │       │         │            ┌─────────────┐    │       │  │ Session:{id}:   │    │
+│  │ Components  │                        │       │         │            │Session Mgr. │    │       │  │    traits       │    │
+│  └─────────────┘                        │       │         │            └──────┬──────┘    │       │  └─────────────────┘    │
+│                                         │       │         │                   │           │       │          ▲               │
+└────────────────┬────────────────────────┘       └─────────┬─────────────┬─────┘           │       │          │               │
+                 │                                          │             │                 │       │          │               │
+                 │                                          │             │                 │       │  ┌─────────────────┐    │
+                 │                                          │             ▼                 │       │  │ Session:{id}:   │    │
+                 │                                          │      ┌─────────────┐          │       │  │     stats       │    │
+                 │                                          │      │ Simulation  │          │       │  └─────────────────┘    │
+                 │                                          │      │ Service     │          │       │          ▲               │
+                 │                                          │      └──────┬──────┘          │       │          │               │
+                 │                                          │             │                 │       │          │               │
+                 │                                          │             ▼                 │       │  ┌─────────────────┐    │
+                 │                                          │      ┌─────────────┐          │       │  │ Session:{id}:   │    │
+                 │                                          │      │  World &    │          │       │  │    results      │    │
+                 │                                          │      │  Systems    │          │       │  └─────────────────┘    │
+                 │                                          │      └─────────────┘          │       │                         │
+                 │                                          │                               │       │                         │
+└────────────────┼──────────────────────────────────────────┼───────────────────────────────┼───────┼─────────────────────────┘
+                 │                                          │                               │
+                 │                                          │                               │
+                 ▼                                          ▼                               ▼
+          ┌──────────────┐                         ┌──────────────┐                  ┌──────────────┐
+          │   HTTP/S     │                         │   HTTP/S     │                  │ Redis Client │
+          │   Request    │◄────────────────────────┤   Response   │◄─────────────────┤    Access    │
+          └──────────────┘                         └──────────────┘                  └──────────────┘
+```
+Key Synchronization Flows
+1. Session Initialization
+```
+Frontend                              Backend                                Redis
+    |                                   |                                     |
+    |  1. Initialize Session Request    |                                     |
+    |---------------------------------->|                                     |
+    |                                   |  2. Create new session with UUID    |
+    |                                   |------------------------------------>|
+    |                                   |                                     |
+    |                                   |  3. Store empty board state         |
+    |                                   |------------------------------------>|
+    |                                   |                                     |
+    |  4. Return Session ID             |                                     |
+    |<----------------------------------|                                     |
+    |                                   |                                     |
+    |  5. Store Session ID in context   |                                     |
+    |----------------------------       |                                     |
+    |                          |        |                                     |
+    |<---------------------------       |                                     |
+    |                                   |                                     |
+```
+2. Add Champion to Board
+```
+Frontend                              Backend                                Redis
+    |                                   |                                     |
+    |  1. Add Champion Request          |                                     |
+    |  (sessionId, championData)        |                                     |
+    |---------------------------------->|                                     |
+    |                                   |  2. Get current board state         |
+    |                                   |------------------------------------>|
+    |                                   |                                     |
+    |                                   |  3. Return board state              |
+    |                                   |<------------------------------------|
+    |                                   |                                     |
+    |                                   |  4. Update board with new champion  |
+    |                                   |------------------------------------>|
+    |                                   |                                     |
+    |                                   |  5. Calculate trait activations     |
+    |                                   |-------------------                  |
+    |                                   |                  |                  |
+    |                                   |<------------------                  |
+    |                                   |                                     |
+    |                                   |  6. Calculate champion stats        |
+    |                                   |-------------------                  |
+    |                                   |                  |                  |
+    |                                   |<------------------                  |
+    |                                   |                                     |
+    |  7. Return updated champion stats |                                     |
+    |  and trait activations            |                                     |
+    |<----------------------------------|                                     |
+    |                                   |                                     |
+    |  8. Update frontend state         |                                     |
+    |-------------------                |                                     |
+    |                  |                |                                     |
+    |<------------------                |                                     |
+    |                                   |                                     |
+```
+3. Run Basic Simulation
+
+```
+Frontend                              Backend                                Redis
+    |                                   |                                     |
+    |  1. Run Simulation Request        |                                     |
+    |  (sessionId)                      |                                     |
+    |---------------------------------->|                                     |
+    |                                   |  2. Get board state                 |
+    |                                   |------------------------------------>|
+    |                                   |                                     |
+    |                                   |  3. Return board state              |
+    |                                   |<------------------------------------|
+    |                                   |                                     |
+    |                                   |  4. Create simulation world         |
+    |                                   |-------------------                  |
+    |                                   |                  |                  |
+    |                                   |<------------------                  |
+    |                                   |                                     |
+    |                                   |  5. Run simulation                  |
+    |                                   |-------------------                  |
+    |                                   |                  |                  |
+    |                                   |<------------------                  |
+    |                                   |                                     |
+    |                                   |  6. Store simulation results        |
+    |                                   |------------------------------------>|
+    |                                   |                                     |
+    |  7. Return damage statistics      |                                     |
+    |<----------------------------------|                                     |
+    |                                   |                                     |
+    |  8. Update UI with results        |                                     |
+    |-------------------                |                                     |
+    |                  |                |                                     |
+    |<------------------                |                                     |
+    |                                   |                                     |
+```
+State Synchronization Features
+Session-based State Management
+
+Each user session has a unique ID stored in Redis
+All state changes are tied to this session ID
+Session data expires after a set period (e.g., 30 minutes)
+Stateless Backend API
+
+Backend doesn't maintain state between requests
+All state is retrieved from/stored in Redis
+Each request is self-contained with session ID
+Frontend State Mirror
+
+Frontend maintains a local copy of state for UI responsiveness
+All state modifications go through the backend API
+Frontend state is updated based on API responses
+World/Board Conversion
+
+Backend converts between Redis board state and ECS World
+Simulation runs on the ECS World model
+Results are converted back to JSON for storage/response
+Optimistic Updates
+
+Frontend can optimistically update UI before backend confirms
+Backend responses validate and correct any discrepancies
+Error handling accounts for sync failures
+By following this architecture, the simulator maintains consistent state across the frontend, backend, and database, ensuring users experience a responsive and reliable application.
+
 DONE:
 
 - [x] Frontend Scaffold (main layout, core components)
@@ -421,10 +589,8 @@ DONE:
 - [x] wrote script to download champion square icons from community dragon
 - [x] frontend trait activation
 - [x] mock simulation endpoints, triggered by clicking combat start button, damage stats panel implemented
+- [x] basic run simulation endpoints
 
-WIP:
-- [ ] basic run simulation endpoints
-- 
 
 TODO:
 

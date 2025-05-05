@@ -193,6 +193,26 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
         }
     }
 
+    // Update attacker's DamageStats
+    attackerDamageStats, okStats := s.world.GetDamageStats(attacker)
+    if okStats {
+        attackerDamageStats.TotalDamage += finalDamageToApply
+        switch evt.DamageSource {
+        case "Attack":
+            attackerDamageStats.AutoAttackDamage += finalDamageToApply
+        case "Spell":
+            attackerDamageStats.SpellDamage += finalDamageToApply
+        }
+
+        switch evt.DamageType {
+        case "AD":
+            attackerDamageStats.TotalADDamage += finalDamageToApply
+        case "AP":
+            attackerDamageStats.TotalAPDamage += finalDamageToApply
+        case "True":
+            attackerDamageStats.TotalTrueDamage += finalDamageToApply
+        }
+    }
     // Target gains mana on being hit (regardless of source?)
     // TODO: Revisit mana lock during cast
     targetMana, okMana := s.world.GetMana(target)

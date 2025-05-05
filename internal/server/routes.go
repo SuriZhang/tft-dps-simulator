@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"tft-dps-simulator/internal/service" // Import the service package
+	"tft-dps-simulator/internal/service" 
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"

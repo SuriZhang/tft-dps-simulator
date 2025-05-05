@@ -28,6 +28,7 @@ type World struct {
 	Spell                    map[Entity]*components.Spell
 	Crit                     map[Entity]*components.Crit
 	State                    map[Entity]*components.State
+	DamageStats 		  map[Entity]*components.DamageStats
 	// --- Dynamic Item Effect Components ---
 	ArchangelsEffects        map[Entity]*items.ArchangelsEffect
 	QuicksilverEffects       map[Entity]*items.QuicksilverEffect
@@ -59,6 +60,7 @@ func NewWorld() *World {
 		Spell:                    make(map[Entity]*components.Spell),
 		Crit:                     make(map[Entity]*components.Crit),
 		State: make(map[Entity]*components.State),
+		DamageStats: make(map[Entity]*components.DamageStats),
 		// --- Dynamic Item Effect Components ---
 		ArchangelsEffects:        make(map[Entity]*items.ArchangelsEffect),
 		QuicksilverEffects:       make(map[Entity]*items.QuicksilverEffect),
@@ -94,6 +96,7 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.Spell, e)
 	delete(w.Crit, e)
 	delete(w.State, e)
+	delete(w.DamageStats, e)
 	// --- Dynamic Item Effect Components ---
 	delete(w.ArchangelsEffects, e)
 	delete(w.QuicksilverEffects, e)
@@ -171,6 +174,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.State[e] = &c
 	case *components.State:
 		w.State[e] = c
+	case components.DamageStats:
+		w.DamageStats[e] = &c
+	case *components.DamageStats:
+		w.DamageStats[e] = c
 	// --- Dynamic Item Effect Components ---
 	case items.ArchangelsEffect:
 		w.ArchangelsEffects[e] = &c
@@ -248,6 +255,9 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.State{}):
 		comp, ok := w.State[e]
 		return comp, ok
+	case reflect.TypeOf(components.DamageStats{}):
+		comp, ok := w.DamageStats[e]
+		return comp, ok
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsEffect{}):
 		comp, ok := w.ArchangelsEffects[e]
@@ -308,6 +318,8 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.Crit, e)
 	case reflect.TypeOf(components.State{}):
 		delete(w.State, e)
+	case reflect.TypeOf(components.DamageStats{}):
+		delete(w.DamageStats, e)
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsEffect{}):
 		delete(w.ArchangelsEffects, e)
@@ -418,6 +430,8 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.Crit)
 	case reflect.TypeOf(components.State{}):
 		return len(w.State)
+	case reflect.TypeOf(components.DamageStats{}):
+		return len(w.DamageStats)
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsEffect{}):
 		return len(w.ArchangelsEffects)
@@ -508,6 +522,11 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(components.State{}):
 		entities = make([]Entity, 0, len(w.State))
 		for e := range w.State {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(components.DamageStats{}):
+		entities = make([]Entity, 0, len(w.DamageStats))
+		for e := range w.DamageStats {
 			entities = append(entities, e)
 		}
 	// --- Dynamic Item Effect Components ---
@@ -637,6 +656,12 @@ func (w *World) GetCrit(e Entity) (*components.Crit, bool) {
 // GetState returns the State component for an entity, type-safe.
 func (w *World) GetState(e Entity) (*components.State, bool) {
 	comp, ok := w.State[e]
+	return comp, ok
+}
+
+// GetDamageStats returns the DamageStats component for an entity, type-safe.
+func (w *World) GetDamageStats(e Entity) (*components.DamageStats, bool) {
+	comp, ok := w.DamageStats[e]
 	return comp, ok
 }
 
