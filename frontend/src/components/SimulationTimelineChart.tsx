@@ -18,7 +18,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     
     return (
       <div className="bg-background/95 border rounded-md p-2 shadow-md max-w-[400px] max-h-[300px] overflow-auto">
-        <p className="font-medium">{`Time: ${label.toFixed(2)}s`}</p>
+        <p className="font-medium">{`Time: ${label.toFixed(3)}s`}</p>
         <p>{`Champion: ${data.championName}`}</p>
         <p>{`Damage: ${data.cumulativeDamage.toFixed(2)}s`}</p>
         {data.eventType && (
@@ -58,11 +58,11 @@ const CustomDot = (props: any) => {
   }
   if (eventType.includes("AttackLandedEvent")) {
     fillColor = "#4ecdc4"; // Teal for attack landed
-    radius = 4;
+    radius = 3;
   }
   if (eventType.includes("SpellLandedEvent")) {
     fillColor = "#ffe66d"; // Yellow for spell landed
-    radius = 4;
+    radius = 3;
   }
   
   return (
@@ -238,7 +238,7 @@ const SimulationTimelineChart = () => {
 
   return (
     <div className="w-full h-[400px] mt-4">
-      <h2 className="text-lg font-medium mb-4">Damage Timeline</h2>
+      <h2 className="text-lg font-medium mb-2">Damage Timeline</h2>
       <p>assumption: attack windup/wind-down takes 0s, cast windup/wind-down takes 1s each</p>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart

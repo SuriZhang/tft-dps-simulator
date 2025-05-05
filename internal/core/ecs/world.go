@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sync/atomic"
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/components/items"
@@ -12,6 +13,7 @@ import (
 
 // World contains all entities and their components, stored in type-specific maps.
 type World struct {
+	nextEntityId uint32
 	// --- Component Maps ---
 	// Using pointers (*components.Type) allows checking for nil to see if an entity has the component.
 	Health                   map[Entity]*components.Health
@@ -45,6 +47,7 @@ type World struct {
 // NewWorld creates a new empty world, initializing all component maps.
 func NewWorld() *World {
 	return &World{
+		nextEntityId: 0,
 		// Initialize maps
 		Health:                   make(map[Entity]*components.Health),
 		Mana:                     make(map[Entity]*components.Mana),
@@ -76,7 +79,8 @@ func NewWorld() *World {
 // NewEntity generates a new unique entity ID using the global NewEntity function.
 // Note: This only reserves the ID; components must be added separately.
 func (w *World) NewEntity() Entity {
-	return NewEntity()
+    // Use the world's internal atomic counter
+    return Entity(atomic.AddUint32(&w.nextEntityId, 1))
 }
 
 // RemoveEntity removes an entity and all its associated components from the world.
