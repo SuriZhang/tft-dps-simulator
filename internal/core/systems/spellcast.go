@@ -41,7 +41,6 @@ func (s *SpellCastSystem) HandleEvent(evt interface{}) {
 		s.handleSpellLanded(event)
     case eventsys.SpellRecoveryEndEvent:
         s.handleSpellRecoveryEnd(event)
-	// TODO: Add handler for SpellRecoveryEndEvent
 	}
 }
 
@@ -131,7 +130,7 @@ func (s *SpellCastSystem) handleSpellRecoveryEnd(evt eventsys.SpellRecoveryEndEv
     recoveryEndTime := evt.Timestamp
 
     // --- Get Components ---
-    _, okState := s.world.GetState(caster)
+    state, okState := s.world.GetState(caster)
     _, okSpell := s.world.GetSpell(caster)
     health, okHealth := s.world.GetHealth(caster) // Check if caster is still alive
 
@@ -141,6 +140,8 @@ func (s *SpellCastSystem) handleSpellRecoveryEnd(evt eventsys.SpellRecoveryEndEv
     }
 
     log.Printf("SpellCastSystem (RecoveryEnd): Entity %d finished spell recovery at %.3fs. Triggering action check.", caster, recoveryEndTime)
+
+	log.Printf("DEBUG (SpellCastSystem (RecoveryEnd)): state: %+v", state)
 
     // Enqueue ChampionActionEvent for the Action System to decide next step (AttackCooldown or AttackStart)
 	actionCheckEvent := eventsys.ChampionActionEvent{

@@ -181,18 +181,6 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
     }
 
     // --- Mana Gain ---
-    // Attacker gains mana only if source was "Attack"
-    if evt.DamageSource == "Attack" {
-        attackerMana, okMana := s.world.GetMana(attacker)
-        if okMana {
-            manaGain := 10.0 // Standard TFT mana gain per auto-attack
-            attackerMana.AddCurrentMana(manaGain)
-            log.Printf("DamageSystem (onDamageApplied): Attacker %s gains %.1f mana (now %.1f / %.1f)\n", attackerName, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
-        } else {
-             log.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attackerName)
-        }
-    }
-
     // Update attacker's DamageStats
     attackerDamageStats, okStats := s.world.GetDamageStats(attacker)
     if okStats {

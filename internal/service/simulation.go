@@ -120,12 +120,12 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 		archievedEvents = append(archievedEvents, archivedEvent)
 	}
 
-	for _, event := range archievedEvents {
-		log.Printf("%s: %+v", event.EventType, event.EventItem)
-	}
+	// for _, event := range archievedEvents {
+	// 	log.Printf("%s: %+v", event.EventType, event.EventItem)
+	// }
 
 	// 6. Process Results
-	log.Println("Processing simulation results (using placeholders)...")
+	log.Println("Processing simulation results")
 	// Use service types instead of server types
 	results := []ChampionSimulationResult{}
 

@@ -22,8 +22,10 @@ type State struct {
 	CurrentState  ChampionActionState // Current action state (e.g., Idle, Attack, Cast)
 
 	// Timing for Current Action State
-	ActionStartTime float64 // Simulation time when the current action state began
-	ActionDuration  float64 // Expected duration of the current action state (e.g., cast time, startup time)
+	ActionStartTime float64 
+	PreviousActionStartTime float64 
+	ActionDuration  float64 
+	PreviousActionDuration float64
 }
 
 // NewState creates a default State component.
@@ -47,6 +49,8 @@ func (s *State) GetIsStunned() bool {
 // Needs current simulation time and calculated startup duration.
 func (s *State) StartAttack(currentTime, startupDuration float64) {
 	s.PreviousState = s.CurrentState
+	s.PreviousActionStartTime = s.ActionStartTime
+	s.PreviousActionDuration = s.ActionDuration
 	s.CurrentState = AttackStartingUp
 	s.ActionStartTime = currentTime
 	s.ActionDuration = startupDuration
@@ -54,6 +58,8 @@ func (s *State) StartAttack(currentTime, startupDuration float64) {
 
 func (s *State) StartAttackRecovery(currentTime, recoveryDuration float64) {
 	s.PreviousState = s.CurrentState
+	s.PreviousActionStartTime = s.ActionStartTime
+	s.PreviousActionDuration = s.ActionDuration
 	s.CurrentState = AttackRecovering
 	s.ActionStartTime = currentTime
 	s.ActionDuration = recoveryDuration
@@ -61,6 +67,8 @@ func (s *State) StartAttackRecovery(currentTime, recoveryDuration float64) {
 
 func (s *State) StartAttackCooldown(currentTime, cooldownDuration float64) {
 	s.PreviousState = s.CurrentState
+	s.PreviousActionStartTime = s.ActionStartTime
+	s.PreviousActionDuration = s.ActionDuration
 	s.CurrentState = AttackCoolingDown
 	s.ActionStartTime = currentTime
 	s.ActionDuration = cooldownDuration
@@ -70,6 +78,8 @@ func (s *State) StartAttackCooldown(currentTime, cooldownDuration float64) {
 // Needs current simulation time and calculated cast duration.
 func (s *State) StartCast(currentTime, castDuration float64) {
 	s.PreviousState = s.CurrentState
+	s.PreviousActionStartTime = s.ActionStartTime
+	s.PreviousActionDuration = s.ActionDuration
 	s.CurrentState = Casting
 	s.ActionStartTime = currentTime
 	s.ActionDuration = castDuration
@@ -77,6 +87,8 @@ func (s *State) StartCast(currentTime, castDuration float64) {
 
 func (s *State) StartActionCheck(currentTime float64) {
     s.PreviousState = s.CurrentState
+	s.PreviousActionStartTime = s.ActionStartTime
+	s.PreviousActionDuration = s.ActionDuration
     s.CurrentState = Idle
     s.ActionStartTime = currentTime
     s.ActionDuration = 0.0 // No action duration in idle state

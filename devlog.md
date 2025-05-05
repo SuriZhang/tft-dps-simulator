@@ -602,5 +602,7 @@ let's do simple endpoints first.
 
 DONE Today:
 - [x] basic run simulation endpoints
+- [x] bug: backend ChampionAction system does not correctly schedule remaining attack CD time after a spell cast:
+ caused by attacker mana gain handled in damage system, sometime DamageAppliedEvent is not handled before ActionCheckEvent, so a champion with full mana goes into attack CD state, hence simulator produces unstable attack times.
 
 - [ ] bug: frontend, backend needs a entityId, otherwise the current code cannot handle well multiple instance of the same champion

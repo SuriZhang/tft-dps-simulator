@@ -174,6 +174,16 @@ func (s *AutoAttackSystem) handleAttackFired(evt eventsys.AttackFiredEvent) {
 		log.Printf("AutoAttackSystem (Fired): Target %d or Attacker %d missing position at %.3fs. Attack fizzles.", target, attacker, fireTime)
 		// Attack fizzles, recovery/cooldown still happens.
 	}
+
+	attackerMana, okMana := s.world.GetMana(attacker)
+	if okMana {
+		manaGain := 10.0 // Standard TFT mana gain per auto-attack
+		attackerMana.AddCurrentMana(manaGain)
+		log.Printf("DamageSystem (onDamageApplied): Attacker %s gains %.1f mana (now %.1f / %.1f)\n", attacker, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
+	} else {
+		log.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attacker)
+	}
+
 	attack.IncrementAttackCount()
 	state.StartAttackRecovery(fireTime, attack.GetCurrentAttackRecovery())
 }
@@ -255,7 +265,7 @@ func (s *AutoAttackSystem) handleAttackCooldownEnd(evt eventsys.AttackCooldownEn
 	entity := evt.Entity
 	cooldownEndTime := evt.Timestamp
 
-	_, okState := s.world.GetState(entity)
+	state, okState := s.world.GetState(entity)
 	health, okHealth := s.world.GetHealth(entity)
 
 	if !okState || !okHealth || health.GetCurrentHP() <= 0 {
@@ -264,6 +274,8 @@ func (s *AutoAttackSystem) handleAttackCooldownEnd(evt eventsys.AttackCooldownEn
 	}
 
 	log.Printf("AutoAttackSystem (CooldownEnd): Entity %d finished cooldown at %.3fs. Triggering action check.", entity, cooldownEndTime)
+
+	log.Printf("DEBUG (AutoAttackSystem (CooldownEnd)): state: %+v", state)
 
 	// Enqueue ChampionActionEvent for the Action System to decide next step (Cast or AttackStart)
 	actionCheckEvent := eventsys.ChampionActionEvent{

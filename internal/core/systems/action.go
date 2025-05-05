@@ -76,8 +76,9 @@ func (s *ChampionActionSystem) decideNextAction(entity ecs.Entity, currentTime f
 	}
 
 	// 2. Check first action (attack or spell)
-	if state.CurrentState == components.Idle && state.PreviousState == components.Idle && currentTime == 0.0 || state.PreviousState == components.AttackCoolingDown {
+	if (state.CurrentState == components.Idle && state.PreviousState == components.Idle && currentTime == 0.0) || state.PreviousState == components.AttackCoolingDown {
 		// Check if mana is full and spell is available
+		log.Printf("DEBUG: 1111")
 		if mana.CanCastSpell() {
 			log.Printf("ActionSystem: Entity %d casting spell at %.3fs.", entity, currentTime)
 			state.StartCast(currentTime, spell.GetCastStartUp() + spell.GetCastRecovery()) 
@@ -113,10 +114,14 @@ func (s *ChampionActionSystem) decideNextAction(entity ecs.Entity, currentTime f
 	// 4. Check if previousState is Casting
 	if state.PreviousState == components.Casting && state.CurrentState == components.Idle {
 		// Check if attack cooldown is over
-		if state.ActionDuration <= attack.GetCurrentAttackCooldown() {
+		if state.PreviousActionDuration <= attack.GetCurrentAttackCooldown() {
+			log.Printf("DEBUG: state.ActionDuration: %.3fs, attack cooldown: %.3fs", state.ActionDuration, attack.GetCurrentAttackCooldown())
 			log.Printf("ActionSystem: Entity %d start attack coolingdown at %.3fs.", entity, currentTime)
 
-			remainingCooldown := attack.GetCurrentAttackCooldown() - state.ActionDuration
+			
+			remainingCooldown := attack.GetCurrentAttackCooldown() - state.PreviousActionDuration
+			log.Printf("DEBUG: Attack cooldown remaining: %.3fs, normal attack cooldown: %.3fs", remainingCooldown, attack.GetCurrentAttackCooldown())
+
 			state.StartAttackCooldown(currentTime, remainingCooldown)
 			s.eventBus.Enqueue(eventsys.AttackCooldownStartEvent{Entity: entity, Timestamp: currentTime}, currentTime)
 			return

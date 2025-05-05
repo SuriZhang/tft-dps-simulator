@@ -131,9 +131,9 @@ const SimulationTimelineChart = () => {
       }
 
       // Skip specific event types we don't want to plot dots for
-      if (eventType.includes("AttackCooldown") || eventType.includes("ChampionActionEvent")) {
-        return; 
-      }
+      // if (eventType.includes("AttackCooldown") || eventType.includes("ChampionActionEvent")) {
+      //   return; 
+      // }
 
       const championName = entityToChampionMap.get(relevantEntityId).name;
       const championEvents = championDamageData.get(relevantEntityId) || [];
@@ -239,6 +239,7 @@ const SimulationTimelineChart = () => {
   return (
     <div className="w-full h-[400px] mt-4">
       <h2 className="text-lg font-medium mb-4">Damage Timeline</h2>
+      <p>assumption: attack windup/wind-down takes 0s, cast windup/wind-down takes 1s each</p>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
