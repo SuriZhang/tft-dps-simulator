@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"; // Import useState
+import React, { useMemo, useState } from "react"; // Ensure useState is imported
 import { useSimulator } from "../context/SimulatorContext";
 import {
   LineChart,
@@ -41,31 +41,56 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-// Custom dot component for events
+// Custom dot component for events - Now aware of global hover state
 const CustomDot = (props: any) => {
-  const { cx, cy, payload } = props;
+  // Destructure props, including payload and the new hoveredInfo/championColor
+  const { cx, cy, payload, hoveredInfo, championColor } = props;
 
   // Only show dots for events with a type
   if (!payload.eventType) return null;
 
+  // Determine if this specific dot is the one being hovered
+  const isActive =
+    hoveredInfo?.championId === payload.championId &&
+    // Use a small tolerance for timestamp comparison due to potential float precision issues
+    Math.abs(hoveredInfo?.timestamp - payload.timestamp) < 0.001;
+
   const eventType = payload.eventType;
-  let fillColor = "#8884d8"; // Default color (e.g., purple)
-  let radius = 2;
+  let baseFillColor = "#8884d8"; // Default color
+  let baseRadius = 2;
 
+  // Determine base appearance based on event type
   if (eventType.includes("DamageAppliedEvent")) {
-    fillColor = "#ff6b6b"; // Red for damage
-    radius = 4;
+    baseFillColor = "#ff6b6b"; // Red for damage
+    baseRadius = 4;
+  } else if (eventType.includes("AttackLandedEvent")) {
+    baseFillColor = "#4ecdc4"; // Teal for attack landed
+    baseRadius = 3;
+  } else if (eventType.includes("SpellLandedEvent")) {
+    baseFillColor = "#ffe66d"; // Yellow for spell landed
+    baseRadius = 3;
   }
-  if (eventType.includes("AttackLandedEvent")) {
-    fillColor = "#4ecdc4"; // Teal for attack landed
-    radius = 3;
-  }
-  if (eventType.includes("SpellLandedEvent")) {
-    fillColor = "#ffe66d"; // Yellow for spell landed
-    radius = 3;
-  }
+  // Add more conditions for other event types if needed
 
-  return <circle cx={cx} cy={cy} r={radius} fill={fillColor} stroke="none" />;
+  // Determine final appearance based on isActive state
+  const finalRadius = isActive ? 6 : baseRadius;
+  // Use the line's color for fill when active, otherwise use the event-based color
+  const finalFill = isActive ? championColor : baseFillColor;
+  // Add a stroke only when active
+  const finalStroke = isActive ? "#fff" : "none";
+  const finalStrokeWidth = isActive ? 1 : 0;
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={finalRadius}
+      fill={finalFill}
+      stroke={finalStroke}
+      strokeWidth={finalStrokeWidth}
+      style={{ pointerEvents: "none" }} // Prevent dot from stealing hover events
+    />
+  );
 };
 
 const SimulationTimelineChart = () => {
@@ -73,7 +98,12 @@ const SimulationTimelineChart = () => {
   const { simulationResults, simulationEvents, champions } = state;
   const [selectedChampionId, setSelectedChampionId] = useState<number | null>(
     null,
-  ); 
+  );
+  // --- Add Hover State ---
+  const [hoveredInfo, setHoveredInfo] = useState<{
+    championId: number;
+    timestamp: number;
+  } | null>(null);
 
   const chartData = useMemo(() => {
     if (!simulationResults || !simulationEvents || !champions) {
@@ -156,16 +186,13 @@ const SimulationTimelineChart = () => {
       // Handle other events (adds a dot without changing cumulative damage)
       else {
         if (championEvents.length > 0) {
-          // Ensure there's a previous event to copy damage from
           championEvents.push({
-            ...lastEvent, // Copy previous data (especially cumulativeDamage)
-            timestamp, // Update timestamp
-            eventType, // Set the correct event type
-            eventData: archivedEvent.eventItem.Event, // Set the event data
+            ...lastEvent,
+            timestamp,
+            eventType,
+            eventData: archivedEvent.eventItem.Event,
           });
         }
-        // Optional: Handle case where the very first event for a champion is not a damage event
-        // else { /* Add logic if needed, e.g., push with cumulativeDamage: 0 */ }
       }
 
       championDamageData.set(relevantEntityId, championEvents);
@@ -278,17 +305,54 @@ const SimulationTimelineChart = () => {
       ? championGroups
       : championGroups.filter((champion) => champion.id === selectedChampionId);
 
+  // --- Tooltip Content Wrapper to Update State ---
+  const renderTooltipContent = (tooltipProps: any) => {
+    const { active, payload } = tooltipProps;
+
+    if (active && payload && payload.length) {
+      // Get data from the first payload item (since shared=false)
+      const pointData = payload[0].payload;
+      const currentHover = {
+        championId: pointData.championId,
+        timestamp: pointData.timestamp,
+      };
+      // Update state only if it changed to avoid potential re-renders
+      if (
+        hoveredInfo?.championId !== currentHover.championId ||
+        hoveredInfo?.timestamp !== currentHover.timestamp
+      ) {
+        // Use rAF to batch state update slightly, might help with performance/flicker
+        requestAnimationFrame(() => {
+          setHoveredInfo(currentHover);
+        });
+      }
+    } else {
+      // Clear hover state if tooltip is inactive
+      if (hoveredInfo !== null) {
+        requestAnimationFrame(() => {
+          setHoveredInfo(null);
+        });
+      }
+    }
+
+    // Render the actual tooltip content using the original component
+    return <CustomTooltip {...tooltipProps} />;
+  };
+
   return (
     <div className="w-full h-[400px] mt-4 mb-2">
       <h2 className="text-lg font-medium mb-0">Damage Timeline</h2>
       <p>
         assumption: attack windup/wind-down takes 0s, cast windup/wind-down
-        takes 1s each. used expected critically strike damage values for simulation.
+        takes 1s each. used expected critically strike damage values for
+        simulation.
       </p>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={chartData} // Keep original chartData here for Tooltip context
+          data={chartData}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          // Clear hover state if mouse leaves the entire chart area
+          onMouseLeave={() => setHoveredInfo(null)}
         >
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis
@@ -312,7 +376,13 @@ const SimulationTimelineChart = () => {
             domain={selectedChampionId !== null ? ["auto", "auto"] : undefined}
             allowDataOverflow={true} // Prevent clipping when domain changes
           />
-          <Tooltip content={<CustomTooltip />} />
+          {/* --- Use Tooltip Wrapper --- */}
+          <Tooltip
+            content={renderTooltipContent}
+            shared={false}
+            // Optional: Adjust position if needed
+            // position={{ y: 0 }}
+          />
           <Legend
             onClick={(data) => {
               // Find the champion based on the legend label (data.value)
@@ -325,23 +395,29 @@ const SimulationTimelineChart = () => {
             }}
             wrapperStyle={{ cursor: "pointer" }} // Add pointer cursor to legend
           />
-
           {displayedChampionGroups.map((champion) => (
             <Line
               key={champion.id}
               type="linear"
               dataKey="cumulativeDamage"
-              // Filter data *for this specific line*
               data={chartData.filter((d) => d.championId === champion.id)}
               name={champion.name}
               stroke={champion.color}
               strokeWidth={2}
-              dot={<CustomDot />}
-              activeDot={{ r: 6, style: { cursor: "pointer" } }} // Add pointer cursor to dots
+              // --- Pass hoverInfo and championColor to CustomDot via dot prop ---
+              dot={(dotProps: any) => (
+                <CustomDot
+                  {...dotProps} // Pass original dot props (cx, cy, payload, etc.)
+                  hoveredInfo={hoveredInfo}
+                  championColor={champion.color} // Pass the specific line's color
+                />
+              )}
+              // --- Remove activeDot prop ---
+              activeDot={false} // Disable default activeDot behavior
               connectNulls
-              isAnimationActive={false} // Disable line rendering animation
-              onClick={() => handleChampionSelect(champion.id)} // Add click handler to line
-              style={{ cursor: "pointer" }} // Add pointer cursor to line
+              isAnimationActive={false}
+              onClick={() => handleChampionSelect(champion.id)}
+              style={{ cursor: "pointer" }}
             />
           ))}
         </LineChart>
