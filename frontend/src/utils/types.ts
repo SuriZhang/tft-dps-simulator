@@ -103,13 +103,13 @@ export interface ChampionSimulationResult {
 
 export interface EventItem {
   Timestamp: number;
-  Entity: number;
+  entity: number;
   Event: any; // Using 'any' as event structure may vary
 }
 
 export interface ArchivedEvent {
-  EventItem: EventItem;
-  EventType: string;
+  eventItem: EventItem;
+  eventType: string;
 }
 
 export type SimulatorAction =

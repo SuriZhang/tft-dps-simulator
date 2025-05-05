@@ -11,6 +11,7 @@ import {
 } from "./ui/tooltip";
 import { Info } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
+import SimulationTimelineChart from "./SimulationTimelineChart";
 
 const DamageStatsPanel = () => {
   const { state } = useSimulator();
