@@ -31,7 +31,6 @@ type Simulation struct {
 
 	config      SimulationConfig
 	currentTime float64
-	recordQueue []*eventsys.EventItem 
 }
 
 // NewSimulation creates a new simulation with the given world and default config
@@ -87,7 +86,6 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 		traitManager: traitManager,
 		config:                 config,
 		currentTime:            0.0,
-		recordQueue:            make([]*eventsys.EventItem, 0),
 	}
 
 	// apply bonus static item stats to champions AND enqueue initial events
@@ -201,9 +199,6 @@ func (s *Simulation) RunSimulation() {
 		// Event handlers might enqueue subsequent events.
 		s.eventBus.Dispatch(eventItem.Event)
 
-		// 4. Save event to RecordQueue (if implemented)
-		s.recordQueue = append(s.recordQueue, eventItem)
-
 	} // End of event loop
 
 	elapsed := time.Since(startTime)
@@ -235,4 +230,9 @@ func (s *Simulation) SetConfig(config SimulationConfig) error {
 // GetTeamTraitState returns the current trait state for the simulation
 func (s *Simulation) GetTeamTraitState() *traitsys.TeamTraitState {
 	return s.teamTraitState
+}
+
+// GetArchiveEvents returns the archive of processed events for analysis
+func (s *Simulation) GetArchiveEvents() []*eventsys.EventItem {
+	return s.eventBus.GetArchive()
 }

@@ -220,7 +220,7 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
         // TODO: Mana gain on hit might scale with damage taken? Using flat 10 for now.
         manaGainOnHit := 10.0
         targetMana.AddCurrentMana(manaGainOnHit)
-        log.Printf("DamageSystem (onDamageApplied): Target %s gains %.1f mana from being hit (now %.1f / %.1f)\n", targetName, manaGainOnHit, targetMana.GetCurrentMana(), targetMana.GetMaxMana())
+        // log.Printf("DamageSystem (onDamageApplied): Target %s gains %.1f mana from being hit (now %.1f / %.1f)\n", targetName, manaGainOnHit, targetMana.GetCurrentMana(), targetMana.GetMaxMana())
     }
     // No warning if target has no mana, common for dummies/some units.
 }

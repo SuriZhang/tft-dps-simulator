@@ -39,7 +39,7 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 	// traitManager := managers.NewTraitManager(world) // Trait manager might be needed if not handled internally by simulation setup
 
 	// Map to link request champion ID (ApiName) to ECS entity ID
-	entityMap := make(map[string]ecs.Entity)
+	entityMap := make(map[ecs.Entity]string)
 	// var championEntities []ecs.Entity
 
 	// 3. Create Champion Entities from Request
@@ -51,13 +51,13 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 			log.Printf("Error creating champion entity %s: %v. Skipping.", reqChamp.ApiName, err)
 			continue // Or return error
 		}
-		entityMap[reqChamp.ApiName] = entityID
-		
+		entityMap[entityID] = reqChamp.ApiName // Store the mapping
+
 		log.Printf("Items for champion %s: %v", reqChamp.ApiName, reqChamp.Items)
 
 		// Add items using AddItemToChampion based on tests
 		for _, itemReq := range reqChamp.Items {
-			
+
 			// Need the item's API name (string) for AddItemToChampion
 			err := equipmentManager.AddItemToChampion(entityID, itemReq.ApiName)
 			if err != nil {
@@ -77,12 +77,14 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 		return nil, fmt.Errorf("error creating target dummy: %w", err)
 	}
 
-	dummyHealth, ok :=world.GetHealth(targetDummy)
+	dummyHealth, ok := world.GetHealth(targetDummy)
 	if !ok {
 		log.Printf("Error getting health component for target dummy: %v", err)
 		return nil, fmt.Errorf("error getting health component for target dummy: %w", err)
 	}
 	dummyHealth.SetBaseMaxHP(10000) // Set dummy health to 1000 for testing
+	dummyHealth.SetBaseMR(0.0)      // Set dummy MR to 0 for testing
+	dummyHealth.SetBaseArmor(0.0)   // Set dummy Armor to 0 for testing
 	dummyAttack, ok := world.GetAttack(targetDummy)
 	if !ok {
 		log.Printf("Error getting attack component for target dummy: %v", err)
@@ -104,16 +106,30 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 	sim := simulation.NewSimulationWithConfig(world, config)
 
 	log.Println("Running simulation...")
-	sim.RunSimulation() 
+	sim.RunSimulation()
 
 	log.Println("Simulation finished.")
 
-	// 6. Process Results 
+	archievedEvents := make([]ArchivedEvent, 0, len(sim.GetArchiveEvents()))
+
+	for _, event := range sim.GetArchiveEvents() {
+		archivedEvent := ArchivedEvent{
+			EventItem: *event,
+			EventType: fmt.Sprintf("%T", event.Event),
+		}
+		archievedEvents = append(archievedEvents, archivedEvent)
+	}
+
+	for _, event := range archievedEvents {
+		log.Printf("%s: %+v", event.EventType, event.EventItem)
+	}
+
+	// 6. Process Results
 	log.Println("Processing simulation results (using placeholders)...")
 	// Use service types instead of server types
 	results := []ChampionSimulationResult{}
 
-	for apiName, entityID := range entityMap {
+	for entityID, apiName := range entityMap {
 		// Fetch final health to check if alive (example of reading state post-simulation)
 		// Use helper functions like in tests if available, otherwise direct component access
 		healthComp, healthOk := world.GetHealth(entityID)
@@ -134,7 +150,7 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 		if spellOk {
 			spellCastCount = spellComp.GetCastCount()
 		}
-		
+
 		damageStats, dsOK := world.GetDamageStats(entityID)
 		if !dsOK {
 			log.Printf("Error getting damage stats for champion %s (Entity %d)", apiName, entityID)
@@ -142,19 +158,18 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 
 		damageStats.TotalAutoAttackCounts = attackCount
 		damageStats.TotalSpellCastCounts = spellCastCount
-		damageStats.DamagePerSecond = damageStats.TotalDamage / config.MaxTime 
+		damageStats.DamagePerSecond = damageStats.TotalDamage / config.MaxTime
 
 		// Use service types
 		results = append(results, ChampionSimulationResult{
-			ChampionApiName:  apiName,
-			DamageStats: *damageStats,
+			ChampionApiName: apiName,
+			DamageStats:     *damageStats,
 		})
 	}
 
-	// 7. Build and Return Response
-	// Use service types
 	response := &RunSimulationResponse{
-		Results: results,
+		Results:        results,
+		ArchieveEvents: archievedEvents, // Assign the dereferenced slice
 	}
 
 	elapsed := time.Since(startTime)
@@ -162,13 +177,3 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 	return response, nil
 }
 
-// Helper function to find the original request data for a champion by ApiName
-// Use service types
-func findRequestChampion(requestChampions []BoardChampion, apiName string) *BoardChampion {
-	for i := range requestChampions {
-		if requestChampions[i].ApiName == apiName {
-			return &requestChampions[i]
-		}
-	}
-	return nil
-}

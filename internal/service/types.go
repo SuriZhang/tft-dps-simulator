@@ -2,6 +2,7 @@ package service
 
 import (
 	"tft-dps-simulator/internal/core/components"
+	eventsys "tft-dps-simulator/internal/core/systems/events"
 )
 
 // BoardPosition matches frontend/src/utils/types.ts
@@ -40,10 +41,13 @@ type ChampionSimulationResult struct {
 	DamageStats components.DamageStats `json:"damageStats"`
 }
 
+type ArchivedEvent struct {
+	EventItem eventsys.EventItem `json:"eventItem"`
+	EventType string `json:"eventType"` // Type of event (e.g., "damage", "heal", etc.)
+}
+
 // RunSimulationResponse is the structure of the response body
 type RunSimulationResponse struct {
 	Results []ChampionSimulationResult `json:"results"`
-	// Could add overall simulation info later:
-	// SimulationDuration float64 `json:"simulationDuration"`
-	// WinnerTeam         int     `json:"winnerTeam"` // e.g., 0 or 1
+	ArchieveEvents []ArchivedEvent `json:"archieveEvents"`
 }

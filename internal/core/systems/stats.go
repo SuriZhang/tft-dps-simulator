@@ -131,6 +131,7 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 	// normally there's no flat bonus AD in TFT, but there are exceptions
 	calculatedAD := (attack.GetBaseAD() + attack.GetBonusAD()) * (1 + attack.GetBonusPercentAD())
 	attack.SetFinalAD(calculatedAD)
+	log.Printf("Entity %d: Base AD: %.2f, Bonus AD: %.2f, Calculated AD: %.2f", entity, attack.GetBaseAD(), attack.GetBonusAD(), calculatedAD)
 
 	// Attack Speed: BaseAS * (1 + TotalBonusAS%)
 	calculatedAS := attack.GetBaseAttackSpeed() * (1 + attack.GetBonusPercentAttackSpeed())
@@ -240,6 +241,8 @@ func (s *StatCalculationSystem) calculateCritStats(entity ecs.Entity) {
 	calculatedCritMultiplier := crit.GetBaseCritMultiplier() + crit.GetBonusCritMultiplier() + conditionalCritDamageBonus + excessCritDamageBonus
 
 	crit.SetFinalCritMultiplier(calculatedCritMultiplier)
+	log.Printf("Entity %d: Base Crit Multiplier: %.2f, Bonus Crit Multiplier: %.2f, Conditional Bonus: %.2f, Excess CritChance Bonus: %.2f, Final Crit Multiplier: %.2f", entity, crit.GetBaseCritMultiplier(), crit.GetBonusCritMultiplier(), conditionalCritDamageBonus, excessCritDamageBonus, calculatedCritMultiplier)
+	log.Printf("Entity %d: Base Crit Chance: %.2f, Bonus Crit Chance: %.2f, Final Crit Chance: %.2f", entity, crit.GetBaseCritChance(), crit.GetBonusCritChance(), calculatedCritChance)
 }
 
 // calculateManaStats calculates FinalInitialMana.

@@ -5,19 +5,22 @@ type EventBus interface {
     RegisterHandler(handler EventHandler)
     Dispatch(evt interface{}) // Dispatch a single event to appropriate handlers
     EventEnqueuer // Embed the enqueuer interface
+    GetArchive() []*EventItem // Return the archived events
 }
 
 // SimpleBus implements a basic synchronous event bus.
 type SimpleBus struct {
-    handlers []EventHandler
-    queue    *PriorityQueue // Use the priority queue
+    handlers     []EventHandler
+    queue        *PriorityQueue // Use the priority queue
+    archiveQueue []*EventItem   // Archive of processed events
 }
 
 // NewSimpleBus creates a new SimpleBus.
 func NewSimpleBus() *SimpleBus {
     return &SimpleBus{
-        handlers: make([]EventHandler, 0),
-        queue:    NewPriorityQueue(), // Initialize the priority queue
+        handlers:     make([]EventHandler, 0),
+        queue:        NewPriorityQueue(), // Initialize the priority queue
+        archiveQueue: make([]*EventItem, 0), // Initialize the archive queue
     }
 }
 
@@ -32,8 +35,14 @@ func (b *SimpleBus) Enqueue(evt interface{}, timestamp float64) {
 }
 
 // Dequeue removes and returns the next event item from the queue.
+// The dequeued event is saved to the archiveQueue for later analysis.
 func (b *SimpleBus) Dequeue() *EventItem {
-   return b.queue.Dequeue()
+    item := b.queue.Dequeue()
+    if item != nil {
+        // Archive the event for later analysis
+        b.archiveQueue = append(b.archiveQueue, item)
+    }
+    return item
 }
 
 // Len returns the number of events currently in the queue.
@@ -41,6 +50,11 @@ func (b *SimpleBus) Len() int {
     return b.queue.Len()
 }
 
+// GetArchive returns the archive of processed events.
+// This can be used to generate time sequence diagrams.
+func (b *SimpleBus) GetArchive() []*EventItem {
+    return b.archiveQueue
+}
 
 // Dispatch sends a single event to all registered handlers that can handle it.
 func (b *SimpleBus) Dispatch(evt interface{}) {

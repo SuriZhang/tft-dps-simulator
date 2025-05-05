@@ -86,6 +86,13 @@ func (m *MockEventBus) Dispatch(evt interface{}) {
 	}
 }
 
+func (m *MockEventBus) GetArchive() []*eventsys.EventItem {
+    // Return a copy of the processed events for analysis
+    archive := make([]*eventsys.EventItem, len(m.processedEvents))
+    copy(archive, m.processedEvents)
+    return archive
+}
+
 // ProcessUntilTime processes events until the next event's timestamp exceeds the given time.
 // Returns the timestamp of the last processed event, or the starting time if no events were processed.
 func (m *MockEventBus) ProcessUntilTime(targetTime float64) float64 {

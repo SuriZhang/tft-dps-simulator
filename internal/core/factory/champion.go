@@ -28,9 +28,9 @@ func StarMultiplier(starLevel int) float64 {
 	case 1:
 		return 1.0
 	case 2:
-		return 1.8
+		return 1.5
 	case 3:
-		return 3.24
+		return 2.25
 	default:
 		log.Printf("Warning: Invalid star level %d requested, using 1-star multiplier.\n", starLevel)
 		return 1.0
