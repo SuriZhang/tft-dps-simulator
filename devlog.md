@@ -589,8 +589,6 @@ DONE:
 - [x] wrote script to download champion square icons from community dragon
 - [x] frontend trait activation
 - [x] mock simulation endpoints, triggered by clicking combat start button, damage stats panel implemented
-- [x] basic run simulation endpoints
-
 
 TODO:
 
@@ -598,3 +596,11 @@ TODO:
 - [ ] endpoint: add champion to board (show champion stats, trait activation)
 - [ ] endpoint: add item to champion (show updated champion stats)
 - [ ] endpoint: advanced run simulation endpoint, show time sequence data
+
+## 20250505
+let's do simple endpoints first.
+
+DONE Today:
+- [x] basic run simulation endpoints
+
+- [ ] bug: frontend, backend needs a entityId, otherwise the current code cannot handle well multiple instance of the same champion

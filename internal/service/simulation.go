@@ -163,6 +163,7 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 		// Use service types
 		results = append(results, ChampionSimulationResult{
 			ChampionApiName: apiName,
+			ChampionEntityID: entityID,
 			DamageStats:     *damageStats,
 		})
 	}

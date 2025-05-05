@@ -82,6 +82,7 @@ export interface SimulatorState {
   error?: string; // Add error state
   hoveredTrait?: string;
   simulationResults?: ChampionSimulationResult[]; // Add simulation results
+  simulationEvents?: ArchivedEvent[]; // Add the new field
 }
 
 export interface DamageStats {
@@ -96,7 +97,19 @@ export interface DamageStats {
 
 export interface ChampionSimulationResult {
   championApiName: string;
+  championEntityId: number;
   damageStats: DamageStats;
+}
+
+export interface EventItem {
+  Timestamp: number;
+  Entity: number;
+  Event: any; // Using 'any' as event structure may vary
+}
+
+export interface ArchivedEvent {
+  EventItem: EventItem;
+  EventType: string;
 }
 
 export type SimulatorAction =
@@ -129,4 +142,6 @@ export type SimulatorAction =
   }
   | { type: "SET_CHAMPION_STAR_LEVEL"; position: BoardPosition; level: number }
   | { type: "SET_LOADING_ERROR"; error: string }
-  | { type: "SET_SIMULATION_RESULTS"; payload: ChampionSimulationResult[] }; // New action type
+  | { type: "SET_SIMULATION_RESULTS"; payload: ChampionSimulationResult[] } // New action type
+  | { type: "SET_SIMULATION_EVENTS"; payload: ArchivedEvent[] } // Add new action type
+  | { type: "SET_SIMULATION_DATA"; payload: { results: ChampionSimulationResult[], events: ArchivedEvent[] } }; // Combined action type

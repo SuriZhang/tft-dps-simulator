@@ -360,6 +360,19 @@ function simulatorReducer(
         simulationResults: action.payload,
       };
 
+    case "SET_SIMULATION_EVENTS":
+      return {
+        ...state,
+        simulationEvents: action.payload,
+      };
+
+    case "SET_SIMULATION_DATA":
+      return {
+        ...state,
+        simulationResults: action.payload.results,
+        simulationEvents: action.payload.events,
+      };
+
     default:
       return state;
   }

@@ -53,14 +53,20 @@ const HexBoard = () => {
 
       const data = await response.json();
 
-      // Update context with simulation results
+      // Update context with simulation results and events
       dispatch({
-        type: "SET_SIMULATION_RESULTS",
-        payload: data.results,
+        type: "SET_SIMULATION_DATA",
+        payload: {
+          results: data.results,
+          events: data.archieveEvents || [], // Note: keeping the same spelling as backend
+        },
       });
 
       // Optionally: Show a success message or navigate to results view
-      console.log("Simulation completed successfully:", data);
+      console.log("Simulation completed successfully:", {
+        results: data.results,
+        events: data.archieveEvents,
+      });
     } catch (err) {
       console.error("Error running simulation:", err);
       setError(
