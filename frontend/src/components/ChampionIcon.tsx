@@ -74,7 +74,7 @@ const ChampionIcon: React.FC<ChampionIconProps> = ({
             onClick={handleClick}
           >
             <AvatarImage
-              src={`/tft-champion/${champion.icon.toLowerCase()}`}
+              src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
               alt={champion.name}
             />
             <AvatarFallback>{champion.name.substring(0, 4)}</AvatarFallback>
@@ -83,7 +83,9 @@ const ChampionIcon: React.FC<ChampionIconProps> = ({
 
         <TooltipContent>
           <p className="font-bold">{champion.name}</p>
-          <p className="text-xs text-muted-foreground">{champion.traits.join(", ")}</p>
+          <p className="text-xs text-muted-foreground">
+            {champion.traits.join(", ")}
+          </p>
           {/* {item.stats && (
             <div className="mt-1 text-xs">
               {Object.entries(item.stats).map(([stat, value]) => (

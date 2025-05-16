@@ -219,7 +219,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                 {champion.icon && (
                   <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     <img
-                      src={`/tft-champion/${champion.icon.toLowerCase()}`}
+                      src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
                       alt={champion.name}
                       className="w-full h-full object-cover rotate-[-90deg]"
                       title={champion.name}

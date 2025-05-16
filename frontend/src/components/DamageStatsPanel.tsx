@@ -96,7 +96,7 @@ const DamageStatsPanel = () => {
                           >
                             {champion.icon ? (
                               <img
-                                src={`/tft-champion/${champion.icon.toLowerCase()}`}
+                                src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
                                 alt={champion.name}
                                 className="w-full h-full object-cover"
                               />
