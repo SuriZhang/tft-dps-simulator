@@ -1,4 +1,4 @@
-package traitsys
+package traithandlers
 
 import (
 	"log"
@@ -9,16 +9,17 @@ import (
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
+	traitsys "tft-dps-simulator/internal/core/systems/traits"
 )
 
 // RapidfireHandler implements dynamic logic for the Rapidfire trait using a dedicated component.
 type RapidfireHandler struct{}
 
 // Static check to ensure interface implementation.
-var _ TraitHandler = (*RapidfireHandler)(nil)
+var _ traitsys.TraitHandler = (*RapidfireHandler)(nil)
 
 func init() {
-	RegisterTraitHandler(data.TFT14_Rapidfire, &RapidfireHandler{})
+	traitsys.RegisterTraitHandler(data.TFT14_Rapidfire, &RapidfireHandler{})
 }
 
 // OnActivate adds the RapidfireEffect component to champions with the trait and applies static team bonus.
@@ -35,7 +36,7 @@ func (h *RapidfireHandler) OnActivate(teamID int, effect data.Effect, world *ecs
 	}
 	maxStacks := int(math.Round(maxStacksFloat))
 
-	teamChampions := getChampionsByTeam(world, teamID)
+	teamChampions := traitsys.GetChampionsByTeam(world, teamID)
 	for _, entity := range teamChampions {
 		// Apply static team-wide bonus directly
 		if teamASBonus != 0 {

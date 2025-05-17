@@ -8,7 +8,7 @@ import (
 )
 
 // getChampionsByTeam finds all entities belonging to a specific team. (Keep this helper)
-func getChampionsByTeam(world *ecs.World, teamID int) []ecs.Entity {
+func GetChampionsByTeam(world *ecs.World, teamID int) []ecs.Entity {
     var teamChampions []ecs.Entity
     teamType := reflect.TypeOf(components.Team{})
     entities := world.GetEntitiesWithComponents(teamType)

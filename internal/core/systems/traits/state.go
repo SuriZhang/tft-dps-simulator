@@ -1,7 +1,5 @@
 package traitsys
 
-// "tft-dps-simulator/internal/coreecs"
-
 // TeamTraitState caches trait counts and active tiers per team.
 type TeamTraitState struct {
     // unitCounts maps teamID -> trait ApiName -> count of units with that trait
