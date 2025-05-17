@@ -36,6 +36,7 @@ type World struct {
 	QuicksilverEffects       map[Entity]*items.QuicksilverEffect
 	TitansResolveEffects     map[Entity]*items.TitansResolveEffect
 	GuinsoosRagebladeEffects map[Entity]*items.GuinsoosRagebladeEffect
+	SpiritVisageEffects  map[Entity]*items.SpiritVisageEffect
 
 	// --- Trait Effect Components ---
 	RapidfireEffects  map[Entity]*traits.RapidfireEffect
@@ -69,6 +70,7 @@ func NewWorld() *World {
 		QuicksilverEffects:       make(map[Entity]*items.QuicksilverEffect),
 		TitansResolveEffects:     make(map[Entity]*items.TitansResolveEffect),
 		GuinsoosRagebladeEffects: make(map[Entity]*items.GuinsoosRagebladeEffect),
+		SpiritVisageEffects:  make(map[Entity]*items.SpiritVisageEffect),
 
 		// --- Traits ---
 		RapidfireEffects: make(map[Entity]*traits.RapidfireEffect),
@@ -106,6 +108,7 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.QuicksilverEffects, e)
 	delete(w.TitansResolveEffects, e)
 	delete(w.GuinsoosRagebladeEffects, e)
+	delete(w.SpiritVisageEffects, e)
 	// Traits
 	delete(w.RapidfireEffects, e)
 	// Delete from other maps here...
@@ -199,6 +202,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.GuinsoosRagebladeEffects[e] = &c
 	case *items.GuinsoosRagebladeEffect:
 		w.GuinsoosRagebladeEffects[e] = c
+	case items.SpiritVisageEffect:
+		w.SpiritVisageEffects[e] = &c
+	case *items.SpiritVisageEffect:
+		w.SpiritVisageEffects[e] = c
 	// Traits
 	case traits.RapidfireEffect:
 		w.RapidfireEffects[e] = &c
@@ -275,6 +282,9 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		comp, ok := w.GuinsoosRagebladeEffects[e]
 		return comp, ok
+	case reflect.TypeOf(items.SpiritVisageEffect{}):
+		comp, ok := w.SpiritVisageEffects[e]
+		return comp, ok
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		comp, ok := w.RapidfireEffects[e]
@@ -333,6 +343,8 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.TitansResolveEffects, e)
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		delete(w.GuinsoosRagebladeEffects, e)
+	case reflect.TypeOf(items.SpiritVisageEffect{}):
+		delete(w.SpiritVisageEffects, e)
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		delete(w.RapidfireEffects, e)
@@ -445,6 +457,8 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.TitansResolveEffects)
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		return len(w.GuinsoosRagebladeEffects)
+	case reflect.TypeOf(items.SpiritVisageEffect{}):
+		return len(w.SpiritVisageEffects)
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		return len(w.RapidfireEffects)
@@ -552,6 +566,11 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
 		entities = make([]Entity, 0, len(w.GuinsoosRagebladeEffects))
 		for e := range w.GuinsoosRagebladeEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(items.SpiritVisageEffect{}):
+		entities = make([]Entity, 0, len(w.SpiritVisageEffects))
+		for e := range w.SpiritVisageEffects {
 			entities = append(entities, e)
 		}
 	// Traits
@@ -690,6 +709,12 @@ func (w *World) GetTitansResolveEffect(e Entity) (*items.TitansResolveEffect, bo
 // GetGuinsoosRagebladeEffect returns the GuinsoosRagebladeEffect component for an entity, type-safe.
 func (w *World) GetGuinsoosRagebladeEffect(e Entity) (*items.GuinsoosRagebladeEffect, bool) {
 	comp, ok := w.GuinsoosRagebladeEffects[e]
+	return comp, ok
+}
+
+// GetSpiritVisageEffect returns the SpiritVisageEffect component for an entity, type-safe.
+func (w *World) GetSpiritVisageEffect(e Entity) (*items.SpiritVisageEffect, bool) {
+	comp, ok := w.SpiritVisageEffects[e]
 	return comp, ok
 }
 

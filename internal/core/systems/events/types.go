@@ -143,6 +143,11 @@ type QuicksilverEndEvent struct {
     Timestamp float64 // Time the effect ends
 }
 
+type SpiritVisageHealTickEvent struct { // New Event
+    Entity    ecs.Entity
+    Timestamp float64
+}
+
 // RecalculateStatsEvent signals that an entity's stats need recalculation due to a change.
 type RecalculateStatsEvent struct {
     Entity    ecs.Entity

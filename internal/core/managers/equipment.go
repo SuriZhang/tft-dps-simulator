@@ -119,6 +119,22 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 					championName, int(maxStacks), adPerStack*100, apPerStack, bonusResists)
 			}
 		}
+	case data.TFT_Item_SpiritVisage: // NOTE: New case for Spirit Visage, this may change.
+	if _, exists := em.world.GetSpiritVisageEffect(champion); !exists {
+			missingHealthHeal := item.Effects["MissingHealthHeal"]
+			healTickRate := item.Effects["HealTickRate"]
+			maxHeal := item.Effects["MaxHeal"]
+
+			spiritVisageEffect := items.NewSpiritVisageEffect(missingHealthHeal, healTickRate, maxHeal)
+			err := em.world.AddComponent(champion, spiritVisageEffect)
+			if err != nil {
+				log.Printf("Warning: Failed to add SpiritVisageEffect component for champion %s: %v", championName, err)
+			} else {
+				log.Printf("Added SpiritVisageEffect component to champion %s (Heal: %.3f%% missing HP / %.1fs)",
+					championName, missingHealthHeal*100, healTickRate)
+			}
+		}
+
 	// Add cases for other dynamic items that need specific components
 	case data.TFT_Item_GuinsoosRageblade:
 		if _, exists := em.world.GetGuinsoosRagebladeEffect(champion); !exists {
@@ -136,8 +152,8 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 			if err != nil {
 				log.Printf("Warning: Failed to add GuinsoosRagebladeEffect component for champion %s: %v", championName, err)
 			} else {
-				log.Printf("Added GuinsoosRagebladeEffect component to champion %s (AS per Stack: %.1f%%)",
-					championName, asPerStack)
+				log.Printf("Added GuinsoosRagebladeEffect component to champion %s (Interval: %.1f, AS/Stack: %.2f%%)",
+					championName, intervalSeconds, asPerStack)
 			}
 		}
 	}
@@ -344,6 +360,9 @@ func (em *EquipmentManager) calculateAndUpdateStaticItemEffects(champion ecs.Ent
 			case "CritDamageToGive": // specific to IE & JG
 				itemEffect.AddCritDamageToGive(value)
 				log.Printf("  [%s] Champion %d: Adding CritDamageToGive: %.1f%%", item.ApiName, champion, value*100)
+            case "Durability": // NOTE: New case for Spirit Visage and other durability items
+                itemEffect.AddDurability(value) // value is 0.10 for 10%
+                log.Printf("  [%s] Champion %d: Adding Durability: %.1f%%", item.ApiName, champion, value*100)
 			// Add other known static stats...
 			default:
 				log.Printf("Warning: Champion %d: Unrecognized or non-static item effect stat '%s' (value: %.2f) for item %s", champion, statName, value, item.ApiName)
