@@ -25,6 +25,8 @@ FROM debian:bookworm
 WORKDIR /app
 # copy in the compiled binary
 COPY --from=builder /app/bin/api .
+# copy in the game data assets
+COPY --from=builder /app/assets ./assets
 # copy in the static assets
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 
