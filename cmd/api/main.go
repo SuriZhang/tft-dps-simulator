@@ -6,13 +6,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"tft-dps-simulator/internal/core/data" // Import data package
 	"tft-dps-simulator/internal/server"
 	"tft-dps-simulator/internal/service" // Import service package
 	"time"
-	"path/filepath"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -49,7 +49,7 @@ func main() {
 	// 1. Load Game Data
 	log.Println("Loading game data...")
 	dataDir := "./assets"
-	fileName := "en_us_14.1b.json"
+	fileName := "en_us_pbe.json"
 	filePath := filepath.Join(dataDir, fileName)
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
 	if err != nil {

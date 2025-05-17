@@ -453,7 +453,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const dataFilePath = "./en_us_14.1b.json"; // Assuming this file contains all needed data
+        const dataFilePath = "./en_us_pbe.json"; // Assuming this file contains all needed data
         const targetMutator = "TFTSet14"; // Example Mutator - Adjust if needed
         const targetPrefix = "TFT14_"; // Example prefix for champions
 

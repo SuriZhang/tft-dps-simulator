@@ -31,7 +31,7 @@ func addComponentOrLog(world *ecs.World, entity ecs.Entity, component interface{
 func main1() {
 	// --- Data Loading ---
 	dataDir := "../assets"
-	fileName := "en_us_14.1b.json"
+	fileName := "en_us_pbe.json"
 	filePath := filepath.Join(dataDir, fileName)
 	fmt.Println("------------Loading Set Data---------------")
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")

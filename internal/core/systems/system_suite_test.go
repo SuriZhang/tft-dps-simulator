@@ -21,7 +21,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	// Load item data once for the entire manager suite
 	// Adjust the path to your actual item data file
 	dataDir := "../../assets"
-	fileName := "en_us_14.1b.json"
+	fileName := "en_us_pbe.json"
 	filePath := filepath.Join(dataDir, fileName)
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
 	if err != nil {
