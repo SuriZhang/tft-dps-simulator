@@ -26,7 +26,7 @@ WORKDIR /app
 # copy in the compiled binary
 COPY --from=builder /app/bin/api .
 # copy in the static assets
-COPY --from=frontend /frontend/dist ./frontend/dist
+COPY --from=frontend /app/frontend/dist ./frontend/dist
 
 # if your Go HTTP server is set up to serve "./frontend/build" for static files:
 EXPOSE 8080
