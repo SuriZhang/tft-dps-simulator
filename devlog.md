@@ -602,11 +602,17 @@ let's do simple endpoints first.
 
 DONE Today:
 - [x] basic run simulation endpoints
-- [x] bug: backend ChampionAction system does not correctly schedule remaining attack CD time after a spell cast:
+- [x] bugfix: backend ChampionAction system does not correctly schedule remaining attack CD time after a spell cast:
  caused by attacker mana gain handled in damage system, sometime DamageAppliedEvent is not handled before ActionCheckEvent, so a champion with full mana goes into attack CD state, hence simulator produces unstable attack times.
-
-- [ ] bug: frontend, backend needs a entityId, otherwise the current code cannot handle well multiple instance of the same champion
+- [x] bug: frontend, backend needs a entityId, otherwise the current code cannot handle well multiple instance of the same champion
 
 ## 20250517
 New item changes were released. Need to update rageblade code. Aiming to release the site when S15 lauches.   
 Implement items to prepare for new set as items are less likely to change drastically.
+
+DONE Today:
+- [x] refactor whole item system
+- [x] update Guinsoo's Rageblade effect according to patch 14.5 update
+- [x] implement new item Spirit Visage
+- [x] bugfix: when multiple instance of same champion exists on the board, the timeline chart could only select one instance
+- [x] bugfix: deselect champion after champion is added to HexCell
