@@ -15,12 +15,20 @@ type ItemCategory =
   | "radiant"
   | "ornn"
   | "support"
+  | "emblem"
   | "other";
 
 const getItemCategory = (item: Item): ItemCategory => {
   // Use the existing 'type' field first
+  
+  // Note: this might change if the item tags changes in json file
+  if (item.name?.includes("Emblem")) return "emblem"; // emblem
   if (item.tags?.includes("component")) return "component";
   if (item.tags?.includes("{7ea41d13}")) return "craftable"; // composition
+  if (item.tags?.includes("{27557a09}")) return "support"; // support
+  if (item.tags?.includes("{44ace175}")) return "ornn"; // artifact
+  if (item.tags?.includes("{6ef5c598}") || item.tags?.includes("{ec243f6b}"))
+    return "radiant"; // radiant
 
   // Fallback category
   return "other";
@@ -34,6 +42,10 @@ const ItemTray: React.FC = () => {
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
+      // Exclude items categorized as "other"
+      if (getItemCategory(item) === "other") {
+        return false;
+      }
       const nameMatch = item?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -46,18 +58,20 @@ const ItemTray: React.FC = () => {
 
   // Define tab order and filter out categories with no items
   const availableCategories = useMemo(() => {
-    // Start with 'all'
+    // Start with 'all' and define the order of other categories, excluding "other"
     const allCats: ItemCategory[] = [
       "all",
       "craftable",
       "radiant",
       "ornn",
       "support",
-      "component",
-      "other",
+      // "component",
+      "emblem"
+      // "other", // "other" category is removed from here
     ];
     const presentCats = new Set(items.map(getItemCategory));
     // Filter other categories based on presence, but always keep 'all'
+    // Categories not in allCats (like "other") will be ignored here.
     return allCats.filter((cat) => cat === "all" || presentCats.has(cat));
   }, [items]);
 
@@ -75,7 +89,7 @@ const ItemTray: React.FC = () => {
         onValueChange={(value) => setActiveTab(value as ItemCategory)}
         className="flex flex-col flex-1"
       >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+        <CardHeader className="flex flex-col items-center justify-between space-y-0 pb-2 px-4 pt-4">
           <CardTitle className="text-base font-semibold">Items</CardTitle>
 
           <TabsList className="bg-muted">
@@ -95,9 +109,9 @@ const ItemTray: React.FC = () => {
                         ? "Support"
                         : category === "radiant"
                           ? "Radiant"
-                          : category === "component"
-                            ? "Components"
-                            : "Other"}
+                          : category === "emblem"
+                              ? "Emblems"
+                              : category}
               </TabsTrigger>
             ))}
           </TabsList>
