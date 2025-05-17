@@ -11,6 +11,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Flatten the map into a single array for the chart
+    interface ChartDataPoint {
+      timestamp: number;
+      cumulativeDamage: number;
+      championName: string;
+      championId: number;
+      eventType?: string;
+      eventData?: any; // Consider using a more specific type if the structure of eventData is known
+}
+    
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -198,15 +208,15 @@ const SimulationTimelineChart = () => {
       championDamageData.set(relevantEntityId, championEvents);
     });
 
-    // Flatten the map into a single array for the chart
-    interface ChartDataPoint {
-      timestamp: number;
-      cumulativeDamage: number;
-      championName: string;
-      championId: number;
-      eventType?: string;
-      eventData?: any; // Consider using a more specific type if the structure of eventData is known
-    }
+    // // Flatten the map into a single array for the chart
+    // interface ChartDataPoint {
+    //   timestamp: number;
+    //   cumulativeDamage: number;
+    //   championName: string;
+    //   championId: number;
+    //   eventType?: string;
+    //   eventData?: any; // Consider using a more specific type if the structure of eventData is known
+    // }
 
     let chartDataPoints: ChartDataPoint[] = [];
     championDamageData.forEach((events) => {
@@ -385,12 +395,44 @@ const SimulationTimelineChart = () => {
           />
           <Legend
             onClick={(data) => {
-              // Find the champion based on the legend label (data.value)
-              const clickedChampion = championGroups.find(
-                (c) => c.name === data.value,
-              );
-              if (clickedChampion) {
-                handleChampionSelect(clickedChampion.id);
+              let championIdToSelect: number | null = null;
+
+              // Assert the type of data.payload to include the 'data' property.
+              // We expect data.payload to be the props passed to the <Line /> component,
+              // which includes a 'data' prop of type ChartDataPoint[].
+              const typedPayload = data.payload as { data?: ChartDataPoint[] };
+
+              if (
+                data && // data is the legend item descriptor from Recharts
+                typedPayload && // Check the (now asserted) payload
+                Array.isArray(typedPayload.data) && // Access 'data' via the typedPayload
+                typedPayload.data.length > 0 &&
+                typedPayload.data[0] &&
+                typeof typedPayload.data[0].championId === "number"
+              ) {
+                championIdToSelect = typedPayload.data[0].championId;
+              } else {
+                // Fallback logic: if the expected path is not valid, try finding by color
+                console.warn(
+                  "Legend click: Could not find championId in data.payload.data. Payload:",
+                  data.payload, // Log the original payload for debugging if the primary path fails
+                  "Falling back to color-based lookup.",
+                );
+                const clickedChampion = championGroups.find(
+                  (c) => c.color === data.color, // data.color is available on the legend item descriptor
+                );
+                if (clickedChampion) {
+                  championIdToSelect = clickedChampion.id;
+                } else {
+                  console.error(
+                    "Legend click: Could not find champion by data path or color.",
+                    data, // Log the entire legend item descriptor for debugging
+                  );
+                }
+              }
+
+              if (championIdToSelect !== null) {
+                handleChampionSelect(championIdToSelect);
               }
             }}
             wrapperStyle={{ cursor: "pointer" }} // Add pointer cursor to legend
@@ -405,13 +447,17 @@ const SimulationTimelineChart = () => {
               stroke={champion.color}
               strokeWidth={2}
               // --- Pass hoverInfo and championColor to CustomDot via dot prop ---
-              dot={(dotProps: any) => (
-                <CustomDot
-                  {...dotProps} // Pass original dot props (cx, cy, payload, etc.)
-                  hoveredInfo={hoveredInfo}
-                  championColor={champion.color} // Pass the specific line's color
-                />
-              )}
+              dot={(dotProps: any) => {
+                const { key, ...restDotProps } = dotProps; // Destructure key and rest of the props
+                return (
+                  <CustomDot
+                    key={key} // Pass key directly
+                    {...restDotProps} // Spread the remaining props
+                    hoveredInfo={hoveredInfo}
+                    championColor={champion.color} // Pass the specific line's color
+                  />
+                );
+              }}
               // --- Remove activeDot prop ---
               activeDot={false} // Disable default activeDot behavior
               connectNulls
