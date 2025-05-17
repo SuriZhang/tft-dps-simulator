@@ -179,9 +179,9 @@ func (s *AutoAttackSystem) handleAttackFired(evt eventsys.AttackFiredEvent) {
 	if okMana {
 		manaGain := 10.0 // Standard TFT mana gain per auto-attack
 		attackerMana.AddCurrentMana(manaGain)
-		log.Printf("DamageSystem (onDamageApplied): Attacker %s gains %.1f mana (now %.1f / %.1f)\n", attacker, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
+		log.Printf("DamageSystem (onDamageApplied): Attacker %d gains %.1f mana (now %.1f / %.1f)\n", attacker, manaGain, attackerMana.GetCurrentMana(), attackerMana.GetMaxMana())
 	} else {
-		log.Printf("DamageSystem: Warning: Attacker %s has no Mana component, cannot gain mana.\n", attacker)
+		log.Printf("DamageSystem: Warning: Attacker %d has no Mana component, cannot gain mana.\n", attacker)
 	}
 
 	attack.IncrementAttackCount()

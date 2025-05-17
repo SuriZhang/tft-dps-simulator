@@ -125,6 +125,12 @@ type ArchangelsTickEvent struct {
     Timestamp float64
 }
 
+// GuinsoosRagebladeTickEvent signals a time-based tick for Guinsoo's Rageblade.
+type GuinsoosRagebladeTickEvent struct {
+    Entity    ecs.Entity
+    Timestamp float64
+}
+
 // QuicksilverProcEvent signals a time-based proc for Quicksilver's AS bonus.
 type QuicksilverProcEvent struct {
     Entity    ecs.Entity

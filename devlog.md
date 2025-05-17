@@ -606,3 +606,7 @@ DONE Today:
  caused by attacker mana gain handled in damage system, sometime DamageAppliedEvent is not handled before ActionCheckEvent, so a champion with full mana goes into attack CD state, hence simulator produces unstable attack times.
 
 - [ ] bug: frontend, backend needs a entityId, otherwise the current code cannot handle well multiple instance of the same champion
+
+## 20250517
+New item changes were released. Need to update rageblade code. Aiming to release the site when S15 lauches.   
+Implement items to prepare for new set as items are less likely to change drastically.

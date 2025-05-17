@@ -22,14 +22,10 @@ var _ = Describe("EquipmentManager", func() {
 		tear             *data.Item
 		bluebuff         *data.Item
 	)
-
 	BeforeEach(func() {
 		world = ecs.NewWorld()
 		championFactory := factory.NewChampionFactory(world)
 		equipmentManager = managers.NewEquipmentManager(world)
-		// statCalculationSystem := systems.NewStatCalculationSystem(world)
-		// abilityCritSystem := itemsys.NewAbilityCritSystem(world)
-		// baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
 
 		// Create a champion entity with necessary components
 		champion, _ = championFactory.CreatePlayerChampion("TFT_BlueGolem", 1)

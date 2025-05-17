@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
-	"time" // Import time package
+	"time" 
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
@@ -36,7 +36,6 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 	// Pass world instead of loadedData based on test setup
 	championFactory := factory.NewChampionFactory(world)
 	equipmentManager := managers.NewEquipmentManager(world)
-	// traitManager := managers.NewTraitManager(world) // Trait manager might be needed if not handled internally by simulation setup
 
 	// Map to link request champion ID (ApiName) to ECS entity ID
 	entityMap := make(map[ecs.Entity]string)

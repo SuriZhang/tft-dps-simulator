@@ -14,6 +14,10 @@ import (
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 	traitsys "tft-dps-simulator/internal/core/systems/traits"
 	"tft-dps-simulator/internal/core/utils"
+
+	// Import handlers packages for side effects (to run their init() functions)
+    _ "tft-dps-simulator/internal/core/systems/items/handlers" // For item handlers
+    _ "tft-dps-simulator/internal/core/systems/traits/handlers" // For trait handlers
 )
 
 // Simulation manages the simulation loop and coordinates system execution
@@ -24,9 +28,9 @@ type Simulation struct {
 	statCalcSystem         *systems.StatCalculationSystem
 	baseStaticItemSystem   *itemsys.BaseStaticItemSystem
 	abilityCritSystem      *itemsys.AbilityCritSystem
-	dynamicTimeItemSystem  *itemsys.DynamicTimeItemSystem
 	traitCounterSystem *traitsys.TraitCounterSystem
 	traitManager *managers.TraitManager 
+	itemManger *managers.ItemManager 
 	// Add other systems as needed
 
 	config      SimulationConfig
@@ -57,22 +61,19 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	baseStaticItemSystem := itemsys.NewBaseStaticItemSystem(world)
 	abilityCritSystem := itemsys.NewAbilityCritSystem(world)
 	spellCastSystem := systems.NewSpellCastSystem(world, eventBus)
-	dynamicEventItemSystem := itemsys.NewDynamicEventItemSystem(world, eventBus)
-	dynamicTimeItemSystem := itemsys.NewDynamicTimeItemSystem(world, eventBus)
 	championActionSystem := systems.NewChampionActionSystem(world, eventBus)
 	traitManager := managers.NewTraitManager(world, traitState, eventBus)
-	traitCounterSystem := traitsys.NewTraitCounterSystem(world, traitState) 
+	traitCounterSystem := traitsys.NewTraitCounterSystem(world, traitState)
+	itemManger := managers.NewItemManager(world, eventBus)
 
 	// Register Event Handlers
 	eventBus.RegisterHandler(damageSystem)
-	eventBus.RegisterHandler(dynamicEventItemSystem)
 	eventBus.RegisterHandler(championActionSystem)
 	eventBus.RegisterHandler(autoAttackSystem)
 	eventBus.RegisterHandler(spellCastSystem)
 	eventBus.RegisterHandler(statCalcSystem)
-	eventBus.RegisterHandler(dynamicTimeItemSystem)
 	eventBus.RegisterHandler(traitManager)
-
+	eventBus.RegisterHandler(itemManger)
 
 	sim := &Simulation{
 		world:                  world,
@@ -81,9 +82,10 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 		statCalcSystem:         statCalcSystem,
 		baseStaticItemSystem:   baseStaticItemSystem,
 		abilityCritSystem:      abilityCritSystem,
-		dynamicTimeItemSystem:  dynamicTimeItemSystem,
+		// dynamicTimeItemSystem:  dynamicTimeItemSystem,
 		traitCounterSystem:    traitCounterSystem,
 		traitManager: traitManager,
+		itemManger: itemManger,
 		config:                 config,
 		currentTime:            0.0,
 	}
@@ -111,8 +113,8 @@ func (s *Simulation) setupCombat() {
 	// TODO: Implement other "before combat" steps from devlog.md (L279)
 	// 1. Resolve start-of-combat effects (Items like Thief's Gloves - requires item implementation) (devlog.md L280)
 	
-	// 3. Enqueue time effects (e.g., Archangel's) - Requires DynamicTimeItemSystem refactor (devlog.md L282)
-	s.dynamicTimeItemSystem.EnqueueInitialEvents()
+	// // 3. Enqueue time effects (e.g., Archangel's)
+	s.itemManger.EnqueueInitialEvents()
 	
 	// 4. Other special handlings (e.g., Overlord - requires trait implementation) (devlog.md L283)
 
@@ -167,6 +169,8 @@ func (s *Simulation) RunSimulation() {
 		log.Fatal("EventBus is not a *SimpleBus, cannot run simulation")
 		return
 	}
+
+	// s.itemManger.EnqueueInitialEvents()
 
 	// Main event loop
 	for simpleBus.Len() > 0 {

@@ -26,7 +26,7 @@ func init() {
 func (h *RapidfireHandler) OnActivate(teamID int, effect data.Effect, world *ecs.World) {
 	log.Printf("RapidfireHandler: Activating for Team %d (Style %d)", teamID, effect.Style)
 
-	teamASBonus, okAS := effect.Variables["{b6739a03}"] // Mapped from "{b6739a03}"
+	teamASBonus, okAS := effect.Variables["TeamBonus"]
 	asPerStack, okStackAS := effect.Variables["AttackSpeed"]
 	maxStacksFloat, okMax := effect.Variables["MaxStacks"]
 

@@ -51,7 +51,8 @@ func (eq *EventQueue) Pop() interface{} {
 
 // EventEnqueuer provides an interface for adding events to the queue.
 type EventEnqueuer interface {
-     Enqueue(evt interface{}, timestamp float64)
+
+    Enqueue(evt interface{}, timestamp float64)
 }
 
 // PriorityQueue wraps the EventQueue and provides Enqueue method.

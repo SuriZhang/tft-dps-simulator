@@ -17,7 +17,9 @@ type EquipmentManager struct {
 
 // NewEquipmentManager creates a new EquipmentManager.
 func NewEquipmentManager(world *ecs.World) *EquipmentManager {
-	return &EquipmentManager{world: world}
+    return &EquipmentManager{
+        world:    world,
+    }
 }
 
 // AddItemToChampion adds an item to a champion's equipment if there's space.
@@ -67,7 +69,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 	// --- Add Specific Effect Components for Dynamic Items ---
 	switch itemApiName {
 	case data.TFT_Item_ArchangelsStaff:
-		if _, exists := em.world.GetArchangelsEffect(champion); !exists {
+		if _, exists := em.world.GetArchangelsStaffEffect(champion); !exists {
 			// Fetch values from item data
 			interval := item.Effects["IntervalSeconds"] // Default to 0 if not found
 			apPerStack := item.Effects["APPerInterval"] // Default to 0 if not found
@@ -122,8 +124,14 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 		if _, exists := em.world.GetGuinsoosRagebladeEffect(champion); !exists {
 			// Fetch the correct value from item data
 			asPerStack := item.Effects["AttackSpeedPerStack"]
+			// TODO: fix the effect field name when the data is updated
+			intervalSeconds, ok := item.Effects["IntervalSeconds"]
+			if !ok {
+				intervalSeconds = 1.0 // Default to 1.0 if not found
+			}
+			
 			// Create the effect component
-			ragebladeEffect := items.NewGuinsoosRagebaldeEffect(asPerStack / 100)
+			ragebladeEffect := items.NewGuinsoosRagebladeEffect(intervalSeconds, asPerStack / 100)
 			err := em.world.AddComponent(champion, ragebladeEffect)
 			if err != nil {
 				log.Printf("Warning: Failed to add GuinsoosRagebladeEffect component for champion %s: %v", championName, err)
@@ -134,13 +142,16 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 		}
 	}
 
-	// Calculate the item stats and apply them to the champion, update ItemEffect component
-	err = em.calculateAndUpdateStaticItemEffects(champion)
-	if err != nil {
-		return fmt.Errorf("failed to calculate item effects for champion %s: %w", championName, err)
-	}
+    log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)
+    err = em.calculateAndUpdateStaticItemEffects(champion)
+    if err != nil {
+        // Attempt to remove the item if static effect calculation fails to revert state
+        equipment.RemoveItem(itemApiName) // Best effort cleanup
+        // Also potentially remove the specific effect component added above
+        return fmt.Errorf("failed to calculate item effects for champion %s after adding %s: %w. Item addition reverted.", championName, itemApiName, err)
+    }
 
-	return nil
+    return nil
 }
 
 // RemoveItemFromChampion removes an item from a champion's equipment by its API name.
@@ -170,8 +181,8 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 	// --- Remove Specific Effect Components for Dynamic Items ---
 	switch itemApiName {
 	case data.TFT_Item_ArchangelsStaff:
-		if _, exists := em.world.GetArchangelsEffect(champion); exists {
-			em.world.RemoveComponent(champion, reflect.TypeOf(items.ArchangelsEffect{}))
+		if _, exists := em.world.GetArchangelsStaffEffect(champion); exists {
+			em.world.RemoveComponent(champion, reflect.TypeOf(items.ArchangelsStaffEffect{}))
 			log.Printf("Removed ArchangelsEffect component from champion %s", championName)
 		}
 	case data.TFT_Item_Quicksilver:
