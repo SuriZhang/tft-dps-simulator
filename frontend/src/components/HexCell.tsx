@@ -65,6 +65,13 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         position,
       });
       console.log("Adding champion to board", selectedChampion, position);
+      // Deselect the champion after placing it
+      dispatch({ type: "SELECT_CHAMPION", champion: undefined });
+      console.log(
+        "deselecting:",
+        selectedChampion,
+        position,
+      );
     } else if (champion && selectedItem) {
       dispatch({
         type: "ADD_ITEM_TO_CHAMPION",
