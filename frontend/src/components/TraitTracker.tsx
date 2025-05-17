@@ -19,12 +19,11 @@ import {
 
 // Define colors for trait tiers
 const traitTierColors = {
-  inactive: "border-gray-700 bg-gray-700/10",
-  bronze: "border-yellow-700 bg-yellow-600/50",
-  silver: "border-gray-400 bg-gray-400/20",
-  gold: "border-yellow-500 bg-yellow-500/20",
-  prismatic:
-    "bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500",
+  inactive: "border-gray-700 bg-gray-900/50", // Darker background for better contrast
+  bronze: "border-amber-600 bg-amber-800/60", // More coppery/brownish
+  silver: "border-gray-400 bg-gray-700/60", // Lighter border, darker background
+  gold: "border-yellow-400 bg-yellow-700/60", // Bright gold border, richer gold background
+  prismatic: "border-teal-400 bg-sky-950/70", // Vibrant teal border, dark contrasting background (inspired by high-tier TFT visuals)
 };
 
 // Find the activated bonus for a trait

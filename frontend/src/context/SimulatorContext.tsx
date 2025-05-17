@@ -513,7 +513,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({
           .filter(
             (item) =>
               setActiveItems.includes(item.apiName) &&
-              item.apiName.startsWith("TFT_Item_") &&
+              item.apiName.includes("_Item_") &&
               !item?.apiName?.startsWith("TFT_Item_Grant") &&
               !item?.apiName?.includes("Anvil"),
           )
@@ -531,6 +531,7 @@ export const SimulatorProvider: React.FC<{ children: React.ReactNode }> = ({
             }
             return item;
           }) as Item[];
+        console.log("Items:", items);
 
         const augments = itemsAndAugmenets
           .filter((item) => setActiveAugments.includes(item.apiName))
