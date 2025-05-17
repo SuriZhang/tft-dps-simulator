@@ -1,6 +1,5 @@
 import React from "react";
 import { useSimulator } from "../context/SimulatorContext";
-import { cn } from "../lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Separator } from "./ui/separator"; // Add Separator import
 import {
@@ -11,7 +10,6 @@ import {
 } from "./ui/tooltip";
 import { Info } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
-import SimulationTimelineChart from "./SimulationTimelineChart";
 
 const DamageStatsPanel = () => {
   const { state } = useSimulator();

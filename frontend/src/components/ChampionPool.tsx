@@ -12,7 +12,7 @@ const ChampionPool: React.FC = () => {
   const { champions } = state;
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCost, setFilterCost] = useState<number | null>(null);
-  const [filterTrait, setFilterTrait] = useState<string | null>(null);
+  const [filterTrait, _setFilterTrait] = useState<string | null>(null);
 
   const filteredChampions = useMemo(() => {
     return champions

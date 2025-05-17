@@ -1,23 +1,18 @@
 import React from "react";
 import { useSimulator } from "../context/SimulatorContext";
-import { cn } from "../lib/utils";
 import { Button } from "./ui/button"; // Import Button
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import {
-  RotateCcw,
-  Download,
-  Upload,
   Trash2,
   Settings,
-  Info,
   Share2,
   Copy,
   UploadCloud,
 } from "lucide-react"; // Import necessary icons
 
 const ControlBar: React.FC = () => {
-  const { state, dispatch } = useSimulator();
+  const { dispatch } = useSimulator();
 
   // Toggle states for UI controls - Assuming these might come from context later
   const [showNames, setShowNames] = React.useState(true);

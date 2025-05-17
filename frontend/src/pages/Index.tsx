@@ -1,11 +1,10 @@
-import React from "react";
 import { SimulatorProvider } from "../context/SimulatorContext";
 import MainBoard from "../components/MainBoard";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 const Index = () => {
   // TODO: Implement search functionality
-  const [globalSearchTerm, setGlobalSearchTerm] = React.useState("");
+  // const [globalSearchTerm, setGlobalSearchTerm] = React.useState("");
 
   return (
     <SimulatorProvider>

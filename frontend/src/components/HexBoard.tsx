@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import HexCell from "./HexCell";
 import { BOARD_ROWS, BOARD_COLS } from "../utils/constants";
 import { useSimulator } from "../context/SimulatorContext";

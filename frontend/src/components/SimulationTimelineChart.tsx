@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"; // Ensure useState is imported
+import { useMemo, useState } from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import {
   LineChart,

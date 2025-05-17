@@ -86,7 +86,7 @@ const TraitTracker: React.FC = () => {
 
   // Sort traits: active first, then by name
   const sortedTraits = [...traits]
-    .filter((trait) => (hasChampions ? true : false)) // Show no traits when no champions
+    .filter(() => hasChampions) // Show no traits when no champions
     .sort((a, b) => {
       if (a.active > 0 && b.active === 0) return -1;
       if (a.active === 0 && b.active > 0) return 1;

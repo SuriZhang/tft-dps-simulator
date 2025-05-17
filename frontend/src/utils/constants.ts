@@ -1,4 +1,4 @@
-import { Champion, Item, Trait, TFTSetData, Set } from "./types"; // Import Set type
+import { Item, TFTSetData, Set } from "./types"; // Import Set type
 
 // Remove the local Set interface definition
 

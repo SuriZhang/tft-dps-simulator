@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 import { BoardPosition, Champion, Item } from "../utils/types";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
