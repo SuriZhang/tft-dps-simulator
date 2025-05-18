@@ -616,3 +616,15 @@ DONE Today:
 - [x] implement new item Spirit Visage
 - [x] bugfix: when multiple instance of same champion exists on the board, the timeline chart could only select one instance
 - [x] bugfix: deselect champion after champion is added to HexCell
+
+## 20250518
+icons for AD/AP/CriticStrike etc: https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/ux/fonts/texticons/lol/statsicon/
+
+DONE Today:
+- [x] deploy using fly.io -> https://tft-dps-simulator.fly.dev/
+- [x] submit project on riot portal
+- [x] implement new item Kraken's Fury
+- [x] frontend minor enhancement: hexcell tooltip, item tooltip
+
+TODO:
+- [ ] frontend: hexcell click on champion cells and use a shadcn Sheet to display champion details (ability, stats etc)

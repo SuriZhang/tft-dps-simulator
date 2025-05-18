@@ -26,40 +26,119 @@ const formatDescription = (
   if (!desc) return "";
   let formattedDesc = desc;
 
-  // 1. Replace placeholders like @EffectName@
+  // 1. Replace placeholders like @EffectName@ or @EffectName*100@
   if (effects) {
-    for (const [key, value] of Object.entries(effects)) {
-      const placeholder = new RegExp(`@${key}(?![a-zA-Z0-9_])@`, "g"); // Ensure full placeholder match
-      const displayValue =
-        value !== null && value !== undefined
-          ? formatEffectValueHelper(value)
-          : "";
-      formattedDesc = formattedDesc.replace(placeholder, displayValue);
+    const placeholderRegex = /@([^@]+)@/g;
+    let resultString = "";
+    let lastIndex = 0;
+    let match;
+
+    while ((match = placeholderRegex.exec(formattedDesc)) !== null) {
+      resultString += formattedDesc.substring(lastIndex, match.index); // Append text before placeholder
+
+      const placeholderContent = match[1]; // e.g., "CritDamageToGive*100" or "HexRange"
+      let replacementValue = match[0]; // Default to original placeholder if not processed
+
+      if (placeholderContent.endsWith("*100")) {
+        const key = placeholderContent.slice(0, -4); // Remove '*100'
+        if (effects[key] !== undefined && typeof effects[key] === "number") {
+          replacementValue = (effects[key] * 100).toFixed(0);
+        }
+      } else {
+        const key = placeholderContent;
+        if (effects[key] !== undefined) {
+          replacementValue = formatEffectValueHelper(effects[key]);
+        }
+      }
+      resultString += replacementValue;
+      lastIndex = placeholderRegex.lastIndex;
     }
+    resultString += formattedDesc.substring(lastIndex); // Append remaining text
+    formattedDesc = resultString;
   }
 
-  // 2. Handle specific TFT tags
-  // <TFTKeyword>Sunder</TFTKeyword> -> <span class="text-yellow-500 font-medium">Sunder</span>
+  // 2. Handle specific TFT tags and other HTML-like tags
+
+  // Styling for specific keywords/concepts
   formattedDesc = formattedDesc.replace(
-    /<TFTKeyword>(.*?)<\/TFTKeyword>/g,
+    /<TFTKeyword>(.*?)<\/TFTKeyword>/gi,
     '<span class="text-yellow-500 font-medium">$1</span>',
   );
-
-  // <tftbold>Sunder</tftbold> -> <strong>Sunder</strong>
   formattedDesc = formattedDesc.replace(
-    /<tftbold>(.*?)<\/tftbold>/g,
-    "<strong>$1</strong>",
+    /<tftbold>(.*?)<\/tftbold>/gi,
+    '<em class="font-semibold">$1</em>', // Italic + Semi-bold
+  );
+  formattedDesc = formattedDesc.replace(
+    /<magicDamage>(.*?)<\/magicDamage>/gi,
+    '<span class="text-purple-400">$1</span>',
+  );
+  formattedDesc = formattedDesc.replace(
+    /<physicalDamage>(.*?)<\/physicalDamage>/gi,
+    '<span class="text-red-500">$1</span>',
+  );
+  formattedDesc = formattedDesc.replace(
+    /<trueDamage>(.*?)<\/trueDamage>/gi,
+    '<span class="text-white font-semibold">$1</span>',
+  );
+  formattedDesc = formattedDesc.replace(
+    /<TFTBonus>(.*?)<\/TFTBonus>/gi,
+    '<span class="text-green-400">$1</span>',
+  );
+  formattedDesc = formattedDesc.replace(
+    /<TFTShadowItemPenalty>(.*?)<\/TFTShadowItemPenalty>/gi,
+    '<span class="text-red-400 italic">$1</span>', // Example: Red and italic for penalty
+  );
+  formattedDesc = formattedDesc.replace(
+    /<healing>(.*?)<\/healing>/gi,
+    '<span class="text-green-300">$1</span>',
+  );
+  formattedDesc = formattedDesc.replace(
+    /<TFTHighlight>(.*?)<\/TFTHighlight>/gi,
+    '<span class="text-blue-300 font-medium">$1</span>',
   );
 
-  // <br> tags
-  formattedDesc = formattedDesc.replace(/<br\s*\/?>/gi, "<br />");
+  // Basic handling for <li> items (convert to bullet points on new lines)
+  // Ensuring <ul> or <ol> wrappers would require more complex parsing.
+  formattedDesc = formattedDesc.replace(/<li>(.*?)<\/li>/gi, "<br />&bull; $1");
 
-  // Strip <tftitemrules> tags but keep content (content should have been processed for <tftbold>)
-  formattedDesc = formattedDesc.replace(/<\/?tftitemrules>/g, "");
+  // Tags to strip while keeping their content.
+  // This will also strip attributes within these tags.
+  // Order might matter if tags are nested.
+  const tagsToStripKeepContent = [
+    "tftitemrules",
+    "rules",
+    "TFTRadiantItemBonus",
+    "TFTShadowItemBonus",
+    "TFTPassive",
+    "scaleLevel", // Handles <scaleLevel> and <scaleLevel enabled=...> by stripping tag, keeping content
+    "scaleShimmer",
+    "TFTTrackerLabel",
+    "spellPassive",
+    "spellActive", // Handles <spellActive> and <spellActive enabled=...> by stripping tag, keeping content
+    "scaleHealth",
+    "keyword", // If different from styled TFTKeyword
+    "tftrules",
+    "active",
+    // Complex conditional tags - content is kept as a fallback
+    "ShowIfNot\\.TFT14_Mob_IsActive_T3", // Escaped dot for regex
+    "ShowIf\\.TFT14_Mob_IsActive_T3", // Escaped dot for regex
+    "ShowIfNot\\.TFTUnitProperty\\.Item:TFT10_BlingActive",
+    "ShowIf\\.TFTUnitProperty\\.Item:TFT10_BlingActive",
+    "ShowIfCustom\\.Set=TFTSetEventCT",
+  ];
 
-  // Handle general stat tags like <scaleAP> or <scaleAD> by making them slightly distinct if needed
-  // For now, this example focuses on the provided tags.
-  // You might want to add more rules for other custom tags if they exist.
+  tagsToStripKeepContent.forEach((tag) => {
+    // Regex to match <tag ...attributes...>content</tag> and replace with content
+    const contentKeepingRegex = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "gi");
+    formattedDesc = formattedDesc.replace(contentKeepingRegex, "$1");
+    // Regex to match opening/closing tags like <tag ...attributes...> or </tag> and remove them
+    // This helps clean up tags that might not have been caught by the above or are self-closing/empty
+    const stripTagOnlyRegex = new RegExp(`</?${tag}[^>]*>`, "gi");
+    formattedDesc = formattedDesc.replace(stripTagOnlyRegex, "");
+  });
+
+  // Consolidate multiple <br> tags (and variants) into one
+  formattedDesc = formattedDesc.replace(/(<br\s*\/?>\s*)+/gi, "<br />");
 
   return formattedDesc;
 };
@@ -68,29 +147,63 @@ const primaryStatsConfig: Record<
   string,
   { name: string; colorClass?: string; isPercentage?: boolean; icon?: string }
 > = {
-  Health: { name: "Health", colorClass: "text-green-400", icon:"/icon_health_max.png" },
-  Mana: { name: "Mana", colorClass: "text-sky-400", icon:"/icon_mana.png" },
-  Armor: { name: "Armor", colorClass: "text-yellow-400", icon:"/icon_armor.png" },
-  MagicResist: { name: "Magic Resist", colorClass: "text-cyan-400", icon:"/icon_mr.png" },
-  AttackDamage: { name: "Attack Damage", colorClass: "text-red-400", icon:"/icon_damage.png" },
-  AbilityPower: { name: "Ability Power", colorClass: "text-pink-400", icon:"/icon_ap.png" },
-  AttackSpeed: {
+  Health: {
+    name: "Health",
+    colorClass: "text-green-400",
+    icon: "/icon_health_max.png",
+  },
+  Mana: { name: "Mana", colorClass: "text-sky-400", icon: "/icon_mana.png" },
+  Armor: {
+    name: "Armor",
+    colorClass: "text-yellow-400",
+    icon: "/icon_armor.png",
+  },
+  MagicResist: {
+    name: "Magic Resist",
+    colorClass: "text-cyan-400",
+    icon: "/icon_mr.png",
+  },
+  AD: {
+    // Changed from AttackDamage to AD to match item.effects
+    name: "Attack Damage",
+    colorClass: "text-orange-400", // Orange for AD value as per Infinity Edge image
+    isPercentage: true, // AD for Infinity Edge is a percentage
+    icon: "/icon_damage.png",
+  },
+  AP: {
+    name: "Ability Power",
+    colorClass: "text-purple-400",
+    icon: "/icon_ap.png",
+  },
+  AS: {
     name: "Attack Speed",
-    colorClass: "text-teal-400",
+    colorClass: "text-amber-400",
     isPercentage: true,
-    icon:"/icon_as.png",
+    icon: "/icon_as.png",
   },
   CritChance: {
-    name: "Crit Chance",
-    colorClass: "text-orange-400",
+    name: "Critical Strike Chance", // Updated name
+    colorClass: "text-red-400", // Red for Crit Chance value as per Infinity Edge image
     isPercentage: true,
-    icon:"/icon_crit.png",
+    icon: "/icon_crit.png",
   },
   CritDamage: {
     name: "Crit Damage",
-    colorClass: "text-orange-500",
+    colorClass: "text-orange-500", 
     isPercentage: true,
-    icon:"/icon_critmult.png",
+    icon: "/icon_critmult.png",
+  },
+  BonusDamage: {
+    name: "Damage Amp",
+    colorClass: "text-gray-300",
+    isPercentage: true,
+    icon: "/icon_damageamp.png",
+  },
+  StatOmnivamp: {
+    name: "Omnivamp",
+    colorClass: "text-red-400",
+    isPercentage: true,
+    icon: "/icon_omnivamp.png",
   },
   // Add more stats as needed, e.g., Omnivamp, etc.
   // Example with icon: Health: { name: "Health", colorClass: "text-green-400", icon: "/icons/health.svg" },
@@ -156,7 +269,6 @@ const ItemIcon: React.FC<ItemIconProps> = ({
           </Avatar>
         </TooltipTrigger>
         <TooltipContent className="w-72 md:w-80 p-3">
-          {" "}
           {/* Adjusted width and padding */}
           <p className="font-bold text-base mb-2">{item.name}</p>
           {/* Display primary stats */}
@@ -171,18 +283,34 @@ const ItemIcon: React.FC<ItemIconProps> = ({
                       typeof value === "number" &&
                       value !== 0
                     ) {
-                      let displayValue =
-                        value > 0 ? `+${value.toFixed(0)}` : value.toFixed(0);
+                      let displayValue: string;
                       if (statConfig.isPercentage) {
-                        // Assuming 'value' for percentage stats is the direct number, e.g., 25 for 25%
-                        // If it's a decimal like 0.25, you'd multiply by 100.
-                        displayValue = `${value > 0 ? "+" : ""}${value.toFixed(0)}%`;
+                        // If value is a decimal like 0.15, multiply by 100.
+                        // Otherwise, assume it's already a whole percentage number (e.g., 25 for 25%).
+                        const numericValue = Number(value); // Ensure it's a number
+                        const percentage =
+                          (numericValue < 1 &&
+                            numericValue > -1 &&
+                            numericValue !== 0) ||
+                          (numericValue > 1 &&
+                            numericValue % 1 !== 0 &&
+                            String(numericValue).includes(".")) // handles 0.15 or 1.15 (115%)
+                            ? numericValue * 100
+                            : numericValue;
+                        displayValue = `${percentage > 0 ? "+" : ""}${percentage.toFixed(0)}%`;
+                      } else {
+                        displayValue = `${value > 0 ? "+" : ""}${value.toFixed(0)}`;
                       }
 
                       return (
                         <div key={key} className="flex items-center">
                           {/* Placeholder for icon, if you have them mapped in primaryStatsConfig */}
-                          {statConfig.icon && <img src={statConfig.icon}  className="w-4 h-4 mr-1.5" />}
+                          {statConfig.icon && (
+                            <img
+                              src={statConfig.icon}
+                              className="w-4 h-4 mr-1.5"
+                            />
+                          )}
                           <span
                             className={`font-medium ${statConfig.colorClass || "text-foreground"} mr-1.5`}
                           >
