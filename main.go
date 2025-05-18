@@ -2,28 +2,22 @@ package main
 
 import (
 	"context"
-	"embed"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
-	"io/fs"
+	"fmt"
 
 	"tft-dps-simulator/internal/core/data" // Import data package
 	"tft-dps-simulator/internal/server"
 	"tft-dps-simulator/internal/service" // Import service package
 
-	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2"
 	_ "github.com/joho/godotenv/autoload"
 )
-
-//go:embed frontend/dist
-var frontendFS embed.FS
 
 func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
@@ -79,17 +73,11 @@ func main() {
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
-	// Serve static files from embedded FS
-    // Create a sub-filesystem for the 'dist' directory within frontendFS
-    distFS, err := fs.Sub(frontendFS, "dist")
-    if err != nil {
-        log.Fatalf("Failed to create sub VFS for frontend/dist: %v", err)
-    }
-    // Serve static files from the 'dist' subdirectory of the embedded FS
-    server.App.Use("/", filesystem.New(filesystem.Config{
-        Root:  http.FS(distFS), // Use the sub-filesystem
-        Index: "index.html",
-    }))
+    // Serve static files from the filesystem
+    // Ensure "./frontend/dist" path is correct relative to your executable in deployment
+    server.App.Static("/", "./frontend/dist", fiber.Static{
+        Index: "index.html", // Explicitly set index.html
+    })
 	server.RegisterFiberRoutes()
 
 
