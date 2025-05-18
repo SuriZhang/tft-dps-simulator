@@ -156,6 +156,20 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 					championName, intervalSeconds, asPerStack)
 			}
 		}
+	
+	case data.TFT_Item_KrakensFury:
+        if _, exists := em.world.GetKrakensFuryEffect(champion); !exists {
+            adPerStack := item.Effects["ADOnAttack"]
+
+            krakensFuryEffect := items.NewKrakensFuryEffect(adPerStack)
+            err := em.world.AddComponent(champion, krakensFuryEffect)
+            if err != nil {
+                log.Printf("Warning: Failed to add KrakensFuryEffect component for champion %s: %v", championName, err)
+            } else {
+                log.Printf("Added KrakensFuryEffect component to champion %s (AD/Stack: %.2f%%)",
+                    championName, adPerStack*100)
+            }
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)
@@ -164,7 +178,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
         // Attempt to remove the item if static effect calculation fails to revert state
         equipment.RemoveItem(itemApiName) // Best effort cleanup
         // Also potentially remove the specific effect component added above
-        return fmt.Errorf("failed to calculate item effects for champion %s after adding %s: %w. Item addition reverted.", championName, itemApiName, err)
+        return fmt.Errorf("failed to calculate item effects for champion %s after adding %s: %w. Item addition reverted", championName, itemApiName, err)
     }
 
     return nil
