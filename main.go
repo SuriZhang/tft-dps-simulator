@@ -75,8 +75,6 @@ func main() {
 	// 3. Initialize Server with Services
 	server := server.New(simService) // Pass simService to New
 
-	server.RegisterFiberRoutes()
-
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
@@ -88,6 +86,8 @@ func main() {
         // PathPrefix: "dist", // If your //go:embed includes the "dist" folder itself as a prefix in the FS
 		Index:      "index.html",
     }))
+	server.RegisterFiberRoutes()
+
 
 	go func() {
 		portStr := os.Getenv("PORT")

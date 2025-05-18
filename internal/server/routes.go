@@ -51,7 +51,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	})
 
 	// Existing routes (keep them if needed, or move under API group)
-	s.App.Get("/", s.HelloWorldHandler)
+	// s.App.Get("/", s.HelloWorldHandler)
 	s.App.Get("/health", s.healthHandler)
 }
 
