@@ -106,3 +106,8 @@ ginkgo -r
 ├── /utils                      # Math helpers, targeting logic, RNG
 │   └── targeting.go            # FindNearestEnemy, etc.
 ```
+
+
+## build and test in docker locally
+docker build -t tft-dps-simulator-test .
+docker run -p 8080:8080 --rm tft-dps-simulator-test
