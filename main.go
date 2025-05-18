@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+	"io/fs"
 
 	"tft-dps-simulator/internal/core/data" // Import data package
 	"tft-dps-simulator/internal/server"
@@ -78,13 +79,16 @@ func main() {
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
-	  // Serve static files from embedded FS
-    // frontendFS is already the 'dist' directory due to the //go:embed directive.
-    // We serve its content directly.
+	// Serve static files from embedded FS
+    // Create a sub-filesystem for the 'dist' directory within frontendFS
+    distFS, err := fs.Sub(frontendFS, "dist")
+    if err != nil {
+        log.Fatalf("Failed to create sub VFS for frontend/dist: %v", err)
+    }
+    // Serve static files from the 'dist' subdirectory of the embedded FS
     server.App.Use("/", filesystem.New(filesystem.Config{
-        Root:       http.FS(frontendFS),
-        // PathPrefix: "dist", // If your //go:embed includes the "dist" folder itself as a prefix in the FS
-		Index:      "index.html",
+        Root:  http.FS(distFS), // Use the sub-filesystem
+        Index: "index.html",
     }))
 	server.RegisterFiberRoutes()
 
