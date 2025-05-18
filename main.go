@@ -78,6 +78,8 @@ func main() {
     server.App.Static("/", "./frontend/dist", fiber.Static{
         Index: "index.html", // Explicitly set index.html
     })
+
+	server.App.Static("/riot.txt", "./assets/riot.txt")
 	server.RegisterFiberRoutes()
 
 
