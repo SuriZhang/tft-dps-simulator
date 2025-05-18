@@ -7,11 +7,11 @@ build:
 	@echo "Building..."
 	
 	
-	@go build -o main.exe cmd/api/main.go
+	@go build -o main.exe main.go
 
 # Run the application
 run:
-	@go run cmd/api/main.go &
+	@go run main.go &
 	@cd frontend && npm install --prefer-offline --no-fund
 	@cd frontend && npm run dev
 	

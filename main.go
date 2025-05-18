@@ -2,20 +2,27 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
+
 	"tft-dps-simulator/internal/core/data" // Import data package
 	"tft-dps-simulator/internal/server"
 	"tft-dps-simulator/internal/service" // Import service package
-	"time"
 
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	_ "github.com/joho/godotenv/autoload"
 )
+
+//go:embed frontend/dist
+var frontendFS embed.FS
 
 func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
@@ -33,8 +40,6 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 	ctxTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Use the App field directly for ShutdownWithContext if FiberServer embeds *fiber.App
-	// Assuming FiberServer has an 'App' field of type *fiber.App
 	if err := fiberServer.App.ShutdownWithContext(ctxTimeout); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
@@ -74,6 +79,14 @@ func main() {
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
+
+	  // Serve static files from embedded FS
+    // frontendFS is already the 'dist' directory due to the //go:embed directive.
+    // We serve its content directly.
+    server.App.Use("/", filesystem.New(filesystem.Config{
+        Root:       http.FS(frontendFS),
+        PathPrefix: "dist", // If your //go:embed includes the "dist" folder itself as a prefix in the FS
+    }))
 
 	go func() {
 		portStr := os.Getenv("PORT")
