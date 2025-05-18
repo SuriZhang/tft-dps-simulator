@@ -19,8 +19,7 @@ const HexBoard = () => {
 
     try {
       // Call the mock endpoint
-      const response = await fetch(
-        `http://localhost:${import.meta.env.VITE_PORT}/api/v1/simulation/run`,
+      const response = await fetch(`/api/v1/simulation/run`,
         {
           method: "POST",
           headers: {
