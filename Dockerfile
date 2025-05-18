@@ -39,4 +39,4 @@ COPY --from=frontend /app/frontend/dist ./frontend/dist
 # if your Go HTTP server is set up to serve "./frontend/build" for static files:
 EXPOSE 8080
 # Run the API binary on container start
-CMD ['./main']
+CMD ["./main"]
