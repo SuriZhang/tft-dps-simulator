@@ -85,7 +85,8 @@ func main() {
     // We serve its content directly.
     server.App.Use("/", filesystem.New(filesystem.Config{
         Root:       http.FS(frontendFS),
-        PathPrefix: "dist", // If your //go:embed includes the "dist" folder itself as a prefix in the FS
+        // PathPrefix: "dist", // If your //go:embed includes the "dist" folder itself as a prefix in the FS
+		Index:      "index.html",
     }))
 
 	go func() {
