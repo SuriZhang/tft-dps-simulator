@@ -19,6 +19,9 @@ COPY . .
 RUN echo "Contents of /app in builder stage:" && ls -R /app
 RUN echo "Contents of /app/assets in builder stage:" && ls -R /app/assets || echo "/app/assets not found or empty in builder"
 
+# Copy the frontend build artifacts into the builder stage
+COPY --from=frontend /app/frontend/dist ./frontend/dist
+
 RUN CGO_ENABLED=0 go build -o main main.go
 
 # ┌────────────── Final image ──────────────┐
@@ -26,7 +29,7 @@ FROM debian:bookworm
 # (optional: add a non-root user here)
 WORKDIR /app
 # copy in the compiled binary
-COPY --from=builder /app/bin/api .
+COPY --from=builder /app/main .
 # copy in the game data assets
 COPY --from=builder /app/assets ./assets
 RUN echo "Contents of /app/assets in final image:" && ls -R /app/assets || echo "/app/assets not found or empty in final image"
