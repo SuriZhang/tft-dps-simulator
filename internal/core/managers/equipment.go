@@ -134,6 +134,17 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 					championName, missingHealthHeal*100, healTickRate)
 			}
 		}
+	case data.TFT_Item_BlueBuff:
+		if _, exists := em.world.GetBlueBuffEffect(champion); !exists {
+			blueBuff := items.NewBlueBuff()
+			err := em.world.AddComponent(champion, blueBuff)
+			if err != nil {
+				log.Printf("Warning: Failed to add BlueBuff component for champion %s: %v", championName, err)
+			} else {
+				log.Printf("Added BlueBuff component to champion %s (ManaRefund: %.1f, DamageAmp: %.1f%%, Timer: %.1fs)",
+					championName, blueBuff.ManaRefund, blueBuff.DamageAmp*100, blueBuff.TakedownTimer)
+			}
+		}
 
 	// Add cases for other dynamic items that need specific components
 	case data.TFT_Item_GuinsoosRageblade:

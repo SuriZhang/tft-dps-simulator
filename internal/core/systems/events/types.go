@@ -146,9 +146,22 @@ type QuicksilverEndEvent struct {
     Timestamp float64 // Time the effect ends
 }
 
-type SpiritVisageHealTickEvent struct { // New Event
+type SpiritVisageHealTickEvent struct { 
     Entity    ecs.Entity
     Timestamp float64
+}
+
+// BlueBuffDamageAmpActivateEvent signals the activation of Blue Buff's damage amplification.
+type BlueBuffDamageAmpActivateEvent struct {
+    Entity    ecs.Entity
+    Timestamp float64
+}
+// BlueBuffDamageAmpDeactivateEvent signals the deactivation of Blue Buff's damage amplification.
+type BlueBuffDamageAmpDeactivateEvent struct {
+    Entity    ecs.Entity
+    Timestamp float64
+    // Add a sequence ID to handle timer resets
+    ActivationSequence uint64
 }
 
 // RecalculateStatsEvent signals that an entity's stats need recalculation due to a change.

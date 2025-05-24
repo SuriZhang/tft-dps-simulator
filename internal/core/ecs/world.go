@@ -39,6 +39,7 @@ type World struct {
 	SpiritVisageEffects  map[Entity]*items.SpiritVisageEffect
 	KrakensFuryEffects map[Entity]*items.KrakensFuryEffect
 	SpearOfShojinEffects map[Entity]*items.SpearOfShojinEffect
+	BlueBuffEffects map[Entity]*items.BlueBuffEffect 
 
 	// --- Trait Effect Components ---
 	RapidfireEffects  map[Entity]*traits.RapidfireEffect
@@ -75,6 +76,7 @@ func NewWorld() *World {
 		SpiritVisageEffects:  make(map[Entity]*items.SpiritVisageEffect),
 		KrakensFuryEffects: make(map[Entity]*items.KrakensFuryEffect),
 		SpearOfShojinEffects: make(map[Entity]*items.SpearOfShojinEffect),
+		BlueBuffEffects: make(map[Entity]*items.BlueBuffEffect),
 
 		// --- Traits ---
 		RapidfireEffects: make(map[Entity]*traits.RapidfireEffect),
@@ -115,6 +117,7 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.SpiritVisageEffects, e)
 	delete(w.KrakensFuryEffects, e)
 	delete(w.SpearOfShojinEffects, e)
+	delete(w.BlueBuffEffects, e)
 	// Traits
 	delete(w.RapidfireEffects, e)
 	// Delete from other maps here...
@@ -220,6 +223,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.SpearOfShojinEffects[e] = &c
 	case *items.SpearOfShojinEffect:
 		w.SpearOfShojinEffects[e] = c
+	case items.BlueBuffEffect:
+		w.BlueBuffEffects[e] = &c
+	case *items.BlueBuffEffect:
+		w.BlueBuffEffects[e] = c
 	// Traits
 	case traits.RapidfireEffect:
 		w.RapidfireEffects[e] = &c
@@ -305,6 +312,9 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(items.SpearOfShojinEffect{}):
 		comp, ok := w.SpearOfShojinEffects[e]
 		return comp, ok
+	case reflect.TypeOf(items.BlueBuffEffect{}):
+		comp, ok := w.BlueBuffEffects[e]
+		return comp, ok
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		comp, ok := w.RapidfireEffects[e]
@@ -369,6 +379,8 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.KrakensFuryEffects, e)
 	case reflect.TypeOf(items.SpearOfShojinEffect{}):
 		delete(w.SpearOfShojinEffects, e)
+	case reflect.TypeOf(items.BlueBuffEffect{}):
+		delete(w.BlueBuffEffects, e)
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		delete(w.RapidfireEffects, e)
@@ -487,6 +499,8 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.KrakensFuryEffects)
 	case reflect.TypeOf(items.SpearOfShojinEffect{}):
 		return len(w.SpearOfShojinEffects)
+	case reflect.TypeOf(items.BlueBuffEffect{}):
+		return len(w.BlueBuffEffects)
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		return len(w.RapidfireEffects)
@@ -609,6 +623,11 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(items.SpearOfShojinEffect{}):
 		entities = make([]Entity, 0, len(w.SpearOfShojinEffects))
 		for e := range w.SpearOfShojinEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(items.BlueBuffEffect{}):
+		entities = make([]Entity, 0, len(w.BlueBuffEffects))
+		for e := range w.BlueBuffEffects {
 			entities = append(entities, e)
 		}
 	// Traits
@@ -767,6 +786,12 @@ func (w *World) GetKrakensFuryEffect(e Entity) (*items.
 func (w *World) GetSpearOfShojinEffect(e Entity) (*items.SpearOfShojinEffect, bool) {
 	comp, exists := w.SpearOfShojinEffects[e]
 	return comp, exists
+}
+
+// GetBlueBuffEffect returns the BlueBuffEffect component for an entity, type-safe.
+func (w *World) GetBlueBuffEffect(e Entity) (*items.BlueBuffEffect, bool) {
+	comp, ok := w.BlueBuffEffects[e]
+	return comp, ok
 }
 
 // GetRapidfireEffect returns the RapidfireEffect component for an entity, type-safe.

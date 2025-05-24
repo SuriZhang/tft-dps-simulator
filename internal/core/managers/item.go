@@ -64,7 +64,7 @@ func (im *ItemManager) CanHandle(event interface{}) bool {
 		return true
 		
 	// General game events that items might react to
-	case eventsys.AttackLandedEvent, eventsys.DamageAppliedEvent: // Add other relevant general events
+	case eventsys.AttackLandedEvent, eventsys.DamageAppliedEvent, eventsys.SpellLandedEvent, eventsys.KillEvent, eventsys.AssistEvent:
 		return true
 	default:
 		return false
@@ -85,6 +85,13 @@ func (im *ItemManager) HandleEvent(event any) { // Changed interface{} to any
         uniqueInvolvedEntities[evt.Entity] = struct{}{}
     case eventsys.GuinsoosRagebladeTickEvent:
         uniqueInvolvedEntities[evt.Entity] = struct{}{}
+    case eventsys.BlueBuffDamageAmpActivateEvent:
+        uniqueInvolvedEntities[evt.Entity] = struct{}{}
+    case eventsys.BlueBuffDamageAmpDeactivateEvent:
+        uniqueInvolvedEntities[evt.Entity] = struct{}{}
+    // General game events that items might react to
+    case eventsys.AttackFiredEvent:
+        uniqueInvolvedEntities[evt.Source] = struct{}{} // Item on attacker
     case eventsys.AttackLandedEvent:
         uniqueInvolvedEntities[evt.Source] = struct{}{} // Item on attacker
         // If items on the target can react to an attack landing (e.g., Bramble Vest), add evt.Target:
@@ -92,6 +99,12 @@ func (im *ItemManager) HandleEvent(event any) { // Changed interface{} to any
     case eventsys.DamageAppliedEvent:
         uniqueInvolvedEntities[evt.Source] = struct{}{} // For items on the dealer of damage
         uniqueInvolvedEntities[evt.Target] = struct{}{} // For items on the receiver of damage
+    case eventsys.SpellLandedEvent:
+        uniqueInvolvedEntities[evt.Source] = struct{}{} // For items on the caster
+    case eventsys.KillEvent:
+        uniqueInvolvedEntities[evt.Killer] = struct{}{} // For items on the killer
+    case eventsys.AssistEvent:
+        uniqueInvolvedEntities[evt.Assistor] = struct{}{} // For items on the assister
     default:
         // Log for unhandled event types, potentially at a debug level if noisy
         // log.Printf("ItemManager: Unhandled event type: %T for item processing", event)
