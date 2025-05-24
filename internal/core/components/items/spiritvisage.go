@@ -1,4 +1,3 @@
-// filepath: c:\Users\suriz\Documents\Projects\tft-dps-simulator\internal\core\components\items\spiritvisage.go
 package items
 
 // SpiritVisageEffect holds the state for the Spirit Visage item's healing.
