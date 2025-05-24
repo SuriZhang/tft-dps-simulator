@@ -482,9 +482,11 @@ var _ = Describe("Simulation", func() {
                 titansBonusResistsAtCap float64
                 titansStaticArmor       float64
 
-                // ragebladeData       *data.Item
-                // ragebladeStaticAS   float64
-                // ragebladeASPerStack float64
+                titansStaticArmor       float64
+
+                ragebladeData       *data.Item
+                ragebladeStaticAS   float64
+                ragebladeASPerStack float64
             )
 
             BeforeEach(func() {
@@ -497,10 +499,10 @@ var _ = Describe("Simulation", func() {
                 titansBonusResistsAtCap = titansData.Effects["BonusResistsAtStackCap"] // 20.0
                 titansStaticArmor = titansData.Effects["Armor"]               // 10.0
 
-                // ragebladeData = data.GetItemByApiName(data.TFT_Item_GuinsoosRageblade)
-                // Expect(ragebladeData).NotTo(BeNil())
-                // ragebladeStaticAS = ragebladeData.Effects["AS"] / 100.0          // 0.1
-                // ragebladeASPerStack = ragebladeData.Effects["AttackSpeedPerStack"] / 100.0 // 0.05
+                ragebladeData = data.GetItemByApiName(data.TFT_Item_GuinsoosRageblade)
+                Expect(ragebladeData).NotTo(BeNil())
+                ragebladeStaticAS = ragebladeData.Effects["AS"] / 100.0          // e.g. 0.1 for 10%
+                ragebladeASPerStack = ragebladeData.Effects["AttackSpeedPerStack"] / 100.0 // e.g. 0.05 for 5%
             })
 
             It("should stack Titan's Resolve on attacks and apply AD/AP bonuses", func() {
@@ -745,62 +747,264 @@ var _ = Describe("Simulation", func() {
                 Expect(attackerHealth.GetFinalMR()).To(BeNumerically("~", mrAtMax, 0.01), "Final MR should not change after max stacks")
             })
 
-            // It("should stack Guinsoo's Rageblade on attacks and apply AS bonus", func() {
-            //     // Add Rageblade to attacker
-            //     err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_GuinsoosRageblade)
-            //     Expect(err).NotTo(HaveOccurred())
+            It("should stack Guinsoo's Rageblade on attacks and apply AS bonus", func() {
+                // Add Rageblade to attacker
+                err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_GuinsoosRageblade)
+                Expect(err).NotTo(HaveOccurred())
 
-            //     // Get components and ensure attacker attacks
-            //     attackerAttack := getAttack(world, attacker)
-            //     attackerAttack.SetBaseAttackSpeed(0.5) // Base AS
-            //     targetHealth := getHealth(world, target)
-            //     if targetAttack, ok := world.GetAttack(target); ok {
-            //         targetAttack.SetFinalAttackSpeed(0)
-            //     }
+                // Get components and ensure attacker attacks
+                attackerAttack := getAttack(world, attacker)
+                attackerAttack.SetBaseAttackSpeed(0.5) // Base AS
+                targetHealth := getHealth(world, target)
+                if targetAttack, ok := world.GetAttack(target); ok {
+                    targetAttack.SetFinalAttackSpeed(0) // Target does not attack
+                    targetAttack.SetBaseAttackSpeed(0)
+                }
+                 // Ensure target has enough HP to survive all attacks
+                targetHealth.SetBaseMaxHP(10000.0)
+                targetHealth.SetCurrentHP(10000.0)
 
-            //     // Create simulation AFTER adding the item
-            //     sim = simulation.NewSimulationWithConfig(world, config) // Use default MaxTime initially if needed
-            //     Expect(sim).NotTo(BeNil())
 
-            //     // --- Initial State Verification (after setupCombat) ---
-            //     ragebladeEffect, ok := world.GetGuinsoosRagebladeEffect(attacker)
-            //     Expect(ok).To(BeTrue(), "GuinsoosRagebladeEffect component should be added")
-            //     Expect(ragebladeEffect.GetCurrentStacks()).To(Equal(0), "Initial stacks should be 0")
-            //     // Bonus AS should only include the static bonus initially
-            //     Expect(attackerAttack.GetBonusPercentAttackSpeed()).To(BeNumerically("~", ragebladeStaticAS, 0.001), "Initial Bonus AS should be static bonus")
-            //     baseAS := attackerAttack.GetBaseAttackSpeed() // 0.5
-            //     initialFinalAS := attackerAttack.GetFinalAttackSpeed()
-            //     expectedInitialFinalAS := baseAS * (1.0 + ragebladeStaticAS) // 0.5 * (1 + 0.1) = 0.55
-            //     Expect(initialFinalAS).To(BeNumerically("~", expectedInitialFinalAS, 0.001), "Initial Final AS should reflect base + static bonus")
+                // Create simulation AFTER adding the item
+                // MaxTime will be set specifically for this test later.
+                // Initial setupCombat runs here.
+                sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(0.1))
+                Expect(sim).NotTo(BeNil())
 
-            //     // --- Simulation Run ---
-            //     // Initial AS = 0.55 -> Interval = 1 / 0.55 = ~1.818s
-            //     // Attack 1 lands at t=0 (0 startup/recovery)
-            //     // Attack 2 lands ~1.8s -> Stack 1 -> Bonus AS = 0.1 + 0.05 = 0.15 -> Final AS = 0.5 * 1.15 = 0.575 -> Interval = ~1.739s
-            //     // Attack 3 lands ~1.8 + 1.7 = ~3.5s -> Stack 2 -> Bonus AS = 0.1 + 0.1 = 0.2 -> Final AS = 0.5 * 1.2 = 0.6 -> Interval = ~1.667s
-            //     // Attack 4 lands ~3.5 + 1.7 = ~5.2s -> Stack 3 -> Bonus AS = 0.1 + 0.15 = 0.25 -> Final AS = 0.5 * 1.25 = 0.625
-            //     // Run for 6.0s to ensure 3 attacks land.
-            //     sim.SetMaxTime(6.0)
-            //     sim.RunSimulation()
+                // --- Initial State Verification (after setupCombat) ---
+                ragebladeEffect, ok := world.GetGuinsoosRagebladeEffect(attacker)
+                Expect(ok).To(BeTrue(), "GuinsoosRagebladeEffect component should be added")
+                Expect(ragebladeEffect.GetCurrentStacks()).To(Equal(0), "Initial stacks should be 0")
 
-            //     // --- Post-Simulation Verification ---
-            //     expectedStacks := 4
-            //     Expect(attackerAttack.GetAttackCount()).To(Equal(expectedStacks))
-            //     Expect(ragebladeEffect.GetCurrentStacks()).To(Equal(expectedStacks), "Should gain 3 stacks from 3 attacks")
+                // Bonus AS should only include the static bonus initially from setupCombat
+                Expect(attackerAttack.GetBonusPercentAttackSpeed()).To(BeNumerically("~", ragebladeStaticAS, 0.001), "Initial BonusPercentAttackSpeed should be static bonus from item")
 
-            //     // Verify Bonus AS includes static + stacks
-            //     expectedTotalBonusAS := ragebladeStaticAS + (float64(expectedStacks) * ragebladeASPerStack) // 0.1 + 3*0.05 = 0.25
-            //     Expect(attackerAttack.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedTotalBonusAS, 0.001), "Bonus AS should include static + 3 stacks")
+                baseAS := attackerAttack.GetBaseAttackSpeed() // Should be 0.5
+                expectedInitialFinalAS := baseAS * (1.0 + ragebladeStaticAS) // 0.5 * (1 + 0.1) = 0.55
+                Expect(attackerAttack.GetFinalAttackSpeed()).To(BeNumerically("~", expectedInitialFinalAS, 0.001), "Initial FinalAttackSpeed should reflect base + static bonus")
 
-            //     // Verify Final AS reflects the total bonus
-            //     expectedFinalAS := baseAS * (1.0 + expectedTotalBonusAS) // 0.5 * (1 + 0.25) = 0.625
-            //     Expect(attackerAttack.GetFinalAttackSpeed()).To(BeNumerically("~", expectedFinalAS, 0.001), "Final AS should reflect base + static + 3 stacks")
+                // --- Simulation Run ---
+                // Attacker Base AS = 0.5. Static Bonus = 10%. AS per Stack = 5%.
+                // Initial Final AS = 0.5 * (1 + 0.10) = 0.55. Interval = 1 / 0.55 = ~1.818s.
+                // Attack 1 (t=0): Stacks = 1. Bonus AS = 0.10 (static) + 0.05 (1 stack) = 0.15. Final AS = 0.5 * 1.15 = 0.575. Interval = ~1.739s.
+                // Attack 2 (t~1.818): Stacks = 2. Bonus AS = 0.10 + 0.10 = 0.20. Final AS = 0.5 * 1.20 = 0.60. Interval = ~1.667s.
+                // Attack 3 (t~1.818 + 1.739 = 3.557): Stacks = 3. Bonus AS = 0.10 + 0.15 = 0.25. Final AS = 0.5 * 1.25 = 0.625. Interval = ~1.600s.
+                // Attack 4 (t~3.557 + 1.667 = 5.224): Stacks = 4. Bonus AS = 0.10 + 0.20 = 0.30. Final AS = 0.5 * 1.30 = 0.65.
+                // Set MaxTime to allow 4 attacks to land.
+                sim.SetMaxTime(5.3) // Slightly above 5.224s
+                // Reset attack count before running, as some might have occurred during setup/previous short sim runs.
+                attackerAttack.SetAttackCount(0)
+                sim.RunSimulation()
 
-            //     // Verify target took damage
-            //     Expect(targetHealth.GetCurrentHP()).To(BeNumerically("<", targetMaxHP), "Target should take damage from attacks")
-            // })
+                // --- Post-Simulation Verification ---
+                expectedAttacks := 4
+                expectedStacks := 4 // Assuming each attack adds a stack
+                Expect(attackerAttack.GetAttackCount()).To(Equal(expectedAttacks), fmt.Sprintf("Expected %d attacks", expectedAttacks))
+                Expect(ragebladeEffect.GetCurrentStacks()).To(Equal(expectedStacks), fmt.Sprintf("Should gain %d stacks from %d attacks", expectedStacks, expectedAttacks))
+
+                // Verify Bonus AS includes static + stacks
+                expectedTotalBonusAS := ragebladeStaticAS + (float64(expectedStacks) * ragebladeASPerStack) // 0.1 + 4*0.05 = 0.1 + 0.2 = 0.3
+                Expect(attackerAttack.GetBonusPercentAttackSpeed()).To(BeNumerically("~", expectedTotalBonusAS, 0.001), "BonusPercentAttackSpeed should include static + all stack bonuses")
+
+                // Verify Final AS reflects the total bonus
+                expectedFinalAS := baseAS * (1.0 + expectedTotalBonusAS) // 0.5 * (1 + 0.3) = 0.65
+                Expect(attackerAttack.GetFinalAttackSpeed()).To(BeNumerically("~", expectedFinalAS, 0.001), "FinalAttackSpeed should reflect base + static + all stack bonuses")
+
+                // Verify target took damage
+                Expect(targetHealth.GetCurrentHP()).To(BeNumerically("<", targetHealth.GetBaseMaxHP()), "Target should take damage from attacks")
+            })
 
         }) // End Context("with Dynamic Event Items")
+
+        Context("with Kranken's Fury", func() {
+            // Placeholder stats for Runaan's Hurricane (base for Kranken's Fury)
+            // These should be verified against actual game data if possible.
+            const (
+                runaansStaticAD         = 10.0
+                runaansStaticASPercent  = 0.15 // 15%
+                runaansStaticCritChance = 0.20 // 20%
+                krankensADPerStack      = 5.0  // Assumed AD per stack for Kranken's Fury
+            )
+
+            var (
+                attackerAttack    *components.Attack
+                attackerCrit      *components.Crit
+                krakensEffect     *components.KrakensFuryEffect
+                initialAttackerAD float64
+                initialAttackerAS float64
+            )
+
+            BeforeEach(func() {
+                // Equip attacker with Kranken's Fury
+                err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_KrakensFury)
+                Expect(err).NotTo(HaveOccurred())
+
+                // Ensure attacker has the KrakensFuryEffect component.
+                // This should be added by the item system when the item is equipped.
+                var ok bool
+                krakensEffect, ok = world.GetKrakensFuryEffect(attacker)
+                Expect(ok).To(BeTrue(), "Attacker should have KrakensFuryEffect component after equipping Kranken's Fury")
+                Expect(krakensEffect).NotTo(BeNil())
+
+                // Configure the effect (assuming it's not configured by default from item data in test)
+                // In a real scenario, this value would come from the item's data definition.
+                // For testing the handler, we set it explicitly if needed.
+                // If the handler itself reads this from item data, this might not be necessary
+                // or could be used to override for specific test cases.
+                // Let's assume the handler or item system correctly sets ADPerStack.
+                // If GetADPerStack() relies on krakensEffect.ADPerStack being set:
+                krakensEffect.ADPerStack = krankensADPerStack // Ensure this is set if component doesn't init from data
+
+                // Set attacker base stats for predictable calculations
+                attackerAttack = getAttack(world, attacker)
+                attackerAttack.SetBaseAttackSpeed(1.0) // 1 attack per second
+                attackerAttack.SetBaseAD(50)           // Base AD for attacker
+
+                attackerCrit = getCrit(world, attacker) // Get crit component for stat checks
+
+                // Ensure target doesn't attack and has high HP
+                targetHealth := getHealth(world, target)
+                targetHealth.SetBaseMaxHP(10000.0)
+                targetHealth.SetCurrentHP(10000.0)
+                if targetAttack, tOk := world.GetAttack(target); tOk {
+                    targetAttack.SetBaseAttackSpeed(0)
+                    targetAttack.SetFinalAttackSpeed(0)
+                }
+
+                // Create a new sim instance (this runs setupCombat)
+                // Use a short MaxTime for setup-related checks if not running the sim further yet
+                sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(0.1)) // Short time just for setup
+                Expect(sim).NotTo(BeNil())
+
+                // Store initial AD/AS *after* simulation setup (static bonuses applied)
+                initialAttackerAD = attackerAttack.GetFinalAD()
+                initialAttackerAS = attackerAttack.GetFinalAttackSpeed()
+            })
+
+            It("should apply base stats of Runaan's Hurricane and initialize Kraken's Fury effect", func() {
+                // Verify static stats from Runaan's Hurricane part of Kranken's Fury
+                // Expected AD = BaseAD + Runaan's Static AD
+                expectedAD := attackerAttack.GetBaseAD() + runaansStaticAD
+                Expect(attackerAttack.GetFinalAD()).To(BeNumerically("~", expectedAD, 0.01), "Final AD should include Runaan's static AD")
+
+                // Expected AS = BaseAS * (1 + Runaan's Static AS %)
+                expectedAS := attackerAttack.GetBaseAttackSpeed() * (1.0 + runaansStaticASPercent)
+                Expect(attackerAttack.GetFinalAttackSpeed()).To(BeNumerically("~", expectedAS, 0.01), "Final AS should include Runaan's static AS percentage")
+
+                // Expected Crit Chance = BaseCritChance + Runaan's Static Crit Chance
+                // Assuming base crit chance is 0.25 (standard)
+                baseCritChance := attackerCrit.GetBaseCritChance() // Use actual base
+                expectedCritChance := baseCritChance + runaansStaticCritChance
+                Expect(attackerCrit.GetFinalCritChance()).To(BeNumerically("~", expectedCritChance, 0.01), "Final Crit Chance should include Runaan's static Crit Chance")
+
+                // Verify Kraken's Fury effect state
+                Expect(krakensEffect).NotTo(BeNil()) // Already checked in BeforeEach, but good for clarity
+                Expect(krakensEffect.GetCurrentStacks()).To(Equal(0), "Initial Kraken's Fury stacks should be 0")
+                Expect(krakensEffect.GetADPerStack()).To(BeNumerically("~", krankensADPerStack, 0.01), "ADPerStack should be the configured value")
+
+                // Bonus AD from stacks should be zero initially
+                // This checks the specific field where the handler adds AD from stacks.
+                // We need to know which field this is, e.g., attackerAttack.BonusADFromKrakens (hypothetical)
+                // or if it's directly added to attackerAttack.BonusAD.
+                // For now, let's assume it's part of a general BonusAD or a specific one.
+                // If Kranken's adds its *static* AD to BonusAD, then initial BonusAD would be runaansStaticAD.
+                // The dynamic part (stacks * ADPerStack) should be 0.
+                // Let's check GetBonusAD, assuming static AD is part of it, and dynamic isn't yet.
+                Expect(attackerAttack.GetBonusAD()).To(BeNumerically("~", runaansStaticAD, 0.01), "Initial Bonus AD should reflect only Runaan's static AD, not stacked AD")
+            })
+
+            It("should stack AD on each attack and update final AD", func() {
+                sim.SetMaxTime(2.5) // Allow for 3 attacks (t=0, t=1, t=2, sim ends before t=3 attack lands)
+                // Attacker AS = 1.0. Attacks should land at t=0.0, t=1.0, t=2.0.
+                // So 3 attacks should occur.
+
+                // Reset attack count for this specific test if necessary (or ensure it's clean)
+                attackerAttack.SetAttackCount(0) // Assuming ResetBonuses or similar doesn't reset this.
+
+                sim.RunSimulation()
+
+                Expect(krakensEffect.GetCurrentStacks()).To(Equal(3), "Kraken's Fury should have 3 stacks after 3 attacks")
+                // Attacker attack count should also be 3.
+                Expect(attackerAttack.GetAttackCount()).To(Equal(3), "Attacker should have performed 3 attacks")
+
+
+                // Expected Bonus AD from stacks = 3 * ADPerStack
+                expectedStackedAD := float64(3) * krankensADPerStack
+                // Total Bonus AD = Runaan's Static AD + Stacked AD
+                expectedTotalBonusAD := runaansStaticAD + expectedStackedAD
+                Expect(attackerAttack.GetBonusAD()).To(BeNumerically("~", expectedTotalBonusAD, 0.01), "Bonus AD should include Runaan's static AD and stacked AD from Kraken's Fury")
+
+                // Final AD = BaseAD + Runaan's Static AD + Stacked AD
+                expectedFinalAD := attackerAttack.GetBaseAD() + expectedTotalBonusAD
+                Expect(attackerAttack.GetFinalAD()).To(BeNumerically("~", expectedFinalAD, 0.01), "Final AD should reflect Base AD, Runaan's static AD, and stacked AD from Kraken's Fury")
+
+                // Target should have taken damage
+                targetHealth := getHealth(world, target)
+                Expect(targetHealth.GetCurrentHP()).To(BeNumerically("<", targetHealth.GetBaseMaxHp()), "Target should have taken damage")
+            })
+
+            It("should reset stacks if a new simulation is created with the same world (simulating re-equip)", func() {
+                // First, equip the item and run a short simulation to accumulate some stacks
+                // Note: Item is already equipped in the outer BeforeEach.
+                // We need to ensure the effect component is clean before this first run for this specific test.
+                krakensEffect.SetCurrentStacks(0) // Manually reset for this test's first phase
+                attackerAttack.SetBonusAD(runaansStaticAD) // Reset bonus AD to only static part
+                attackerAttack.CalculateFinalStats() // Recalculate based on reset bonuses
+
+                sim1Config := config.WithMaxTime(1.5) // Enough for 2 attacks (t=0, t=1)
+                sim1 := simulation.NewSimulationWithConfig(world, sim1Config)
+                // The krakensEffect instance is shared via the world, so sim1 will use the one from BeforeEach.
+                // NewSimulationWithConfig runs setupCombat, which should re-initialize the effect if designed that way.
+                // Let's verify the handler's OnEquip logic.
+                // Get the effect component *after* sim1 is created, as setupCombat might replace/reset it.
+                krakensEffectSim1, okSim1 := world.GetKrakensFuryEffect(attacker)
+                Expect(okSim1).To(BeTrue())
+                // If OnEquip resets stacks, it should be 0 after NewSimulationWithConfig
+                Expect(krakensEffectSim1.GetCurrentStacks()).To(Equal(0), "Stacks should be 0 after new sim creation due to OnEquip reset")
+
+
+                sim1.RunSimulation() // Run to accumulate stacks again
+                Expect(krakensEffectSim1.GetCurrentStacks()).To(Equal(2), "Should have 2 stacks after sim1 run")
+
+                // Now, create a *new* simulation instance with the *same world*.
+                // This simulates the setup process happening again for the same champion with the same item.
+                // The OnEquip method in the handler should be called during this new simulation's setupCombat.
+                sim2Config := config.WithMaxTime(0.1) // Short, just for setup
+                sim2 := simulation.NewSimulationWithConfig(world, sim2Config)
+                _ = sim2 // Avoid unused variable error if not running sim2
+
+                krakensEffectSim2, okSim2 := world.GetKrakensFuryEffect(attacker)
+                Expect(okSim2).To(BeTrue())
+                Expect(krakensEffectSim2.GetCurrentStacks()).To(Equal(0), "Stacks should be reset to 0 when a new simulation initializes with the same entity having the item")
+            })
+
+            It("should not stack if the AttackLandedEvent source is not the wearer", func() {
+                // Attacker has Kranken's Fury from BeforeEach.
+                // Ensure its stacks are 0 before this test.
+                krakensEffect.SetCurrentStacks(0)
+                attackerAttack.SetBonusAD(runaansStaticAD) // Reset to static AD
+                attackerAttack.CalculateFinalStats()
+
+                // Set up target to also be able to attack
+                targetAttack, ok := world.GetAttack(target)
+                Expect(ok).To(BeTrue(), "Target should have an Attack component")
+                targetAttack.SetBaseAttackSpeed(1.0) // Target can attack
+                targetAttack.SetBaseAD(10)
+
+                // Manually enqueue an AttackLandedEvent where 'target' is the source
+                // Sim is already created in BeforeEach. We can use its event bus.
+                eventBus := sim.GetEventBus()
+                Expect(eventBus).NotTo(BeNil())
+                eventBus.Enqueue(eventsys.NewAttackLandedEvent(target, attacker, 0.1))
+
+                sim.SetMaxTime(0.2) // Run sim long enough to process the enqueued event
+                sim.RunSimulation()
+
+                // Stacks on attacker's Kranken's Fury should remain 0
+                Expect(krakensEffect.GetCurrentStacks()).To(Equal(0), "Kranken's Fury should not stack if the wearer is not the source of the attack")
+            })
+
+        }) // End Context("with Kranken's Fury")
 
     }) // End Describe("RunSimulation Method")
 
@@ -1115,7 +1319,388 @@ var _ = Describe("Simulation", func() {
             Expect(championSpell.GetBonusAP()).To(BeNumerically("~", expectedBonusAPAfterStack2, 0.01), "Bonus AP should include 2 stacks after the second interval")
             Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedFinalAPAfterStack2, 0.01), "Final AP should include 2 stacks after the second interval")
         })
-    }) 
+    })
+
+    Describe("Item Effects Integration (Dynamic Time via RunSimulation)", func() {
+        // Tests how RunSimulation handles dynamic time items like Archangel's
+
+        var (
+            champion       ecs.Entity
+            championSpell  *components.Spell
+            archangelsData *data.Item
+            initialAP      float64 // Static AP from item
+            initialMana    float64
+            interval       float64
+            apPerInterval  float64
+            err            error
+        )
+
+        BeforeEach(func() {
+            // Setup world, champion, manager
+            world = ecs.NewWorld()
+            championFactory = factory.NewChampionFactory(world)
+            equipmentManager = managers.NewEquipmentManager(world)
+            champion, err = championFactory.CreatePlayerChampion("TFT14_Kindred", 1)
+            Expect(err).NotTo(HaveOccurred())
+            championSpell = getSpell(world, champion)
+            // Add mana if needed
+            if _, ok := world.GetMana(champion); !ok {
+                world.AddComponent(champion, components.NewMana(0, 100))
+            }
+
+            // Get Archangel's data
+            archangelsData = data.GetItemByApiName(data.TFT_Item_ArchangelsStaff)
+            Expect(archangelsData).NotTo(BeNil())
+            initialAP = archangelsData.Effects["AP"]
+            initialMana = archangelsData.Effects["Mana"]
+            interval = archangelsData.Effects["IntervalSeconds"]    // Should be 5.0
+            apPerInterval = archangelsData.Effects["APPerInterval"] // Should be 30.0
+
+            // Add item BEFORE creating the simulation instance
+            err = equipmentManager.AddItemToChampion(champion, data.TFT_Item_ArchangelsStaff)
+            Expect(err).NotTo(HaveOccurred())
+
+            // Create simulation AFTER adding the item
+            // Use a config suitable for testing intervals
+            sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(11.0)) // Default max time for this context
+            Expect(sim).NotTo(BeNil())
+        })
+
+        It("should apply initial static AP and Mana during setup", func() {
+            // Check Final fields immediately after simulation creation (setupCombat runs)
+            expectedInitialFinalAP := championSpell.GetBaseAP() + initialAP
+            Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedInitialFinalAP, 0.01))
+
+            manaComp, ok := world.GetMana(champion)
+            Expect(ok).To(BeTrue())
+            // Assuming BaseInitialMana exists and is relevant
+            expectedInitialFinalMana := manaComp.GetBaseInitialMana() + initialMana
+            Expect(manaComp.GetFinalInitialMana()).To(BeNumerically("~", expectedInitialFinalMana, 0.01)) // Check FinalInitialMana if applicable
+        })
+
+        It("should stack AP correctly over time via RunSimulation", func() {
+            // --- State after initial setup (checked above) ---
+            effect, ok := world.GetArchangelsStaffEffect(champion)
+            Expect(ok).To(BeTrue())
+            Expect(effect.GetStacks()).To(Equal(0), "Initial stacks should be 0")
+
+            championSpell.ResetBonuses()
+
+            // --- Run past first stack (e.g., 5.1s total) ---
+            // Create a new sim instance with the same world but longer time
+            sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(interval+0.1)) // Run up to 5.1s
+            sim.RunSimulation() // Re-runs from t=0 up to 5.1s
+
+            Expect(effect.GetStacks()).To(Equal(1), "Stacks should be 1 after the first interval")
+            expectedBonusAPAfterStack1 := initialAP + apPerInterval
+            expectedFinalAPAfterStack1 := championSpell.GetBaseAP() + expectedBonusAPAfterStack1
+            Expect(championSpell.GetBonusAP()).To(BeNumerically("~", expectedBonusAPAfterStack1, 0.01), "Bonus AP should include 1 stack after the first interval")
+            Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedFinalAPAfterStack1, 0.01), "Final AP should include 1 stack after the first interval")
+
+            championSpell.ResetBonuses()
+            // --- Run past second stack (e.g., 10.1s total) ---
+            sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(2*interval+0.1)) // Run up to 10.1s
+            sim.RunSimulation() // Re-runs from t=0 up to 10.1s
+
+            Expect(effect.GetStacks()).To(Equal(2), "Stacks should be 2 after the second interval")
+            expectedBonusAPAfterStack2 := initialAP + 2*apPerInterval
+            expectedFinalAPAfterStack2 := championSpell.GetBaseAP() + expectedBonusAPAfterStack2
+            Expect(championSpell.GetBonusAP()).To(BeNumerically("~", expectedBonusAPAfterStack2, 0.01), "Bonus AP should include 2 stacks after the second interval")
+            Expect(championSpell.GetFinalAP()).To(BeNumerically("~", expectedFinalAPAfterStack2, 0.01), "Final AP should include 2 stacks after the second interval")
+        })
+
+        Context("with Spirit Visage", func() {
+            // Placeholder stats for Redemption (base for Spirit Visage)
+            const (
+                redemptionStaticHealth = 200.0
+                redemptionStaticArmor  = 25.0
+                redemptionStaticMR     = 25.0
+            )
+            // Assumed values for SpiritVisageEffect (as per task description)
+            const (
+                spiritVisageTickInterval      = 2.0
+                spiritVisageMissingHealRate = 0.05 // 5%
+                spiritVisageMaxHeal           = 100.0 // This is MaxHeal as per component, used in math.Max by handler
+            )
+
+            var (
+                attackerHealth       *components.Health
+                spiritVisageEffect   *components.SpiritVisageEffect
+                baseMaxHP            float64
+            )
+
+            BeforeEach(func() {
+                // Attacker is already created in the outer Describe("Simulation") BeforeEach
+                // Target is also available
+
+                // Set Attacker's Max HP for predictable calculations
+                attackerHealth = getHealth(world, attacker) // Get health component for attacker
+                baseMaxHP = 1000.0
+                attackerHealth.SetBaseMaxHP(baseMaxHP)
+                attackerHealth.SetCurrentHP(baseMaxHP / 2) // Start at 50% HP (500/1000)
+
+                // Equip attacker with Spirit Visage
+                err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_SpiritVisage)
+                Expect(err).NotTo(HaveOccurred())
+
+                // Ensure attacker has the SpiritVisageEffect component.
+                // This should be added by the item system (specifically by BaseStaticItemSystem or a similar setup system).
+                // For this test, we'll retrieve it. If it's not added, the test will fail here.
+                var ok bool
+                spiritVisageEffect, ok = world.GetSpiritVisageEffect(attacker)
+                Expect(ok).To(BeTrue(), "Attacker should have SpiritVisageEffect component after equipping Spirit Visage")
+                Expect(spiritVisageEffect).NotTo(BeNil())
+
+                // Manually set the effect parameters if they are not automatically populated from item data
+                // This ensures the test uses the assumed values.
+                // In a real scenario, these would come from loaded item data.
+                spiritVisageEffect.TickInterval = spiritVisageTickInterval
+                spiritVisageEffect.MissingHealthHealRate = spiritVisageMissingHealRate
+                spiritVisageEffect.MaxHeal = spiritVisageMaxHeal // This is the value used in math.Max by the handler
+
+                // Create a new sim instance (this runs setupCombat, which should trigger OnEquip for Spirit Visage)
+                // Config MaxTime can be short for setup tests, will be overridden in specific test cases.
+                sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(0.1))
+                Expect(sim).NotTo(BeNil())
+
+                // Re-fetch health component in case it was modified by simulation setup
+                attackerHealth = getHealth(world, attacker)
+            })
+
+            It("should apply base stats of Redemption and initialize Spirit Visage effect", func() {
+                // Static bonuses from Redemption should be applied during simulation setup.
+                // Base Max HP = 1000 (set in BeforeEach)
+                // Expected Final Max HP = Base Max HP (1000) + Redemption Static Health (200)
+                expectedFinalMaxHP := baseMaxHP + redemptionStaticHealth
+                Expect(attackerHealth.GetFinalMaxHP()).To(BeNumerically("~", expectedFinalMaxHP, 0.01), "Final Max HP should include Redemption's static health bonus")
+
+                // Current HP should also reflect the added static health if it was at max.
+                // If it was 500/1000, now it should be 500 + 200 = 700 / 1200 (assuming current HP increases proportionally or by the flat amount if not capped)
+                // The setupCombat logic for health usually adds static HP to both current and max.
+                // Initial current HP was 500. After adding 200 static HP, it should be 700.
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", (baseMaxHP/2)+redemptionStaticHealth, 0.01), "Current HP should increase by Redemption's static health bonus")
+
+
+                // Expected Armor = Base Armor + Redemption Static Armor
+                // Base Armor is usually 0 for dummies, or a champion's base. Assume 0 for simplicity here.
+                baseArmor := attackerHealth.GetBaseArmor() // Get actual base armor
+                expectedFinalArmor := baseArmor + redemptionStaticArmor
+                Expect(attackerHealth.GetFinalArmor()).To(BeNumerically("~", expectedFinalArmor, 0.01), "Final Armor should include Redemption's static armor bonus")
+
+                // Expected MR = Base MR + Redemption Static MR
+                baseMR := attackerHealth.GetBaseMR() // Get actual base MR
+                expectedFinalMR := baseMR + redemptionStaticMR
+                Expect(attackerHealth.GetFinalMR()).To(BeNumerically("~", expectedFinalMR, 0.01), "Final MR should include Redemption's static MR bonus")
+
+                // Assert SpiritVisageEffect parameters
+                Expect(spiritVisageEffect).NotTo(BeNil()) // Already checked in BeforeEach
+                Expect(spiritVisageEffect.GetTickInterval()).To(BeNumerically("~", spiritVisageTickInterval, 0.001))
+                Expect(spiritVisageEffect.GetMissingHealthHealRate()).To(BeNumerically("~", spiritVisageMissingHealRate, 0.001))
+                Expect(spiritVisageEffect.GetMaxHeal()).To(BeNumerically("~", spiritVisageMaxHeal, 0.001)) // This is the value for math.Max
+            })
+
+            It("should schedule and process the first heal tick correctly", func() {
+                // Attacker MaxHP = 1000 (base) + 200 (item) = 1200
+                // Attacker CurrentHP = 500 (base) + 200 (item) = 700 initially (after static bonuses)
+                // Missing HP = 1200 - 700 = 500
+                initialCurrentHP := attackerHealth.GetCurrentHP() // Should be 700
+                finalMaxHP := attackerHealth.GetFinalMaxHP()     // Should be 1200
+                missingHP := finalMaxHP - initialCurrentHP       // 1200 - 700 = 500
+
+                sim.SetMaxTime(spiritVisageEffect.GetTickInterval() + 0.1) // e.g., 2.1s
+                sim.RunSimulation()
+
+                // Heal calculation:
+                // PercentHeal = missingHP * MissingHealthHealRate = 500 * 0.05 = 25
+                // MaxHeal (from component, used in math.Max) = 100.0
+                // Actual Heal = math.Max(PercentHeal, MaxHeal) = math.Max(25, 100) = 100
+                percentHeal := missingHP * spiritVisageEffect.GetMissingHealthHealRate()
+                expectedHealAmount := math.Max(percentHeal, spiritVisageEffect.GetMaxHeal()) // As per handler logic
+
+                expectedHPAfterHeal := initialCurrentHP + expectedHealAmount
+                // Cap HP at MaxHP
+                if expectedHPAfterHeal > finalMaxHP {
+                    expectedHPAfterHeal = finalMaxHP
+                }
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", expectedHPAfterHeal, 0.01),
+                    fmt.Sprintf("Expected HP after 1 tick. InitialHP: %.1f, MissingHP: %.1f, PercentHeal: %.1f, MaxHealField: %.1f, ActualHeal: %.1f",
+                        initialCurrentHP, missingHP, percentHeal, spiritVisageEffect.GetMaxHeal(), expectedHealAmount))
+            })
+
+            It("should process multiple heal ticks, adjusting to current missing health", func() {
+                // Initial state after static bonuses: MaxHP=1200, CurrentHP=700
+                initialHP := attackerHealth.GetCurrentHP() // 700
+                finalMaxHP := attackerHealth.GetFinalMaxHP() // 1200
+
+                sim.SetMaxTime((2 * spiritVisageEffect.GetTickInterval()) + 0.1) // e.g., 4.1s
+                sim.RunSimulation()
+
+                // Tick 1 @ 2.0s:
+                missingHP1 := finalMaxHP - initialHP // 1200 - 700 = 500
+                percentHeal1 := missingHP1 * spiritVisageEffect.GetMissingHealthHealRate() // 500 * 0.05 = 25
+                actualHeal1 := math.Max(percentHeal1, spiritVisageEffect.GetMaxHeal())     // Max(25, 100) = 100
+                hpAfterTick1 := initialHP + actualHeal1                                   // 700 + 100 = 800
+                if hpAfterTick1 > finalMaxHP { hpAfterTick1 = finalMaxHP }
+
+                // Tick 2 @ 4.0s:
+                missingHP2 := finalMaxHP - hpAfterTick1 // 1200 - 800 = 400
+                percentHeal2 := missingHP2 * spiritVisageEffect.GetMissingHealthHealRate() // 400 * 0.05 = 20
+                actualHeal2 := math.Max(percentHeal2, spiritVisageEffect.GetMaxHeal())     // Max(20, 100) = 100
+                hpAfterTick2 := hpAfterTick1 + actualHeal2                                 // 800 + 100 = 900
+                if hpAfterTick2 > finalMaxHP { hpAfterTick2 = finalMaxHP }
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterTick2, 0.01),
+                    fmt.Sprintf("Expected HP after 2 ticks. HP_init:%.1f, Heal1:%.1f (Missing1:%.1f, Perc1:%.1f), HP_mid:%.1f, Heal2:%.1f (Missing2:%.1f, Perc2:%.1f)",
+                        initialHP, actualHeal1, missingHP1, percentHeal1, hpAfterTick1, actualHeal2, missingHP2, percentHeal2))
+            })
+
+            It("should use MaxHeal value if percent missing health heal is smaller (due to math.Max)", func() {
+                // Set CurrentHP so that (MissingHP * Rate) < MaxHeal
+                // MaxHP = 1200. CurrentHP = 700 (from BeforeEach + static)
+                // Let's set current HP higher to make missing HP smaller for this test.
+                // CurrentHP = 1100. MaxHP = 1200. MissingHP = 100.
+                attackerHealth.SetCurrentHP(finalMaxHP - 100) // Set HP to 1100 (Missing = 100)
+                initialCurrentHP := attackerHealth.GetCurrentHP() // Should be 1100
+                missingHP := finalMaxHP - initialCurrentHP       // 100
+
+                sim.SetMaxTime(spiritVisageEffect.GetTickInterval() + 0.1)
+                sim.RunSimulation()
+
+                // PercentHeal = missingHP * Rate = 100 * 0.05 = 5
+                // MaxHeal (from component, used in math.Max) = 100.0
+                // Actual Heal = math.Max(PercentHeal, MaxHeal) = math.Max(5, 100) = 100
+                percentHeal := missingHP * spiritVisageEffect.GetMissingHealthHealRate()
+                expectedHealAmount := math.Max(percentHeal, spiritVisageEffect.GetMaxHeal())
+
+                expectedHPAfterHeal := initialCurrentHP + expectedHealAmount
+                if expectedHPAfterHeal > finalMaxHP { expectedHPAfterHeal = finalMaxHP }
+
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", expectedHPAfterHeal, 0.01),
+                    fmt.Sprintf("Expected HP when percent heal is small. InitialHP: %.1f, MissingHP: %.1f, PercentHeal: %.1f, MaxHealField: %.1f, ActualHeal: %.1f",
+                        initialCurrentHP, missingHP, percentHeal, spiritVisageEffect.GetMaxHeal(), expectedHealAmount))
+            })
+
+            It("should not heal if champion is at full health", func() {
+                attackerHealth.SetCurrentHP(attackerHealth.GetFinalMaxHP()) // Set to full health
+                initialCurrentHP := attackerHealth.GetCurrentHP()
+
+                sim.SetMaxTime(spiritVisageEffect.GetTickInterval() + 0.1)
+                sim.RunSimulation()
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", initialCurrentHP, 0.01), "HP should not change if already at max")
+            })
+
+            It("should stop scheduling new heal ticks if item is removed", func() {
+                // Initial state after static bonuses: MaxHP=1200, CurrentHP=700
+                initialHP := attackerHealth.GetCurrentHP() // 700
+                finalMaxHP := attackerHealth.GetFinalMaxHP() // 1200
+
+                // Run for one tick
+                sim.SetMaxTime(spiritVisageEffect.GetTickInterval() + 0.1) // e.g. 2.1s
+                sim.RunSimulation()
+
+                // Calculate HP after 1st tick
+                missingHP1 := finalMaxHP - initialHP
+                percentHeal1 := missingHP1 * spiritVisageEffect.GetMissingHealthHealRate()
+                actualHeal1 := math.Max(percentHeal1, spiritVisageEffect.GetMaxHeal())
+                hpAfterTick1 := initialHP + actualHeal1
+                if hpAfterTick1 > finalMaxHP { hpAfterTick1 = finalMaxHP }
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterTick1, 0.01), "HP after first tick before item removal")
+
+                // Remove Spirit Visage
+                equipmentComp, ok := world.GetEquipment(attacker)
+                Expect(ok).To(BeTrue())
+                err := equipmentComp.RemoveItem(data.TFT_Item_SpiritVisage) // Assuming RemoveItem by API name
+                Expect(err).NotTo(HaveOccurred())
+                // Also need to remove the SpiritVisageEffect component to stop existing handlers
+                // or ensure the handler checks for the item in equipment component.
+                // The handler should check `if !equipment.HasItem(s.itemApiName) { return }`
+                // Let's assume the handler does this check.
+
+                // Run simulation longer, past the next scheduled tick time
+                // A new simulation instance is implicitly created by SetMaxTime then RunSimulation
+                // if we are using the same 'sim' variable defined in an outer scope.
+                // To ensure the same simulation continues with item removed, we need a way
+                // to remove item and then continue.
+                // The current structure of `sim.RunSimulation()` re-evaluates events from t=0
+                // up to new MaxTime.
+                // A better test would be to check the event queue or if new events are published.
+                // However, if the handler itself checks for item presence before healing,
+                // then even if an event is processed, no heal should occur.
+
+                // To test this robustly with current sim structure:
+                // 1. Create sim, run for 1st tick. HP changes.
+                // 2. Create a *new* sim instance with the *same world* but *without the item*.
+                //    The item must be removed from the world's entity BEFORE creating the new sim.
+                //    This is tricky because the item is already added in BeforeEach.
+                //    Alternative: Modify the existing sim's world state and continue.
+                //    Let's try to remove it and run the *same* sim longer. The handler logic will be key.
+
+                // Remove item from equipment component (done above)
+                // The SpiritVisageHealTickEvent for the *next* tick was already enqueued by the previous tick.
+                // We need to check if the handler for that event will abort due to item removal.
+                sim.SetMaxTime((2 * spiritVisageEffect.GetTickInterval()) + 0.1) // e.g. 4.1s
+                sim.RunSimulation() // This will process events up to 4.1s
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", hpAfterTick1, 0.01), "HP should remain unchanged after item removal, despite a previously scheduled tick")
+            })
+
+            It("should increase heal amount if multiple Spirit Visages are equipped", func() {
+                // One Spirit Visage is already equipped from BeforeEach. Equip a second one.
+                err := equipmentManager.AddItemToChampion(attacker, data.TFT_Item_SpiritVisage)
+                Expect(err).NotTo(HaveOccurred())
+
+                // Manually add a second SpiritVisageEffect component or ensure the system handles multiple.
+                // The current ECS design might only allow one component of each type per entity.
+                // If so, this test needs a system that aggregates effects from multiple items.
+                // Assuming the item system correctly creates multiple effect instances or one that counts stacks.
+                // For this test, let's assume the SpiritVisageHandler's ProcessEvent is called for each item instance's effect.
+                // This implies multiple SpiritVisageEffect components or a single one that knows about stacks.
+                // The provided handler seems to operate on a single effect component instance passed to it.
+                // This test might expose a limitation or require a specific setup for multiple items of the same type.
+
+                // Given the current handler structure (receives one effect component),
+                // true stacking would mean the handler for Spirit Visage is registered per item instance,
+                // and each calls ApplyHeal.
+
+                // Let's assume the test setup means two separate heal events will be processed for the same champion
+                // if two items are equipped and the system supports this (e.g. two effect components, or one effect component with stack count).
+                // For now, we'll assume the handler's OnEquip is called twice, scheduling two independent series of ticks.
+                // And ProcessEvent is triggered for each.
+
+                // Re-initialize simulation to apply the second item's OnEquip
+                sim = simulation.NewSimulationWithConfig(world, config.WithMaxTime(spiritVisageEffect.GetTickInterval()+0.1))
+                Expect(sim).NotTo(BeNil())
+                attackerHealth = getHealth(world, attacker) // Re-fetch after new sim
+
+                // Attacker MaxHP = 1000 (base) + 200 (item1) + 200 (item2) = 1400
+                // Attacker CurrentHP = 500 (base) + 200 (item1) + 200 (item2) = 900 initially
+                initialCurrentHP := attackerHealth.GetCurrentHP() // Should be 900
+                finalMaxHP := attackerHealth.GetFinalMaxHP()     // Should be 1400
+                missingHP := finalMaxHP - initialCurrentHP       // 1400 - 900 = 500
+
+                // Heal calculation for ONE item:
+                percentHealPerItem := missingHP * spiritVisageEffect.GetMissingHealthHealRate() // 500 * 0.05 = 25
+                actualHealPerItem := math.Max(percentHealPerItem, spiritVisageEffect.GetMaxHeal()) // Max(25, 100) = 100
+
+                // Total heal from two items = actualHealPerItem * 2 (assuming independent application)
+                totalExpectedHeal := actualHealPerItem * 2 // 100 * 2 = 200
+
+                sim.RunSimulation()
+
+                expectedHPAfterHeal := initialCurrentHP + totalExpectedHeal
+                if expectedHPAfterHeal > finalMaxHP { expectedHPAfterHeal = finalMaxHP }
+
+                Expect(attackerHealth.GetCurrentHP()).To(BeNumerically("~", expectedHPAfterHeal, 0.01),
+                    fmt.Sprintf("Expected HP with 2 items. InitialHP: %.1f, MissingHP: %.1f, HealPerItem: %.1f, TotalHeal: %.1f",
+                        initialCurrentHP, missingHP, actualHealPerItem, totalExpectedHeal))
+            })
+        })
+    })
+
     Describe("Trait System Integration", func() {
         // Focus on how trait systems interact during setup and potentially during the run
 
