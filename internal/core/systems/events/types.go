@@ -87,8 +87,11 @@ type KillEvent struct {
 }
 
 // AsistEvent signifies that an entity assisted in a kill.
+// Dealing Damage: If a unit inflicts damage on an enemy before that enemy is eliminated, it's considered to have participated in the kill.
+// TODO: Applying Crowd Control or Debuffs: Units that apply effects like stuns, slows, or other debuffs to an enemy before its death are also considered participants.
+// TODO: Providing Support: Units that heal, shield, or buff allies who then secure a kill may be deemed to have participated, depending on the specific trait or augment mechanics
 type AssistEvent struct {
-    Source   ecs.Entity // The entity that assisted
+    Assistor   ecs.Entity // The entity that assisted
     Victim  ecs.Entity // The entity that was killed
     Timestamp float64 // Time the assist occurred
 }
