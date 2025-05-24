@@ -59,11 +59,9 @@ func (m *Mana) ResetCurrentMana() {
 	m.Current = 0
 }
 
+// AddCurrentMana allows exceeding max mana temporarily, useful for effects that grant mana
 func (m *Mana) AddCurrentMana(amount float64) {
 	m.Current += amount
-	if m.Current > m.Max {
-		m.Current = m.Max
-	}
 }
 
 func (m *Mana) AddBonusInitialMana(amount float64) {

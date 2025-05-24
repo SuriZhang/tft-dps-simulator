@@ -628,3 +628,8 @@ DONE Today:
 
 TODO:
 - [ ] frontend: hexcell click on champion cells and use a shadcn Sheet to display champion details (ability, stats etc)
+
+## 20250524
+Goal of today:
+- implement mana related items: blue buff, shojin, nashor's tooth
+- use old guinsoo's logic to implement new flickerblade

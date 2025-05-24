@@ -170,6 +170,16 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
                     championName, adPerStack*100)
             }
         }
+	case data.TFT_Item_SpearOfShojin:
+        if _, exists := em.world.GetSpearOfShojinEffect(champion); !exists {
+            // Fetch the correct value from item data
+            flatManaRestore := item.Effects["FlatManaRestore"]
+            
+            // Create the effect component
+            spearEffect := items.NewSpearOfShojinEffect(flatManaRestore)
+            em.world.AddComponent(champion, spearEffect)
+            log.Printf("EquipmentManager: Added SpearOfShojinEffect component to Entity %d with %.1f mana restore per attack", champion, flatManaRestore)
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)
