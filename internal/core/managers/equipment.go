@@ -191,6 +191,21 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
             em.world.AddComponent(champion, spearEffect)
             log.Printf("EquipmentManager: Added SpearOfShojinEffect component to Entity %d with %.1f mana restore per attack", champion, flatManaRestore)
         }
+	case data.TFT_Item_Artifact_NavoriFlickerblades:
+        if _, exists := em.world.GetFlickerbladeEffect(champion); !exists {
+            asPerStackVal := item.Effects["ASPerStack"]
+            adPerBonusVal := item.Effects["ADPerBonus"]
+            apPerBonusVal := item.Effects["APPerBonus"]
+            stacksPerBonusVal := item.Effects["StacksPerBonus"]
+
+            flickerbladeEffect := items.NewFlickerbladeEffect(asPerStackVal, adPerBonusVal, apPerBonusVal, stacksPerBonusVal)
+            err := em.world.AddComponent(champion, flickerbladeEffect)
+            if err != nil {
+                return fmt.Errorf("champion %s: failed to add FlickerbladeEffect: %w", championName, err)
+            }
+            log.Printf("Added FlickerbladeEffect to champion %s (AS/stack: %.2f%%, AD/bonus: %.2f%%, AP/bonus: %.1f, Stacks/bonus: %.0f)",
+                championName, asPerStackVal*100, adPerBonusVal*100, apPerBonusVal, stacksPerBonusVal)
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)
@@ -207,6 +222,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 
 // RemoveItemFromChampion removes an item from a champion's equipment by its API name.
 // It also removes associated effect components for specific dynamic items.
+// TODO: Need to handle all dynamic items that have effects
 func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiName string) error {
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {

@@ -33,6 +33,7 @@ const (
 	TFT_Item_KrakensFury = "TFT_Item_RunaansHurricane" // TODO: check when this item goes live
 	TFT_Item_SpearOfShojin      = "TFT_Item_SpearOfShojin"
 	TFT_Item_BlueBuff          = "TFT_Item_BlueBuff"
+	 TFT_Item_Artifact_NavoriFlickerblades = "TFT_Item_Artifact_NavoriFlickerblades"
 )
 
 // GetItemByApiName returns an item by its API name or nil if not found
