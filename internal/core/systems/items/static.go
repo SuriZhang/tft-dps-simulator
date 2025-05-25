@@ -3,8 +3,9 @@ package itemsys
 import (
 	"reflect"
 
-	"tft-dps-simulator/internal/core/ecs"
 	"tft-dps-simulator/internal/core/components/items"
+	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 )
 
 // BaseStaticItemSystem applies the aggregated stat bonuses from items
@@ -61,7 +62,7 @@ func (s *BaseStaticItemSystem) ApplyStaticItemsBonus() {
 }
 
 // --- Helper functions (Optional) ---
-func (s *BaseStaticItemSystem) applyHealthBonuses(entity ecs.Entity, itemEffect *items.ItemStaticEffect) {
+func (s *BaseStaticItemSystem) applyHealthBonuses(entity entity.Entity, itemEffect *items.ItemStaticEffect) {
 	if health, ok := s.world.GetHealth(entity); ok {
 		health.AddBonusMaxHealth(itemEffect.GetBonusHealth())
 		health.AddBonusPercentHealth(itemEffect.GetBonusPercentHp())
@@ -72,7 +73,7 @@ func (s *BaseStaticItemSystem) applyHealthBonuses(entity ecs.Entity, itemEffect 
 
 }
 
-func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect *items.ItemStaticEffect) {
+func (s *BaseStaticItemSystem) applyAttackBonuses(entity entity.Entity, itemEffect *items.ItemStaticEffect) {
 	if attack, ok := s.world.GetAttack(entity); ok {
 		attack.AddBonusPercentAD(itemEffect.GetBonusPercentAD())
 		attack.AddBonusDamageAmp(itemEffect.GetDamageAmp())
@@ -80,7 +81,7 @@ func (s *BaseStaticItemSystem) applyAttackBonuses(entity ecs.Entity, itemEffect 
 	}
 }
 
-func (s *BaseStaticItemSystem) applyCritBonuses(entity ecs.Entity, itemEffect *items.ItemStaticEffect) {
+func (s *BaseStaticItemSystem) applyCritBonuses(entity entity.Entity, itemEffect *items.ItemStaticEffect) {
 	if crit, ok := s.world.GetCrit(entity); ok {
 		crit.AddBonusCritChance(itemEffect.GetBonusCritChance())
 		// crit.AddBonusCritMultiplier(itemEffect.GetBonusCritMultiplier())
@@ -90,13 +91,13 @@ func (s *BaseStaticItemSystem) applyCritBonuses(entity ecs.Entity, itemEffect *i
 	}
 }
 
-func (s *BaseStaticItemSystem) applyManaBonuses(entity ecs.Entity, itemEffect *items.ItemStaticEffect) {
+func (s *BaseStaticItemSystem) applyManaBonuses(entity entity.Entity, itemEffect *items.ItemStaticEffect) {
 	if mana, ok := s.world.GetMana(entity); ok {
 		mana.AddBonusInitialMana(itemEffect.GetBonusInitialMana())
 	}
 }
 
-func (s *BaseStaticItemSystem) applySpellBonuses(entity ecs.Entity, itemEffect *items.ItemStaticEffect) {
+func (s *BaseStaticItemSystem) applySpellBonuses(entity entity.Entity, itemEffect *items.ItemStaticEffect) {
     if spell, ok := s.world.GetSpell(entity); ok {
         spell.AddBonusAP(itemEffect.GetBonusAP())
     }

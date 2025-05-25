@@ -15,20 +15,21 @@ type Health struct {
 
 	// --- Aggregated Bonus Stats (Sum from Items, Traits, Temp Buffs, etc.) ---
 	// These are modified by systems like ItemSystem, TraitSystems, BuffSystems
-	BonusMaxHP      float64 // Flat HP bonuses
-	BonusPercentHp  float64 // Additive % HP bonuses (e.g., 0.1 + 0.2 = 0.3 for +30%)
-	BonusArmor      float64 // Flat Armor bonuses
-	BonusMR         float64 // Flat MR bonuses
-	BonusDurability float64 // Flat durability bonuses (e.g., from items or traits)
+	BonusMaxHP         float64 // Flat HP bonuses
+	BonusPercentHp     float64 // Additive % HP bonuses (e.g., 0.1 + 0.2 = 0.3 for +30%)
+	BonusArmor         float64 // Flat Armor bonuses
+	BonusMR            float64 // Flat MR bonuses
+	BonusDurability    float64 // Flat durability bonuses (e.g., from items or traits)
 	// Add BonusPercentArmor/MR if needed by mechanics
-
+	
 	// --- Final Calculated Stats (Calculated by StatCalculationSystem) ---
 	// These are the values used in combat calculations (damage reduction, checking max health)
 	FinalMaxHP      float64
 	FinalArmor      float64
 	FinalMR         float64
 	FinalDurability float64 // This is the durability that can be set, not the current durability
-
+	
+	HealReduction float64 // Percentage healing reduction (e.g., from Wound Debuff)
 	// --- Current State ---
 	CurrentHP float64
 }
@@ -51,15 +52,16 @@ func NewHealth(baseHp, baseArmor, baseMr float64) *Health {
 		BaseMR:    baseMr,
 
 		// Initialize bonuses to 0
-		BonusMaxHP:     0,
-		BonusPercentHp: 0,
-		BonusArmor:     0,
-		BonusMR:        0,
-
+		BonusMaxHP:         0,
+		BonusPercentHp:     0,
+		BonusArmor:         0,
+		BonusMR:            0,
+		
 		// Initialize final stats to base stats initially
 		FinalMaxHP: baseHp,
 		FinalArmor: baseArmor,
 		FinalMR:    baseMr,
+		HealReduction: 0,
 
 		// Initialize current health
 		CurrentHP: baseHp,
@@ -115,12 +117,16 @@ func (h *Health) AddBonusMR(amount float64) {
 func (h *Health) AddBonusDurability(amount float64) {
 	h.BonusDurability += amount
 }
+func (h *Health) SetHealReduction(amount float64) {
+	h.HealReduction = amount
+}
 
 func (h *Health) ResetBonuses() {
 	h.BonusMaxHP = 0
 	h.BonusPercentHp = 0
 	h.BonusArmor = 0
 	h.BonusMR = 0
+	h.BonusDurability = 0
 	// Reset other bonuses if added
 }
 
@@ -160,17 +166,9 @@ func (h *Health) AddDurability(amount float64) {
 
 // Heal adjusts current HP, respecting the already calculated FinalMaxHP
 func (h *Health) Heal(amount float64) {
-	h.CurrentHP += amount
+	h.CurrentHP += (1 - h.HealReduction) * amount
 	if h.CurrentHP > h.FinalMaxHP { // Use FinalMaxHP here
 		h.CurrentHP = h.FinalMaxHP
-	}
-}
-
-// TakeDamage adjusts current HP. Damage reduction logic would happen before calling this.
-func (h *Health) TakeDamage(amount float64) {
-	h.CurrentHP -= amount
-	if h.CurrentHP < 0 {
-		h.CurrentHP = 0
 	}
 }
 

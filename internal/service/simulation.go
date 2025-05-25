@@ -3,10 +3,11 @@ package service
 import (
 	"fmt"
 	"log"
-	"time" 
+	"time"
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	"tft-dps-simulator/internal/core/factory"
 	"tft-dps-simulator/internal/core/managers"
 	"tft-dps-simulator/internal/core/simulation"
@@ -38,8 +39,8 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 	equipmentManager := managers.NewEquipmentManager(world)
 
 	// Map to link request champion ID (ApiName) to ECS entity ID
-	entityMap := make(map[ecs.Entity]string)
-	// var championEntities []ecs.Entity
+	entityMap := make(map[entity.Entity]string)
+	// var championEntities []entity.Entity
 
 	// 3. Create Champion Entities from Request
 	log.Printf("Processing %d requested champions...", len(requestChampions))

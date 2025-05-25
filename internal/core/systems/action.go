@@ -6,6 +6,7 @@ import (
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 )
 
@@ -43,7 +44,7 @@ func (s *ChampionActionSystem) HandleEvent(evt interface{}) {
 }
 
 // decideNextAction implements the logic from devlog.md#L237
-func (s *ChampionActionSystem) decideNextAction(entity ecs.Entity, currentTime float64) {
+func (s *ChampionActionSystem) decideNextAction(entity entity.Entity, currentTime float64) {
 	// --- Get necessary components ---
 	state, hasState := s.world.GetState(entity)
 	mana, hasMana := s.world.GetMana(entity)

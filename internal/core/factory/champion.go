@@ -8,6 +8,7 @@ import (
 	"tft-dps-simulator/internal/core/components/items"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 )
 
 // ChampionFactory creates champion entities from champion data.
@@ -39,7 +40,7 @@ func StarMultiplier(starLevel int) float64 {
 
 // CreateChampion creates a champion entity with components from data.
 // It now returns an error if adding any component fails.
-func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel int) (ecs.Entity, error) {
+func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel int) (entity.Entity, error) {
 	// Create entity
 	entity := cf.world.NewEntity()
 	var err error // Variable to hold potential errors
@@ -161,7 +162,7 @@ func (cf *ChampionFactory) CreateChampion(championData data.Champion, starLevel 
 
 // CreateChampionByApiName creates a champion entity by searching for it by name.
 // It now propagates errors from CreateChampion.
-func (cf *ChampionFactory) CreateChampionByApiName(apiName string, starLevel int, team int) (ecs.Entity, error) {
+func (cf *ChampionFactory) CreateChampionByApiName(apiName string, starLevel int, team int) (entity.Entity, error) {
 	// Find champion data by name using the function from the data package
 	championData := data.GetChampionByApiName(apiName)
 	if championData == nil {
@@ -184,11 +185,11 @@ func (cf *ChampionFactory) CreateChampionByApiName(apiName string, starLevel int
 }
 
 // CreatePlayerChampion creates a champion entity for the player team (team ID 0).
-func (cf *ChampionFactory) CreatePlayerChampion(apiName string, starLevel int) (ecs.Entity, error) {
+func (cf *ChampionFactory) CreatePlayerChampion(apiName string, starLevel int) (entity.Entity, error) {
 	return cf.CreateChampionByApiName(apiName, starLevel, 0)
 }
 
 // CreateEnemyChampion creates a champion entity for the enemy team (team ID 1).
-func (cf *ChampionFactory) CreateEnemyChampion(apiName string, starLevel int) (ecs.Entity, error) {
+func (cf *ChampionFactory) CreateEnemyChampion(apiName string, starLevel int) (entity.Entity, error) {
 	return cf.CreateChampionByApiName(apiName, starLevel, 1)
 }

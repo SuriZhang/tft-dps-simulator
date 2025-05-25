@@ -8,6 +8,7 @@ import (
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	"tft-dps-simulator/internal/core/factory"
 	"tft-dps-simulator/internal/core/managers"
 	"tft-dps-simulator/internal/core/simulation"
@@ -20,35 +21,35 @@ import (
 )
 
 // Helper to get component safely
-func getAttack(w *ecs.World, e ecs.Entity) *components.Attack {
+func getAttack(w *ecs.World, e entity.Entity) *components.Attack {
     comp, ok := w.GetAttack(e)
     Expect(ok).To(BeTrue(), "Entity should have Attack component")
     Expect(comp).NotTo(BeNil())
     return comp
 }
 
-func getHealth(w *ecs.World, e ecs.Entity) *components.Health {
+func getHealth(w *ecs.World, e entity.Entity) *components.Health {
     comp, ok := w.GetHealth(e)
     Expect(ok).To(BeTrue(), "Entity should have Health component")
     Expect(comp).NotTo(BeNil())
     return comp
 }
 
-func getSpell(w *ecs.World, e ecs.Entity) *components.Spell {
+func getSpell(w *ecs.World, e entity.Entity) *components.Spell {
     comp, ok := w.GetSpell(e)
     Expect(ok).To(BeTrue(), "Entity should have Spell component")
     Expect(comp).NotTo(BeNil())
     return comp
 }
 
-func getCrit(w *ecs.World, e ecs.Entity) *components.Crit {
+func getCrit(w *ecs.World, e entity.Entity) *components.Crit {
     comp, ok := w.GetCrit(e)
     Expect(ok).To(BeTrue(), "Entity should have Crit component")
     Expect(comp).NotTo(BeNil())
     return comp
 }
 
-func getPosition(w *ecs.World, e ecs.Entity) *components.Position {
+func getPosition(w *ecs.World, e entity.Entity) *components.Position {
     comp, ok := w.GetPosition(e)
     Expect(ok).To(BeTrue(), "Entity should have Position component")
     Expect(comp).NotTo(BeNil())
@@ -62,8 +63,8 @@ var _ = Describe("Simulation", func() {
         config           simulation.SimulationConfig
         championFactory  *factory.ChampionFactory
         equipmentManager *managers.EquipmentManager // Added equipment manager
-        attacker         ecs.Entity
-        target           ecs.Entity
+        attacker         entity.Entity
+        target           entity.Entity
         targetMaxHP      float64 // Store initial max HP for checks
     )
 
@@ -843,7 +844,7 @@ var _ = Describe("Simulation", func() {
             abilityCritSystem     *itemsys.AbilityCritSystem
             baseStaticItemSystem  *itemsys.BaseStaticItemSystem
             // Champion and components for testing
-            champion       ecs.Entity
+            champion       entity.Entity
             championSpell  *components.Spell
             championAttack *components.Attack
             championCrit   *components.Crit
@@ -1032,7 +1033,7 @@ var _ = Describe("Simulation", func() {
         // Tests how RunSimulation handles dynamic time items like Archangel's
 
         var (
-            champion       ecs.Entity
+            champion       entity.Entity
             championSpell  *components.Spell
             archangelsData *data.Item
             initialAP      float64 // Static AP from item
@@ -1143,7 +1144,7 @@ var _ = Describe("Simulation", func() {
 
         Context("with Rapidfire Trait (2 units)", func() {
             var (
-                kindred1, kindred2, kogmaw, shyvana, blueGolem ecs.Entity
+                kindred1, kindred2, kogmaw, shyvana, blueGolem entity.Entity
                 rapidfireData              *data.Trait
                 expectedBonusAS            float64
             )

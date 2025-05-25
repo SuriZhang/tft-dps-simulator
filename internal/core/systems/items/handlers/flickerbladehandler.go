@@ -5,6 +5,7 @@ import (
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -15,7 +16,7 @@ func init() {
 	itemsys.RegisterItemHandler(data.TFT_Item_Artifact_NavoriFlickerblades, &FlickerbladeHandler{})
 }
 
-func (h *FlickerbladeHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *FlickerbladeHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	log.Printf("FlickerbladeHandler: OnEquip for entity %d", entity)
 	if effect, exists := world.GetFlickerbladeEffect(entity); exists {
 		effect.ResetEffects()
@@ -25,7 +26,7 @@ func (h *FlickerbladeHandler) OnEquip(entity ecs.Entity, world *ecs.World, event
 	}
 }
 
-func (h *FlickerbladeHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *FlickerbladeHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	attackEvent, ok := event.(eventsys.AttackFiredEvent)
 	if !ok || attackEvent.Source != entity {
 		return

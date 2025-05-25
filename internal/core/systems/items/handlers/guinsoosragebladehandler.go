@@ -5,6 +5,7 @@ import (
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -16,7 +17,7 @@ func init() {
 }
 
 // OnEquip implements itemsys.ItemHandler.
-func (h *GuinsoosRagebladeHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *GuinsoosRagebladeHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	log.Printf("GuinsoosRagebladeHandler: OnEquip for entity %d", entity)
 
 	effect, exists := world.GetGuinsoosRagebladeEffect(entity)
@@ -36,7 +37,7 @@ func (h *GuinsoosRagebladeHandler) OnEquip(entity ecs.Entity, world *ecs.World, 
 	}
 }
 
-func (h *GuinsoosRagebladeHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *GuinsoosRagebladeHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	ragebladeTickEvent, ok := event.(eventsys.GuinsoosRagebladeTickEvent)
 	if !ok || ragebladeTickEvent.Entity != entity {
 		return // Not a GuinsoosRagebladeTickEvent for this entity

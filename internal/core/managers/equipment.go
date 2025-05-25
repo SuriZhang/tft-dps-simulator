@@ -8,6 +8,7 @@ import (
 	"tft-dps-simulator/internal/core/components/items"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 )
 
 // EquipmentManager handles adding/removing items and calculating their effects.
@@ -24,7 +25,7 @@ func NewEquipmentManager(world *ecs.World) *EquipmentManager {
 
 // AddItemToChampion adds an item to a champion's equipment if there's space.
 // It also adds specific effect components for dynamic items.
-func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName string) error {
+func (em *EquipmentManager) AddItemToChampion(champion entity.Entity, itemApiName string) error {
 	// Get the item data by API name
 	item := data.GetItemByApiName(itemApiName)
 	if item == nil {
@@ -238,7 +239,7 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
 // RemoveItemFromChampion removes an item from a champion's equipment by its API name.
 // It also removes associated effect components for specific dynamic items.
 // TODO: Need to handle all dynamic items that have effects
-func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiName string) error {
+func (em *EquipmentManager) RemoveItemFromChampion(champion entity.Entity, itemApiName string) error {
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {
 		log.Printf("Warning: Champion %d has no ChampionInfo component when removing item %s", champion, itemApiName)
@@ -339,7 +340,7 @@ func (em *EquipmentManager) RemoveItemFromChampion(champion ecs.Entity, itemApiN
 
 // calculateAndUpdateStaticItemEffects calculates the total passive stats from equipped items
 // and updates the champion's ItemStaticEffect component.
-func (em *EquipmentManager) calculateAndUpdateStaticItemEffects(champion ecs.Entity) error {
+func (em *EquipmentManager) calculateAndUpdateStaticItemEffects(champion entity.Entity) error {
 	championInfo, ok := em.world.GetChampionInfo(champion)
 	if !ok {
 		return fmt.Errorf("champion %d has no ChampionInfo component", champion)

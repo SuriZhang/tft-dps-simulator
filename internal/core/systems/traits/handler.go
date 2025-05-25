@@ -3,6 +3,7 @@ package traitsys
 import (
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 )
 
@@ -13,7 +14,7 @@ type TraitHandler interface {
 
     // Handle processes game events relevant to the trait. Operates on entities with the trait component.
     // It receives the eventBus to enqueue follow-up events like RecalculateStatsEvent.
-    Handle(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) // Added eventBus
+    Handle(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) // Added eventBus
 
     // OnDeactivate is called when the trait becomes inactive or changes tier for a team.
     // Since tiers are static, this might only be relevant if combat could restart with different tiers.

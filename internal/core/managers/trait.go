@@ -7,6 +7,7 @@ import (
 	"tft-dps-simulator/internal/core/components/traits"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	traitsys "tft-dps-simulator/internal/core/systems/traits"
 )
@@ -105,10 +106,10 @@ func (s *TraitManager) HandleEvent(event interface{}) {
 }
 
 // determineInvolvedEntities extracts entities from an event.
-func (s *TraitManager) determineInvolvedEntities(event interface{}) []ecs.Entity {
-    entities := make(map[ecs.Entity]struct{}) // Use map for uniqueness
+func (s *TraitManager) determineInvolvedEntities(event interface{}) []entity.Entity {
+    entities := make(map[entity.Entity]struct{}) // Use map for uniqueness
 
-    addEntity := func(entity ecs.Entity) {
+    addEntity := func(entity entity.Entity) {
         if entity != 0 {
             entities[entity] = struct{}{}
         }
@@ -121,7 +122,7 @@ func (s *TraitManager) determineInvolvedEntities(event interface{}) []ecs.Entity
         return nil
     }
 
-    result := make([]ecs.Entity, 0, len(entities))
+    result := make([]entity.Entity, 0, len(entities))
     for entity := range entities {
         result = append(result, entity)
     }

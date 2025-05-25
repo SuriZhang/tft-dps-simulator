@@ -8,6 +8,7 @@ import (
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	"tft-dps-simulator/internal/core/managers"
 	"tft-dps-simulator/internal/core/systems"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
@@ -16,8 +17,8 @@ import (
 	"tft-dps-simulator/internal/core/utils"
 
 	// Import handlers packages for side effects (to run their init() functions)
-    _ "tft-dps-simulator/internal/core/systems/items/handlers" // For item handlers
-    _ "tft-dps-simulator/internal/core/systems/traits/handlers" // For trait handlers
+	_ "tft-dps-simulator/internal/core/systems/items/handlers"  // For item handlers
+	_ "tft-dps-simulator/internal/core/systems/traits/handlers" // For trait handlers
 )
 
 // Simulation manages the simulation loop and coordinates system execution
@@ -28,6 +29,7 @@ type Simulation struct {
 	statCalcSystem         *systems.StatCalculationSystem
 	baseStaticItemSystem   *itemsys.BaseStaticItemSystem
 	abilityCritSystem      *itemsys.AbilityCritSystem
+	debuffSystem *systems.DebuffSystem
 	traitCounterSystem *traitsys.TraitCounterSystem
 	traitManager *managers.TraitManager 
 	itemManger *managers.ItemManager 
@@ -62,6 +64,7 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	abilityCritSystem := itemsys.NewAbilityCritSystem(world)
 	spellCastSystem := systems.NewSpellCastSystem(world, eventBus)
 	championActionSystem := systems.NewChampionActionSystem(world, eventBus)
+	debuffSystem := systems.NewDebuffSystem(world, eventBus)
 	traitManager := managers.NewTraitManager(world, traitState, eventBus)
 	traitCounterSystem := traitsys.NewTraitCounterSystem(world, traitState)
 	itemManger := managers.NewItemManager(world, eventBus)
@@ -72,6 +75,7 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 	eventBus.RegisterHandler(autoAttackSystem)
 	eventBus.RegisterHandler(spellCastSystem)
 	eventBus.RegisterHandler(statCalcSystem)
+	eventBus.RegisterHandler(debuffSystem)
 	eventBus.RegisterHandler(traitManager)
 	eventBus.RegisterHandler(itemManger)
 
@@ -82,7 +86,7 @@ func NewSimulationWithConfig(world *ecs.World, config SimulationConfig) *Simulat
 		statCalcSystem:         statCalcSystem,
 		baseStaticItemSystem:   baseStaticItemSystem,
 		abilityCritSystem:      abilityCritSystem,
-		// dynamicTimeItemSystem:  dynamicTimeItemSystem,
+		debuffSystem:           debuffSystem,
 		traitCounterSystem:    traitCounterSystem,
 		traitManager: traitManager,
 		itemManger: itemManger,
@@ -210,7 +214,7 @@ func (s *Simulation) RunSimulation() {
 }
 
 // PrintResults displays the final simulation results
-func (s *Simulation) PrintResults(entities ...ecs.Entity) {
+func (s *Simulation) PrintResults(entities ...entity.Entity) {
 	fmt.Println("\n------------Final Stats---------------")
 	for _, entity := range entities {
 		utils.PrintChampionStats(s.world, entity)

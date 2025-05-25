@@ -4,6 +4,7 @@ import (
 	"log"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -14,25 +15,25 @@ func init() {
     itemsys.RegisterItemHandler(data.TFT_Item_SpearOfShojin, &SpearOfShojinHandler{})
 }
 
-func (h *SpearOfShojinHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *SpearOfShojinHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     log.Printf("SpearOfShojinHandler: OnEquip for entity %d", entity)
     // No special equip logic needed - effect is handled in ProcessEvent
 }
 
-// func (h *SpearOfShojinHandler) OnUnequip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+// func (h *SpearOfShojinHandler) OnUnequip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 //     log.Printf("SpearOfShojinHandler: OnUnequip for entity %d", entity)
 //     // Remove the component when item is unequipped
 //     world.RemoveComponent(entity, (*items.SpearOfShojinEffect)(nil))
 // }
 
-func (h *SpearOfShojinHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *SpearOfShojinHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     switch evt := event.(type) {
     case eventsys.AttackFiredEvent:
         h.handleAttackFired(evt, entity, world, eventBus)
     }
 }
 
-func (h *SpearOfShojinHandler) handleAttackFired(evt eventsys.AttackFiredEvent, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *SpearOfShojinHandler) handleAttackFired(evt eventsys.AttackFiredEvent, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     // Only process if this entity is the attacker
     if evt.Source != entity {
         return

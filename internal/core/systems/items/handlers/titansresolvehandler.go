@@ -4,6 +4,7 @@ import (
 	"log"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
@@ -18,7 +19,7 @@ func init() {
 // OnEquip implements itemsys.ItemHandler.
 // For Titan's Resolve, there's no immediate timed event to schedule on equip.
 // Stacks are gained through AttackLandedEvent or DamageAppliedEvent.
-func (h *TitansResolveHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *TitansResolveHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     log.Printf("TitansResolveHandler: OnEquip for entity %d. No initial events to enqueue.", entity)
 
     effect, exists := world.GetTitansResolveEffect(entity)
@@ -32,7 +33,7 @@ func (h *TitansResolveHandler) OnEquip(entity ecs.Entity, world *ecs.World, even
 
 // ProcessEvent implements itemsys.ItemHandler.
 // This function will handle AttackLandedEvent and DamageAppliedEvent to grant stacks.
-func (h *TitansResolveHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *TitansResolveHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     // Generic check for entity validity
     health, healthOk := world.GetHealth(entity)
     equipment, equipOk := world.GetEquipment(entity)
@@ -66,7 +67,7 @@ func (h *TitansResolveHandler) ProcessEvent(event interface{}, entity ecs.Entity
     }
 }
 
-func (h *TitansResolveHandler) handleTitansTrigger(entity ecs.Entity, evtTimestamp float64, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *TitansResolveHandler) handleTitansTrigger(entity entity.Entity, evtTimestamp float64, world *ecs.World, eventBus eventsys.EventBus) {
     equipment, ok := world.GetEquipment(entity)
     if (!ok || !equipment.HasItem(data.TFT_Item_TitansResolve)) {
         return // Entity doesn't have the item

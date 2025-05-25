@@ -6,6 +6,7 @@ import (
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -73,7 +74,7 @@ func (im *ItemManager) CanHandle(event interface{}) bool {
 
 // HandleEvent dispatches the event to relevant item handlers.
 func (im *ItemManager) HandleEvent(event any) { // Changed interface{} to any
-    uniqueInvolvedEntities := make(map[ecs.Entity]struct{})
+    uniqueInvolvedEntities := make(map[entity.Entity]struct{})
 
     // Determine involved entity/entities from the event
     switch evt := event.(type) {
@@ -116,7 +117,7 @@ func (im *ItemManager) HandleEvent(event any) { // Changed interface{} to any
     }
 
     // This map ensures a specific item handler on a specific entity is called at most once per event.
-    processedHandlersThisEvent := make(map[ecs.Entity]map[string]struct{}) // entity -> itemApiName -> processed
+    processedHandlersThisEvent := make(map[entity.Entity]map[string]struct{}) // entity -> itemApiName -> processed
 
     for entity := range uniqueInvolvedEntities {
         equipment, ok := im.world.GetEquipment(entity)

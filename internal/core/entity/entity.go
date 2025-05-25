@@ -1,4 +1,4 @@
-package ecs
+package entity
 
 import (
 	// "sync/atomic"

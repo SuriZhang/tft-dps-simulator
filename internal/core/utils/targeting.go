@@ -7,11 +7,12 @@ import (
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 )
 
 // FindNearestEnemy finds the closest entity on an opposing team.
 // Uses type-safe getters. Range is ignored.
-func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ecs.Entity, bool) {
+func FindNearestEnemy(world *ecs.World, source entity.Entity, sourceTeamID int) (entity.Entity, bool) {
 	// Get source position using type-safe getter
 	sourcePos, okPosSource := world.GetPosition(source)
 	if !okPosSource {
@@ -28,7 +29,7 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 	entities := world.GetEntitiesWithComponents(posType, healthType, teamType)
 
 	// Filter for entities specifically on Team 1
-	var potentialTargets []ecs.Entity
+	var potentialTargets []entity.Entity
 	for _, entity := range entities {
 		team, ok := world.GetTeam(entity)
 		// Ensure the entity is on a different team and has a valid Team component
@@ -37,7 +38,7 @@ func FindNearestEnemy(world *ecs.World, source ecs.Entity, sourceTeamID int) (ec
 		}
 	}
 
-	var closestEnemy ecs.Entity
+	var closestEnemy entity.Entity
 	closestDistSq := math.MaxInt32 
 	foundTarget := false
 

@@ -4,6 +4,7 @@ import (
 	"log"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
@@ -15,7 +16,7 @@ func init() {
 	itemsys.RegisterItemHandler(data.TFT_Item_KrakensFury, &KrankensFuryHandler{})
 }
 
-func (h *KrankensFuryHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *KrankensFuryHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	log.Printf("KrankensFuryHandler: OnEquip for entity %d. No initial events to enqueue.", entity)
 
 	effect, exists := world.GetKrakensFuryEffect(entity)
@@ -27,7 +28,7 @@ func (h *KrankensFuryHandler) OnEquip(entity ecs.Entity, world *ecs.World, event
 	}
 }
 
-func (h *KrankensFuryHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *KrankensFuryHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 
 	// Generic check for entity validity
 	health, healthOk := world.GetHealth(entity)
@@ -56,7 +57,7 @@ func (h *KrankensFuryHandler) ProcessEvent(event interface{}, entity ecs.Entity,
 
 }
 
-func (h *KrankensFuryHandler) handleKrankensTrigger(entity ecs.Entity, evtTimestamp float64, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *KrankensFuryHandler) handleKrankensTrigger(entity entity.Entity, evtTimestamp float64, world *ecs.World, eventBus eventsys.EventBus) {
 	equipment, ok := world.GetEquipment(entity)
 	if !ok || !equipment.HasItem(data.TFT_Item_KrakensFury) {
 		return // Entity doesn't have the item

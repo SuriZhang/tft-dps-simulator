@@ -8,6 +8,7 @@ import (
 	"tft-dps-simulator/internal/core/components/traits"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	traitsys "tft-dps-simulator/internal/core/systems/traits"
 )
@@ -61,7 +62,7 @@ func (h *RapidfireHandler) OnActivate(teamID int, effect data.Effect, world *ecs
 
 // Handle processes AttackLandedEvent for entities with RapidfireEffect component.
 // Now receives eventBus to enqueue RecalculateStatsEvent.
-func (h *RapidfireHandler) Handle(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *RapidfireHandler) Handle(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	attackEvt, ok := event.(eventsys.AttackLandedEvent)
 	if !ok || attackEvt.Source != entity {
 		return // Not an attack landed event from this entity

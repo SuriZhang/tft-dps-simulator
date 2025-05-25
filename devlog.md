@@ -630,6 +630,18 @@ TODO:
 - [ ] frontend: hexcell click on champion cells and use a shadcn Sheet to display champion details (ability, stats etc)
 
 ## 20250524
-Goal of today:
-- implement mana related items: blue buff, shojin, nashor's tooth
+DONE today:
+- [x] implement mana related items: blue buff, shojin
+
+TODO:
 - use old guinsoo's logic to implement new flickerblade
+
+## 20250525
+- [x] use old guinsoo's logic to implement new flickerblade
+- [x] implement Nashor's Tooth
+- [x] create new debuff system to handle debuffs:
+    - Shred: Reduce Magic Resist
+    - Burn: Deals a percent of the target's max Health as true damage every second
+    - Wound: Reduces healing received
+    - Sunder: Reduce Armor
+- [x] move Entity to a separate package to avoid import cycles

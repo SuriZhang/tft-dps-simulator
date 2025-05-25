@@ -4,6 +4,7 @@ import (
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	"tft-dps-simulator/internal/core/factory"
 	"tft-dps-simulator/internal/core/managers"
 
@@ -15,7 +16,7 @@ var _ = Describe("EquipmentManager", func() {
 	var (
 		world            *ecs.World
 		equipmentManager *managers.EquipmentManager
-		champion         ecs.Entity
+		champion         entity.Entity
 		bfSword          *data.Item
 		deathblade       *data.Item
 		inifityEdge      *data.Item

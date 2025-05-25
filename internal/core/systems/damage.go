@@ -7,13 +7,14 @@ import (
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 )
 
 // DamageTracker tracks damage participants for assist tracking.
 type DamageTracker struct {
     // Maps target entity ID to a map of source entity IDs that have damaged it
-    damageParticipants map[ecs.Entity]map[ecs.Entity]bool
+    damageParticipants map[entity.Entity]map[entity.Entity]bool
 }
 
 // DamageSystem handles damage calculation and application based on events.
@@ -57,7 +58,7 @@ func (s *DamageSystem) CanHandle(evt interface{}) bool {
 func (s *DamageSystem) initDamageTracker() {
 	if s.damageTracker == nil {
 		s.damageTracker = &DamageTracker{
-			damageParticipants: make(map[ecs.Entity]map[ecs.Entity]bool),
+			damageParticipants: make(map[entity.Entity]map[entity.Entity]bool),
 		}
 	}
 }
@@ -180,7 +181,7 @@ func (s *DamageSystem) onDamageApplied(evt eventsys.DamageAppliedEvent) {
 	// Track damage participants for assist tracking
 	s.initDamageTracker()
 	if s.damageTracker.damageParticipants[target] == nil {
-		s.damageTracker.damageParticipants[target] = make(map[ecs.Entity]bool)
+		s.damageTracker.damageParticipants[target] = make(map[entity.Entity]bool)
 	}
 	s.damageTracker.damageParticipants[target][attacker] = true
 

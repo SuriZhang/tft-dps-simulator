@@ -5,6 +5,7 @@ import (
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -17,7 +18,7 @@ func init() {
 }
 
 // OnEquip implements itemsys.ItemHandler
-func (h *BlueBuffHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *BlueBuffHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	log.Printf("BlueBuff: OnEquip for entity %d", entity)
 
 	// Reset the effect state when equipped
@@ -41,7 +42,7 @@ func (h *BlueBuffHandler) GetHandledEvents() []string {
 }
 
 // ProcessEvent implements itemsys.ItemHandler
-func (h *BlueBuffHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *BlueBuffHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	switch evt := event.(type) {
 	case eventsys.SpellLandedEvent:
 		if evt.Source == entity {
@@ -67,7 +68,7 @@ func (h *BlueBuffHandler) ProcessEvent(event interface{}, entity ecs.Entity, wor
 }
 
 // enqueueTakedownActivation enqueues the activation event when takedown occurs
-func (h *BlueBuffHandler) enqueueTakedownActivation(entity ecs.Entity, timestamp float64, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *BlueBuffHandler) enqueueTakedownActivation(entity entity.Entity, timestamp float64, world *ecs.World, eventBus eventsys.EventBus) {
 	// Verify entity still has Blue Buff
 	equipment, okEq := world.GetEquipment(entity)
 	if !okEq || equipment.GetItemCount(data.TFT_Item_BlueBuff) == 0 {
@@ -85,7 +86,7 @@ func (h *BlueBuffHandler) enqueueTakedownActivation(entity ecs.Entity, timestamp
 }
 
 // handleSpellLanded grants mana after casting
-func (h *BlueBuffHandler) handleSpellLanded(evt eventsys.SpellLandedEvent, entity ecs.Entity, world *ecs.World) {
+func (h *BlueBuffHandler) handleSpellLanded(evt eventsys.SpellLandedEvent, entity entity.Entity, world *ecs.World) {
 	// Verify entity still has Blue Buff
 	equipment, okEq := world.GetEquipment(entity)
 	if !okEq || equipment.GetItemCount(data.TFT_Item_BlueBuff) == 0 {
@@ -114,7 +115,7 @@ func (h *BlueBuffHandler) handleSpellLanded(evt eventsys.SpellLandedEvent, entit
 }
 
 // handleDamageAmpActivation processes the activation event and manages the effect
-func (h *BlueBuffHandler) handleDamageAmpActivation(evt eventsys.BlueBuffDamageAmpActivateEvent, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *BlueBuffHandler) handleDamageAmpActivation(evt eventsys.BlueBuffDamageAmpActivateEvent, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	// Verify entity still has Blue Buff
 	equipment, okEq := world.GetEquipment(entity)
 	if !okEq || equipment.GetItemCount(data.TFT_Item_BlueBuff) == 0 {
@@ -170,7 +171,7 @@ func (h *BlueBuffHandler) handleDamageAmpActivation(evt eventsys.BlueBuffDamageA
 }
 
 // Add handleDamageAmpDeactivation method
-func (h *BlueBuffHandler) handleDamageAmpDeactivation(evt eventsys.BlueBuffDamageAmpDeactivateEvent, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *BlueBuffHandler) handleDamageAmpDeactivation(evt eventsys.BlueBuffDamageAmpDeactivateEvent, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	// Verify entity still has Blue Buff
 	equipment, okEq := world.GetEquipment(entity)
 	if !okEq || equipment.GetItemCount(data.TFT_Item_BlueBuff) == 0 {

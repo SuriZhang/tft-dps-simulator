@@ -4,6 +4,7 @@ import (
 	"log"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -17,7 +18,7 @@ func init() {
 // OnEquip implements itemsys.ItemHandler.
 // This function is called when Quicksilver is equipped to an entity.
 // It should schedule the initial QuicksilverProcEvent.
-func (h *QuicksilverHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *QuicksilverHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	log.Printf("QuicksilverHandler: OnEquip for entity %d", entity)
 
 	effect, exists := world.GetQuicksilverEffect(entity)
@@ -41,7 +42,7 @@ func (h *QuicksilverHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventB
 
 // ProcessEvent implements itemsys.ItemHandler.
 // This function will handle QuicksilverProcEvent and QuicksilverEndEvent.
-func (h *QuicksilverHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *QuicksilverHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	// Generic check for entity validity
 	health, healthOk := world.GetHealth(entity)
 	equipment, equipOk := world.GetEquipment(entity)

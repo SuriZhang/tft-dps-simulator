@@ -5,6 +5,7 @@ import (
 
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	"tft-dps-simulator/internal/core/factory"
 	"tft-dps-simulator/internal/core/systems"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
@@ -20,8 +21,8 @@ var _ = Describe("DamageSystem", func() {
         mockEventBus        *utils.MockEventBus
         championFactory *factory.ChampionFactory
         damageSystem    *systems.DamageSystem
-        attacker        ecs.Entity
-        target          ecs.Entity
+        attacker        entity.Entity
+        target          entity.Entity
         attackerAttack  *components.Attack
         attackerCrit    *components.Crit
         attackerMana    *components.Mana

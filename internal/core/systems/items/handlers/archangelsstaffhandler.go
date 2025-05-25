@@ -5,6 +5,7 @@ import (
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -16,7 +17,7 @@ func init() {
 }
 
 // OnEquip implements itemsys.ItemHandler.
-func (h *ArchangelsStaffHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *ArchangelsStaffHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	log.Printf("ArchangelsStaffHandler: OnEquip for entity %d", entity)
 
 	effect, exists := world.GetArchangelsStaffEffect(entity)
@@ -33,7 +34,7 @@ func (h *ArchangelsStaffHandler) OnEquip(entity ecs.Entity, world *ecs.World, ev
 }
 
 // ProcessEvent implements itemsys.ItemHandler.
-func (h *ArchangelsStaffHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *ArchangelsStaffHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	archangelsTickEvent, ok := event.(eventsys.ArchangelsTickEvent)
 	if !ok || archangelsTickEvent.Entity != entity {
 		return // Not an ArchangelsTickEvent for this entity

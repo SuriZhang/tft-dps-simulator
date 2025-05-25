@@ -6,6 +6,7 @@ import (
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -16,7 +17,7 @@ func init() {
 	itemsys.RegisterItemHandler(data.TFT_Item_SpiritVisage, &SpiritVisageHandler{})
 }
 
-func (h *SpiritVisageHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *SpiritVisageHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	effect, okEffect := world.GetSpiritVisageEffect(entity)
 	if !okEffect {
 		log.Printf("SpiritVisageHandler: SpiritVisageEffect component not found for entity %d on equip.", entity)
@@ -29,7 +30,7 @@ func (h *SpiritVisageHandler) OnEquip(entity ecs.Entity, world *ecs.World, event
 	log.Printf("SpiritVisageHandler: OnEquip for entity %d. Scheduled first heal tick at %.3fs.", entity, healTickEvent.Timestamp)
 }
 
-func (h *SpiritVisageHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *SpiritVisageHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 	spiritVisageHealTickEvent, ok := event.(eventsys.SpiritVisageHealTickEvent)
 	if !ok || spiritVisageHealTickEvent.Entity != entity {
 		return 

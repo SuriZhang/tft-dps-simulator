@@ -20,8 +20,8 @@ package systems_test
 // 		eventBus         *MockEventBus // Use the mock event bus
 // 		championFactory  *factory.ChampionFactory
 // 		autoAttackSystem *systems.AutoAttackSystem
-// 		player           ecs.Entity // Blue Golem
-// 		target           ecs.Entity // Training Dummy
+// 		player           entity.Entity // Blue Golem
+// 		target           entity.Entity // Training Dummy
 // 		playerAttack     *components.Attack
 // 		playerCrit       *components.Crit
 // 		playerSpell      *components.Spell // Added for lockout test

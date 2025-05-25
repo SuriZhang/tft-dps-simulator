@@ -2,11 +2,13 @@ package systems
 
 import (
 	"log"
+	"math"
 	"reflect"
 
-	"tft-dps-simulator/internal/core/ecs"
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/data"
+	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 )
 
@@ -87,7 +89,7 @@ func (s *StatCalculationSystem) handleRecalculateStats(evt eventsys.RecalculateS
 
 
 // calculateAllStats() performs all stat calculations for a single entity.
-func (s *StatCalculationSystem) calculateAllStats(entity ecs.Entity) {
+func (s *StatCalculationSystem) calculateAllStats(entity entity.Entity) {
     s.calculateHealthStats(entity)
     s.calculateAttackStats(entity)
     s.calculateManaStats(entity)
@@ -96,32 +98,47 @@ func (s *StatCalculationSystem) calculateAllStats(entity ecs.Entity) {
 }
 
 // calculateHealthStats calculates FinalMaxHP, FinalArmor, FinalMR, FinalDurability.
-func (s *StatCalculationSystem) calculateHealthStats(entity ecs.Entity) {
-	health, ok := s.world.GetHealth(entity)
-	if !ok {
-		return // No health component, nothing to calculate
-	}
+func (s *StatCalculationSystem) calculateHealthStats(entity entity.Entity) {
+    health, ok := s.world.GetHealth(entity)
+    if !ok {
+        return // No health component, nothing to calculate
+    }
 
-	// Max HP: (Base + FlatBonus) * (1 + PercentBonus)
-	calculatedMaxHp := (health.GetBaseMaxHp() + health.GetBonusMaxHP()) * (1 + health.GetBonusPercentHp())
-	health.SetFinalMaxHP(calculatedMaxHp)
+    // Max HP: (Base + FlatBonus) * (1 + PercentBonus)
+    calculatedMaxHp := (health.GetBaseMaxHp() + health.GetBonusMaxHP()) * (1 + health.GetBonusPercentHp())
+    health.SetFinalMaxHP(calculatedMaxHp)
 
-	// Armor: Base + FlatBonus (Add % bonus calculation if needed)
-	calculatedArmor := health.GetBaseArmor() + health.GetBonusArmor()
-	health.SetFinalArmor(calculatedArmor)
+    // Armor: Base + FlatBonus
+    calculatedArmor := health.GetBaseArmor() + health.GetBonusArmor()
+    
+    // Apply Sunder debuff reduction
+    if sunderEffect, exists := s.world.GetSunderEffect(entity); exists {
+        calculatedArmor -= sunderEffect.GetArmorReduction()
+    }
+    
+    // Ensure armor doesn't go below 0
+    calculatedArmor = math.Max(0, calculatedArmor)
+    health.SetFinalArmor(calculatedArmor)
 
-	// MR: Base + FlatBonus (Add % bonus calculation if needed)
-	calculatedMR := health.GetBaseMR() + health.GetBonusMR()
-	health.SetFinalMR(calculatedMR)
+    // MR: Base + FlatBonus
+    calculatedMR := health.GetBaseMR() + health.GetBonusMR()
+    
+    // Apply Shred debuff reduction
+    if shredEffect, exists := s.world.GetShredEffect(entity); exists {
+        calculatedMR -= shredEffect.GetMRReduction()
+    }
+    
+    // Ensure MR doesn't go below 0
+    calculatedMR = math.Max(0, calculatedMR)
+    health.SetFinalMR(calculatedMR)
 
-	// Durability: Base + FlatBonus (Assuming simple addition for now)
-	// You might need a BaseDurability field if it exists.
-	calculatedDurability := health.GetBonusDurability() // Or Base + Bonus
-	health.SetFinalDurability(calculatedDurability)
+    // Durability: Base + FlatBonus (Assuming simple addition for now)
+    calculatedDurability := health.GetBonusDurability()
+    health.SetFinalDurability(calculatedDurability)
 }
 
 // calculateAttackStats calculates FinalAD, FinalAS, FinalCritChance, FinalCritMultiplier, FinalDamageAmp.
-func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
+func (s *StatCalculationSystem) calculateAttackStats(entity entity.Entity) {
 	attack, ok := s.world.GetAttack(entity)
 	if !ok {
 		return // No attack component
@@ -180,7 +197,7 @@ func (s *StatCalculationSystem) calculateAttackStats(entity ecs.Entity) {
 }
 
 // calculateCritStats calculates FinalCritChance, FinalCritMultiplier.
-func (s *StatCalculationSystem) calculateCritStats(entity ecs.Entity) {
+func (s *StatCalculationSystem) calculateCritStats(entity entity.Entity) {
 	crit, ok := s.world.GetCrit(entity)
 	if !ok {
 		return
@@ -246,7 +263,7 @@ func (s *StatCalculationSystem) calculateCritStats(entity ecs.Entity) {
 }
 
 // calculateManaStats calculates FinalInitialMana.
-func (s *StatCalculationSystem) calculateManaStats(entity ecs.Entity) {
+func (s *StatCalculationSystem) calculateManaStats(entity entity.Entity) {
 	mana, ok := s.world.GetMana(entity)
 	if !ok {
 		return // No mana component
@@ -261,7 +278,7 @@ func (s *StatCalculationSystem) calculateManaStats(entity ecs.Entity) {
 }
 
 // calculateSpellStats calculates FinalSpellDamage, FinalSpellManaCost.
-func (s *StatCalculationSystem) calculateSpellStats(entity ecs.Entity) {
+func (s *StatCalculationSystem) calculateSpellStats(entity entity.Entity) {
 	spell, ok := s.world.GetSpell(entity)
 	if !ok {
 		return // No spell component
@@ -275,7 +292,7 @@ func (s *StatCalculationSystem) calculateSpellStats(entity ecs.Entity) {
 
 // applyHealthConsequences handles adjustments needed after health stats change.
 // only invoke before the combat starts, not during the combat.
-func (s *StatCalculationSystem) applyHealthConsequences(entity ecs.Entity) {
+func (s *StatCalculationSystem) applyHealthConsequences(entity entity.Entity) {
 	health, ok := s.world.GetHealth(entity)
 	if !ok {
 		return

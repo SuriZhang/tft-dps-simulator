@@ -7,47 +7,53 @@ import (
 	"sync/atomic"
 
 	"tft-dps-simulator/internal/core/components"
+	"tft-dps-simulator/internal/core/components/debuffs"
 	"tft-dps-simulator/internal/core/components/items"
 	"tft-dps-simulator/internal/core/components/traits"
+	"tft-dps-simulator/internal/core/entity"
 )
 
 // World contains all entities and their components, stored in type-specific maps.
 type World struct {
 	nextEntityId uint32
 	// --- Component Maps ---
-	// Using pointers (*components.Type) allows checking for nil to see if an entity has the component.
-	Health                   map[Entity]*components.Health
-	Mana                     map[Entity]*components.Mana
-	Attack                   map[Entity]*components.Attack
-	Traits                   map[Entity]*components.Traits
-	ChampionInfo             map[Entity]*components.ChampionInfo
-	Position                 map[Entity]*components.Position
-	Team                     map[Entity]*components.Team
-	Item                     map[Entity]*items.ItemStaticEffect
-	Equipment                map[Entity]*components.Equipment
-	CanAbilityCritFromTraits map[Entity]*components.CanAbilityCritFromTraits
-	CanAbilityCritFromItems  map[Entity]*components.CanAbilityCritFromItems
-	Spell                    map[Entity]*components.Spell
-	Crit                     map[Entity]*components.Crit
-	State                    map[Entity]*components.State
-	DamageStats 		  map[Entity]*components.DamageStats
+	// Using pointers (*components.Type) allows checking for nil to see if an entity.Entity has the component.
+	Health                   map[entity.Entity]*components.Health
+	Mana                     map[entity.Entity]*components.Mana
+	Attack                   map[entity.Entity]*components.Attack
+	Traits                   map[entity.Entity]*components.Traits
+	ChampionInfo             map[entity.Entity]*components.ChampionInfo
+	Position                 map[entity.Entity]*components.Position
+	Team                     map[entity.Entity]*components.Team
+	Item                     map[entity.Entity]*items.ItemStaticEffect
+	Equipment                map[entity.Entity]*components.Equipment
+	CanAbilityCritFromTraits map[entity.Entity]*components.CanAbilityCritFromTraits
+	CanAbilityCritFromItems  map[entity.Entity]*components.CanAbilityCritFromItems
+	Spell                    map[entity.Entity]*components.Spell
+	Crit                     map[entity.Entity]*components.Crit
+	State                    map[entity.Entity]*components.State
+	DamageStats              map[entity.Entity]*components.DamageStats
+
+	// --- Debuff Components ---
+	ShredEffects  map[entity.Entity]*debuffs.ShredEffect
+	SunderEffects map[entity.Entity]*debuffs.SunderEffect
+	WoundEffects  map[entity.Entity]*debuffs.WoundEffect
+	BurnEffects   map[entity.Entity]*debuffs.BurnEffect
+
 	// --- Dynamic Item Effect Components ---
-	ArchangelsStaffEffects        map[Entity]*items.ArchangelsStaffEffect
-	QuicksilverEffects       map[Entity]*items.QuicksilverEffect
-	TitansResolveEffects     map[Entity]*items.TitansResolveEffect
-	GuinsoosRagebladeEffects map[Entity]*items.GuinsoosRagebladeEffect
-	SpiritVisageEffects  map[Entity]*items.SpiritVisageEffect
-	KrakensFuryEffects map[Entity]*items.KrakensFuryEffect
-	SpearOfShojinEffects map[Entity]*items.SpearOfShojinEffect
-	BlueBuffEffects map[Entity]*items.BlueBuffEffect 
-	FlickerbladeEffects map[Entity]*items.FlickerbladeEffect
-	NashorsToothEffects map[Entity]*items.NashorsToothEffect // Add this line
+	ArchangelsStaffEffects   map[entity.Entity]*items.ArchangelsStaffEffect
+	QuicksilverEffects       map[entity.Entity]*items.QuicksilverEffect
+	TitansResolveEffects     map[entity.Entity]*items.TitansResolveEffect
+	GuinsoosRagebladeEffects map[entity.Entity]*items.GuinsoosRagebladeEffect
+	SpiritVisageEffects      map[entity.Entity]*items.SpiritVisageEffect
+	KrakensFuryEffects       map[entity.Entity]*items.KrakensFuryEffect
+	SpearOfShojinEffects     map[entity.Entity]*items.SpearOfShojinEffect
+	BlueBuffEffects          map[entity.Entity]*items.BlueBuffEffect
+	FlickerbladeEffects      map[entity.Entity]*items.FlickerbladeEffect
+	NashorsToothEffects      map[entity.Entity]*items.NashorsToothEffect
 
 	// --- Trait Effect Components ---
-	RapidfireEffects  map[Entity]*traits.RapidfireEffect
-	// Add maps for other components defined in your components directory as needed:
-	// Defense      map[Entity]*components.Defense
-	// Buffs        map[Entity]*components.Buffs
+	RapidfireEffects map[entity.Entity]*traits.RapidfireEffect
 }
 
 // NewWorld creates a new empty world, initializing all component maps.
@@ -55,48 +61,54 @@ func NewWorld() *World {
 	return &World{
 		nextEntityId: 0,
 		// Initialize maps
-		Health:                   make(map[Entity]*components.Health),
-		Mana:                     make(map[Entity]*components.Mana),
-		Attack:                   make(map[Entity]*components.Attack),
-		Traits:                   make(map[Entity]*components.Traits),
-		ChampionInfo:             make(map[Entity]*components.ChampionInfo),
-		Position:                 make(map[Entity]*components.Position),
-		Team:                     make(map[Entity]*components.Team),
-		Item:                     make(map[Entity]*items.ItemStaticEffect),
-		Equipment:                make(map[Entity]*components.Equipment),
-		CanAbilityCritFromTraits: make(map[Entity]*components.CanAbilityCritFromTraits),
-		CanAbilityCritFromItems:  make(map[Entity]*components.CanAbilityCritFromItems),
-		Spell:                    make(map[Entity]*components.Spell),
-		Crit:                     make(map[Entity]*components.Crit),
-		State: make(map[Entity]*components.State),
-		DamageStats: make(map[Entity]*components.DamageStats),
+		Health:                   make(map[entity.Entity]*components.Health),
+		Mana:                     make(map[entity.Entity]*components.Mana),
+		Attack:                   make(map[entity.Entity]*components.Attack),
+		Traits:                   make(map[entity.Entity]*components.Traits),
+		ChampionInfo:             make(map[entity.Entity]*components.ChampionInfo),
+		Position:                 make(map[entity.Entity]*components.Position),
+		Team:                     make(map[entity.Entity]*components.Team),
+		Item:                     make(map[entity.Entity]*items.ItemStaticEffect),
+		Equipment:                make(map[entity.Entity]*components.Equipment),
+		CanAbilityCritFromTraits: make(map[entity.Entity]*components.CanAbilityCritFromTraits),
+		CanAbilityCritFromItems:  make(map[entity.Entity]*components.CanAbilityCritFromItems),
+		Spell:                    make(map[entity.Entity]*components.Spell),
+		Crit:                     make(map[entity.Entity]*components.Crit),
+		State:                    make(map[entity.Entity]*components.State),
+		DamageStats:              make(map[entity.Entity]*components.DamageStats),
+
+		// --- Debuff Components ---
+		ShredEffects:  make(map[entity.Entity]*debuffs.ShredEffect),
+		SunderEffects: make(map[entity.Entity]*debuffs.SunderEffect),
+		WoundEffects:  make(map[entity.Entity]*debuffs.WoundEffect),
+		BurnEffects:   make(map[entity.Entity]*debuffs.BurnEffect),
+
 		// --- Dynamic Item Effect Components ---
-		ArchangelsStaffEffects:        make(map[Entity]*items.ArchangelsStaffEffect),
-		QuicksilverEffects:       make(map[Entity]*items.QuicksilverEffect),
-		TitansResolveEffects:     make(map[Entity]*items.TitansResolveEffect),
-		GuinsoosRagebladeEffects: make(map[Entity]*items.GuinsoosRagebladeEffect),
-		SpiritVisageEffects:  make(map[Entity]*items.SpiritVisageEffect),
-		KrakensFuryEffects: make(map[Entity]*items.KrakensFuryEffect),
-		SpearOfShojinEffects: make(map[Entity]*items.SpearOfShojinEffect),
-		BlueBuffEffects: make(map[Entity]*items.BlueBuffEffect),
-		FlickerbladeEffects: make(map[Entity]*items.FlickerbladeEffect),
-		NashorsToothEffects: make(map[Entity]*items.NashorsToothEffect), // Add this line
+		ArchangelsStaffEffects:   make(map[entity.Entity]*items.ArchangelsStaffEffect),
+		QuicksilverEffects:       make(map[entity.Entity]*items.QuicksilverEffect),
+		TitansResolveEffects:     make(map[entity.Entity]*items.TitansResolveEffect),
+		GuinsoosRagebladeEffects: make(map[entity.Entity]*items.GuinsoosRagebladeEffect),
+		SpiritVisageEffects:      make(map[entity.Entity]*items.SpiritVisageEffect),
+		KrakensFuryEffects:       make(map[entity.Entity]*items.KrakensFuryEffect),
+		SpearOfShojinEffects:     make(map[entity.Entity]*items.SpearOfShojinEffect),
+		BlueBuffEffects:          make(map[entity.Entity]*items.BlueBuffEffect),
+		FlickerbladeEffects:      make(map[entity.Entity]*items.FlickerbladeEffect),
+		NashorsToothEffects:      make(map[entity.Entity]*items.NashorsToothEffect),
 
 		// --- Traits ---
-		RapidfireEffects: make(map[Entity]*traits.RapidfireEffect),
-		// Initialize other maps here...
+		RapidfireEffects: make(map[entity.Entity]*traits.RapidfireEffect),
 	}
 }
 
 // NewEntity generates a new unique entity ID using the global NewEntity function.
 // Note: This only reserves the ID; components must be added separately.
-func (w *World) NewEntity() Entity {
-    // Use the world's internal atomic counter
-    return Entity(atomic.AddUint32(&w.nextEntityId, 1))
+func (w *World) NewEntity() entity.Entity {
+	// Use the world's internal atomic counter
+	return entity.Entity(atomic.AddUint32(&w.nextEntityId, 1))
 }
 
 // RemoveEntity removes an entity and all its associated components from the world.
-func (w *World) RemoveEntity(e Entity) {
+func (w *World) RemoveEntity(e entity.Entity) {
 	// Delete the entity from every component map
 	delete(w.Health, e)
 	delete(w.Mana, e)
@@ -113,6 +125,11 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.Crit, e)
 	delete(w.State, e)
 	delete(w.DamageStats, e)
+	// --- Debuff Components ---
+	delete(w.ShredEffects, e)
+	delete(w.SunderEffects, e)
+	delete(w.WoundEffects, e)
+	delete(w.BurnEffects, e)
 	// --- Dynamic Item Effect Components ---
 	delete(w.ArchangelsStaffEffects, e)
 	delete(w.QuicksilverEffects, e)
@@ -123,19 +140,19 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.SpearOfShojinEffects, e)
 	delete(w.BlueBuffEffects, e)
 	delete(w.FlickerbladeEffects, e)
-	delete(w.NashorsToothEffects, e) // Add this line
+	delete(w.NashorsToothEffects, e)
 	// Traits
 	delete(w.RapidfireEffects, e)
 	// Delete from other maps here...
 }
 
-// AddComponent adds a component to an entity. It uses a type switch
+// AddComponent adds a component to an entity.Entity. It uses a type switch
 // to place the component in the correct map.
 // Returns an error if the component type is not recognized by the World struct.
-func (w *World) AddComponent(e Entity, component interface{}) error {
+func (w *World) AddComponent(e entity.Entity, component interface{}) error {
 	// Ensure component is not nil
 	if component == nil {
-		return fmt.Errorf("cannot add nil component to entity %d", e)
+		return fmt.Errorf("cannot add nil component to entity.Entity %d", e)
 	}
 
 	switch c := component.(type) {
@@ -200,6 +217,23 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.DamageStats[e] = &c
 	case *components.DamageStats:
 		w.DamageStats[e] = c
+	// --- Debuff Components ---
+	case debuffs.ShredEffect:
+		w.ShredEffects[e] = &c
+	case *debuffs.ShredEffect:
+		w.ShredEffects[e] = c
+	case debuffs.SunderEffect:
+		w.SunderEffects[e] = &c
+	case *debuffs.SunderEffect:
+		w.SunderEffects[e] = c
+	case debuffs.WoundEffect:
+		w.WoundEffects[e] = &c
+	case *debuffs.WoundEffect:
+		w.WoundEffects[e] = c
+	case debuffs.BurnEffect:
+		w.BurnEffects[e] = &c
+	case *debuffs.BurnEffect:
+		w.BurnEffects[e] = c
 	// --- Dynamic Item Effect Components ---
 	case items.ArchangelsStaffEffect:
 		w.ArchangelsStaffEffects[e] = &c
@@ -238,9 +272,9 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 	case *items.FlickerbladeEffect:
 		w.FlickerbladeEffects[e] = c
 	case items.NashorsToothEffect:
-		w.NashorsToothEffects[e] = &c // Add this line
+		w.NashorsToothEffects[e] = &c
 	case *items.NashorsToothEffect:
-		w.NashorsToothEffects[e] = c // Add this line
+		w.NashorsToothEffects[e] = c
 	// Traits
 	case traits.RapidfireEffect:
 		w.RapidfireEffects[e] = &c
@@ -254,10 +288,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 	return nil
 }
 
-// GetComponent retrieves a component of a specific type for an entity.
+// GetComponent retrieves a component of a specific type for an entity.Entity.
 // It returns the component (as interface{}) and true if found, otherwise nil and false.
 // This generic version is kept for flexibility but type-safe getters are preferred.
-func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{}, bool) {
+func (w *World) GetComponent(e entity.Entity, componentType reflect.Type) (interface{}, bool) {
 	switch componentType {
 	case reflect.TypeOf(components.Health{}):
 		comp, ok := w.Health[e] // Use type-safe getter internally
@@ -304,6 +338,19 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(components.DamageStats{}):
 		comp, ok := w.DamageStats[e]
 		return comp, ok
+	// --- Debuff Components ---
+	case reflect.TypeOf(debuffs.ShredEffect{}):
+		comp, ok := w.ShredEffects[e]
+		return comp, ok
+	case reflect.TypeOf(debuffs.SunderEffect{}):
+		comp, ok := w.SunderEffects[e]
+		return comp, ok
+	case reflect.TypeOf(debuffs.WoundEffect{}):
+		comp, ok := w.WoundEffects[e]
+		return comp, ok
+	case reflect.TypeOf(debuffs.BurnEffect{}):
+		comp, ok := w.BurnEffects[e]
+		return comp, ok
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsStaffEffect{}):
 		comp, ok := w.ArchangelsStaffEffects[e]
@@ -333,7 +380,7 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 		comp, ok := w.FlickerbladeEffects[e]
 		return comp, ok
 	case reflect.TypeOf(items.NashorsToothEffect{}):
-		comp, ok := w.NashorsToothEffects[e] // Add this line
+		comp, ok := w.NashorsToothEffects[e]
 		return comp, ok
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
@@ -345,14 +392,14 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	}
 }
 
-// HasComponent checks if an entity possesses a component of the specified type.
-func (w *World) HasComponent(e Entity, componentType reflect.Type) bool {
+// HasComponent checks if an entity.Entity possesses a component of the specified type.
+func (w *World) HasComponent(e entity.Entity, componentType reflect.Type) bool {
 	_, ok := w.GetComponent(e, componentType) // Leverage existing logic
 	return ok
 }
 
-// RemoveComponent removes a specific component type from an entity.
-func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
+// RemoveComponent removes a specific component type from an entity.Entity.
+func (w *World) RemoveComponent(e entity.Entity, componentType reflect.Type) {
 	switch componentType {
 	case reflect.TypeOf(components.Health{}):
 		delete(w.Health, e)
@@ -384,6 +431,15 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.State, e)
 	case reflect.TypeOf(components.DamageStats{}):
 		delete(w.DamageStats, e)
+	// --- Debuff Components ---
+	case reflect.TypeOf(debuffs.ShredEffect{}):
+		delete(w.ShredEffects, e)
+	case reflect.TypeOf(debuffs.SunderEffect{}):
+		delete(w.SunderEffects, e)
+	case reflect.TypeOf(debuffs.WoundEffect{}):
+		delete(w.WoundEffects, e)
+	case reflect.TypeOf(debuffs.BurnEffect{}):
+		delete(w.BurnEffects, e)
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsStaffEffect{}):
 		delete(w.ArchangelsStaffEffects, e)
@@ -404,20 +460,20 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
 		delete(w.FlickerbladeEffects, e)
 	case reflect.TypeOf(items.NashorsToothEffect{}):
-		delete(w.NashorsToothEffects, e) // Add this line
+		delete(w.NashorsToothEffects, e)
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		delete(w.RapidfireEffects, e)
 	// Add cases for other component types here...
 	default:
-		log.Printf("Warning: Attempted to remove unknown component type %v from entity %d\n", componentType, e)
+		log.Printf("Warning: Attempted to remove unknown component type %v from entity.Entity %d\n", componentType, e)
 	}
 }
 
 // GetEntitiesWithComponents returns a slice of entities that possess ALL the specified component types.
-func (w *World) GetEntitiesWithComponents(componentTypes ...reflect.Type) []Entity {
+func (w *World) GetEntitiesWithComponents(componentTypes ...reflect.Type) []entity.Entity {
 	if len(componentTypes) == 0 {
-		return []Entity{}
+		return []entity.Entity{}
 	}
 
 	// Optimization: Find the component type with the fewest entities first.
@@ -432,12 +488,12 @@ func (w *World) GetEntitiesWithComponents(componentTypes ...reflect.Type) []Enti
 	}
 
 	if smallestMapSize == 0 {
-		return []Entity{} // If the smallest map is empty, no entities can have all components.
+		return []entity.Entity{} // If the smallest map is empty, no entities can have all components.
 	}
 
 	// Initialize candidates with entities from the smallest map
 	initialSet := w.getEntitiesForType(firstType)
-	candidates := make(map[Entity]bool, len(initialSet))
+	candidates := make(map[entity.Entity]bool, len(initialSet))
 	for _, e := range initialSet {
 		candidates[e] = true
 	}
@@ -449,7 +505,7 @@ func (w *World) GetEntitiesWithComponents(componentTypes ...reflect.Type) []Enti
 		}
 
 		// Check entities for the current component type
-		currentTypeSet := make(map[Entity]bool)
+		currentTypeSet := make(map[entity.Entity]bool)
 		for _, e := range w.getEntitiesForType(ct) {
 			currentTypeSet[e] = true
 		}
@@ -457,18 +513,18 @@ func (w *World) GetEntitiesWithComponents(componentTypes ...reflect.Type) []Enti
 		// Filter candidates: keep only those present in currentTypeSet
 		for e := range candidates {
 			if !currentTypeSet[e] {
-				delete(candidates, e) // Remove if entity doesn't have the current component type
+				delete(candidates, e) // Remove if entity.Entity doesn't have the current component type
 			}
 		}
 
 		// Early exit if no candidates remain
 		if len(candidates) == 0 {
-			return []Entity{}
+			return []entity.Entity{}
 		}
 	}
 
 	// Convert the final candidate map keys to a slice
-	result := make([]Entity, 0, len(candidates))
+	result := make([]entity.Entity, 0, len(candidates))
 	for e := range candidates {
 		result = append(result, e)
 	}
@@ -508,6 +564,15 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.State)
 	case reflect.TypeOf(components.DamageStats{}):
 		return len(w.DamageStats)
+	// --- Debuff Components ---
+	case reflect.TypeOf(debuffs.ShredEffect{}):
+		return len(w.ShredEffects)
+	case reflect.TypeOf(debuffs.SunderEffect{}):
+		return len(w.SunderEffects)
+	case reflect.TypeOf(debuffs.WoundEffect{}):
+		return len(w.WoundEffects)
+	case reflect.TypeOf(debuffs.BurnEffect{}):
+		return len(w.BurnEffects)
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsStaffEffect{}):
 		return len(w.ArchangelsStaffEffects)
@@ -528,7 +593,7 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
 		return len(w.FlickerbladeEffects)
 	case reflect.TypeOf(items.NashorsToothEffect{}):
-		return len(w.NashorsToothEffects) // Add this line
+		return len(w.NashorsToothEffects)
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		return len(w.RapidfireEffects)
@@ -539,194 +604,215 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 }
 
 // Helper function for GetEntitiesWithComponents to get entities for a single type
-func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
-	var entities []Entity
+func (w *World) getEntitiesForType(componentType reflect.Type) []entity.Entity {
+	var entities []entity.Entity
 	switch componentType {
 	case reflect.TypeOf(components.Health{}):
-		entities = make([]Entity, 0, len(w.Health))
+		entities = make([]entity.Entity, 0, len(w.Health))
 		for e := range w.Health {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Mana{}):
-		entities = make([]Entity, 0, len(w.Mana))
+		entities = make([]entity.Entity, 0, len(w.Mana))
 		for e := range w.Mana {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Attack{}):
-		entities = make([]Entity, 0, len(w.Attack))
+		entities = make([]entity.Entity, 0, len(w.Attack))
 		for e := range w.Attack {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Traits{}):
-		entities = make([]Entity, 0, len(w.Traits))
+		entities = make([]entity.Entity, 0, len(w.Traits))
 		for e := range w.Traits {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.ChampionInfo{}):
-		entities = make([]Entity, 0, len(w.ChampionInfo))
+		entities = make([]entity.Entity, 0, len(w.ChampionInfo))
 		for e := range w.ChampionInfo {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Position{}):
-		entities = make([]Entity, 0, len(w.Position))
+		entities = make([]entity.Entity, 0, len(w.Position))
 		for e := range w.Position {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Team{}):
-		entities = make([]Entity, 0, len(w.Team))
+		entities = make([]entity.Entity, 0, len(w.Team))
 		for e := range w.Team {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.ItemStaticEffect{}):
-		entities = make([]Entity, 0, len(w.Item))
+		entities = make([]entity.Entity, 0, len(w.Item))
 		for e := range w.Item {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Equipment{}):
-		entities = make([]Entity, 0, len(w.Equipment))
+		entities = make([]entity.Entity, 0, len(w.Equipment))
 		for e := range w.Equipment {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.CanAbilityCritFromTraits{}):
-		entities = make([]Entity, 0, len(w.CanAbilityCritFromTraits))
+		entities = make([]entity.Entity, 0, len(w.CanAbilityCritFromTraits))
 		for e := range w.CanAbilityCritFromTraits {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.CanAbilityCritFromItems{}):
-		entities = make([]Entity, 0, len(w.CanAbilityCritFromItems))
+		entities = make([]entity.Entity, 0, len(w.CanAbilityCritFromItems))
 		for e := range w.CanAbilityCritFromItems {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Spell{}):
-		entities = make([]Entity, 0, len(w.Spell))
+		entities = make([]entity.Entity, 0, len(w.Spell))
 		for e := range w.Spell {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.Crit{}):
-		entities = make([]Entity, 0, len(w.Crit))
+		entities = make([]entity.Entity, 0, len(w.Crit))
 		for e := range w.Crit {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.State{}):
-		entities = make([]Entity, 0, len(w.State))
+		entities = make([]entity.Entity, 0, len(w.State))
 		for e := range w.State {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(components.DamageStats{}):
-		entities = make([]Entity, 0, len(w.DamageStats))
+		entities = make([]entity.Entity, 0, len(w.DamageStats))
 		for e := range w.DamageStats {
+			entities = append(entities, e)
+		}
+	// --- Debuff Components ---
+	case reflect.TypeOf(debuffs.ShredEffect{}):
+		entities = make([]entity.Entity, 0, len(w.ShredEffects))
+		for e := range w.ShredEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(debuffs.SunderEffect{}):
+		entities = make([]entity.Entity, 0, len(w.SunderEffects))
+		for e := range w.SunderEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(debuffs.WoundEffect{}):
+		entities = make([]entity.Entity, 0, len(w.WoundEffects))
+		for e := range w.WoundEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(debuffs.BurnEffect{}):
+		entities = make([]entity.Entity, 0, len(w.BurnEffects))
+		for e := range w.BurnEffects {
 			entities = append(entities, e)
 		}
 	// --- Dynamic Item Effect Components ---
 	case reflect.TypeOf(items.ArchangelsStaffEffect{}):
-		entities = make([]Entity, 0, len(w.ArchangelsStaffEffects))
+		entities = make([]entity.Entity, 0, len(w.ArchangelsStaffEffects))
 		for e := range w.ArchangelsStaffEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.QuicksilverEffect{}):
-		entities = make([]Entity, 0, len(w.QuicksilverEffects))
+		entities = make([]entity.Entity, 0, len(w.QuicksilverEffects))
 		for e := range w.QuicksilverEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.TitansResolveEffect{}):
-		entities = make([]Entity, 0, len(w.TitansResolveEffects))
+		entities = make([]entity.Entity, 0, len(w.TitansResolveEffects))
 		for e := range w.TitansResolveEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.GuinsoosRagebladeEffect{}):
-		entities = make([]Entity, 0, len(w.GuinsoosRagebladeEffects))
+		entities = make([]entity.Entity, 0, len(w.GuinsoosRagebladeEffects))
 		for e := range w.GuinsoosRagebladeEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.SpiritVisageEffect{}):
-		entities = make([]Entity, 0, len(w.SpiritVisageEffects))
+		entities = make([]entity.Entity, 0, len(w.SpiritVisageEffects))
 		for e := range w.SpiritVisageEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.KrakensFuryEffect{}):
-		entities = make([]Entity, 0, len(w.KrakensFuryEffects))
+		entities = make([]entity.Entity, 0, len(w.KrakensFuryEffects))
 		for e := range w.KrakensFuryEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.SpearOfShojinEffect{}):
-		entities = make([]Entity, 0, len(w.SpearOfShojinEffects))
+		entities = make([]entity.Entity, 0, len(w.SpearOfShojinEffects))
 		for e := range w.SpearOfShojinEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.BlueBuffEffect{}):
-		entities = make([]Entity, 0, len(w.BlueBuffEffects))
+		entities = make([]entity.Entity, 0, len(w.BlueBuffEffects))
 		for e := range w.BlueBuffEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
-		entities = make([]Entity, 0, len(w.FlickerbladeEffects))
+		entities = make([]entity.Entity, 0, len(w.FlickerbladeEffects))
 		for e := range w.FlickerbladeEffects {
 			entities = append(entities, e)
 		}
 	case reflect.TypeOf(items.NashorsToothEffect{}):
-		entities = make([]Entity, 0, len(w.NashorsToothEffects)) // Add this line
+		entities = make([]entity.Entity, 0, len(w.NashorsToothEffects))
 		for e := range w.NashorsToothEffects {
 			entities = append(entities, e)
 		}
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
-		entities = make([]Entity, 0, len(w.RapidfireEffects))
+		entities = make([]entity.Entity, 0, len(w.RapidfireEffects))
 		for e := range w.RapidfireEffects {
 			entities = append(entities, e)
 		}
 	// Add cases for other component types...
 	default:
-		return []Entity{} // Return empty slice for unknown types
+		return []entity.Entity{} // Return empty slice for unknown types
 	}
 	return entities
 }
 
 // --- Type-Safe Getters (Recommended) ---
 
-// GetHealth returns the Health component for an entity, type-safe.
-func (w *World) GetHealth(e Entity) (*components.Health, bool) {
+// GetHealth returns the Health component for an entity.Entity, type-safe.
+func (w *World) GetHealth(e entity.Entity) (*components.Health, bool) {
 	comp, ok := w.Health[e]
 	return comp, ok
 }
 
-// GetMana returns the Mana component for an entity, type-safe.
-func (w *World) GetMana(e Entity) (*components.Mana, bool) {
+// GetMana returns the Mana component for an entity.Entity, type-safe.
+func (w *World) GetMana(e entity.Entity) (*components.Mana, bool) {
 	comp, ok := w.Mana[e]
 	return comp, ok
 }
 
-// GetAttack returns the Attack component for an entity, type-safe.
-func (w *World) GetAttack(e Entity) (*components.Attack, bool) {
+// GetAttack returns the Attack component for an entity.Entity, type-safe.
+func (w *World) GetAttack(e entity.Entity) (*components.Attack, bool) {
 	comp, ok := w.Attack[e]
 	return comp, ok
 }
 
-// GetTraits returns the Traits component for an entity, type-safe.
-func (w *World) GetTraits(e Entity) (*components.Traits, bool) {
+// GetTraits returns the Traits component for an entity.Entity, type-safe.
+func (w *World) GetTraits(e entity.Entity) (*components.Traits, bool) {
 	comp, ok := w.Traits[e]
 	return comp, ok
 }
 
-// GetChampionInfo returns the ChampionInfo component for an entity, type-safe.
-func (w *World) GetChampionInfo(e Entity) (*components.ChampionInfo, bool) {
+// GetChampionInfo returns the ChampionInfo component for an entity.Entity, type-safe.
+func (w *World) GetChampionInfo(e entity.Entity) (*components.ChampionInfo, bool) {
 	comp, ok := w.ChampionInfo[e]
 	return comp, ok
 }
 
-// GetPosition returns the Position component for an entity, type-safe.
-func (w *World) GetPosition(e Entity) (*components.Position, bool) {
+// GetPosition returns the Position component for an entity.Entity, type-safe.
+func (w *World) GetPosition(e entity.Entity) (*components.Position, bool) {
 	comp, ok := w.Position[e]
 	return comp, ok
 }
 
-// GetTeam returns the Team component for an entity, type-safe.
-func (w *World) GetTeam(e Entity) (*components.Team, bool) {
+// GetTeam returns the Team component for an entity.Entity, type-safe.
+func (w *World) GetTeam(e entity.Entity) (*components.Team, bool) {
 	comp, ok := w.Team[e]
 	return comp, ok
 }
 
-// GetChampionByName returns the first entity with the specified champion name.
-func (w *World) GetChampionByName(name string) (Entity, bool) {
+// GetChampionByName returns the first entity.Entity with the specified champion name.
+func (w *World) GetChampionByName(name string) (entity.Entity, bool) {
 	for e, info := range w.ChampionInfo {
 		if info.Name == name {
 			return e, true
@@ -735,117 +821,143 @@ func (w *World) GetChampionByName(name string) (Entity, bool) {
 	return 0, false // Not found
 }
 
-// GetItemEffect returns the ItemEffect component for an entity, type-safe.
-func (w *World) GetItemEffect(e Entity) (*items.ItemStaticEffect, bool) {
+// GetItemEffect returns the ItemEffect component for an entity.Entity, type-safe.
+func (w *World) GetItemEffect(e entity.Entity) (*items.ItemStaticEffect, bool) {
 	comp, ok := w.Item[e]
 	return comp, ok
 }
 
-// GetEquipment returns the Equipment component for an entity, type-safe.
-func (w *World) GetEquipment(e Entity) (*components.Equipment, bool) {
+// GetEquipment returns the Equipment component for an entity.Entity, type-safe.
+func (w *World) GetEquipment(e entity.Entity) (*components.Equipment, bool) {
 	comp, ok := w.Equipment[e]
 	return comp, ok
 }
 
-// GetCanAbilityCritFromTraits returns the CanAbilityCritFromTraits component for an entity, type-safe.
-func (w *World) GetCanAbilityCritFromTraits(e Entity) (*components.CanAbilityCritFromTraits, bool) {
+// GetCanAbilityCritFromTraits returns the CanAbilityCritFromTraits component for an entity.Entity, type-safe.
+func (w *World) GetCanAbilityCritFromTraits(e entity.Entity) (*components.CanAbilityCritFromTraits, bool) {
 	comp, ok := w.CanAbilityCritFromTraits[e]
 	return comp, ok
 }
 
-// GetCanAbilityCritFromItems returns the CanAbilityCritFromItems component for an entity, type-safe.
-func (w *World) GetCanAbilityCritFromItems(e Entity) (*components.CanAbilityCritFromItems, bool) {
+// GetCanAbilityCritFromItems returns the CanAbilityCritFromItems component for an entity.Entity, type-safe.
+func (w *World) GetCanAbilityCritFromItems(e entity.Entity) (*components.CanAbilityCritFromItems, bool) {
 	comp, ok := w.CanAbilityCritFromItems[e]
 	return comp, ok
 }
 
-// GetSpell returns the Spell component for an entity, type-safe.
-func (w *World) GetSpell(e Entity) (*components.Spell, bool) {
+// GetSpell returns the Spell component for an entity.Entity, type-safe.
+func (w *World) GetSpell(e entity.Entity) (*components.Spell, bool) {
 	comp, ok := w.Spell[e]
 	return comp, ok
 }
 
-// GetCrit returns the Crit component for an entity, type-safe.
-func (w *World) GetCrit(e Entity) (*components.Crit, bool) {
+// GetCrit returns the Crit component for an entity.Entity, type-safe.
+func (w *World) GetCrit(e entity.Entity) (*components.Crit, bool) {
 	comp, ok := w.Crit[e]
 	return comp, ok
 }
 
-// GetState returns the State component for an entity, type-safe.
-func (w *World) GetState(e Entity) (*components.State, bool) {
+// GetState returns the State component for an entity.Entity, type-safe.
+func (w *World) GetState(e entity.Entity) (*components.State, bool) {
 	comp, ok := w.State[e]
 	return comp, ok
 }
 
-// GetDamageStats returns the DamageStats component for an entity, type-safe.
-func (w *World) GetDamageStats(e Entity) (*components.DamageStats, bool) {
+// GetDamageStats returns the DamageStats component for an entity.Entity, type-safe.
+func (w *World) GetDamageStats(e entity.Entity) (*components.DamageStats, bool) {
 	comp, ok := w.DamageStats[e]
 	return comp, ok
 }
 
-// GetArchangelsStaffEffect returns the ArchangelsEffect component for an entity, type-safe.
-func (w *World) GetArchangelsStaffEffect(e Entity) (*items.ArchangelsStaffEffect, bool) {
+// GetArchangelsStaffEffect returns the ArchangelsEffect component for an entity.Entity, type-safe.
+func (w *World) GetArchangelsStaffEffect(e entity.Entity) (*items.ArchangelsStaffEffect, bool) {
 	comp, ok := w.ArchangelsStaffEffects[e]
 	return comp, ok
 }
 
-// GetQuicksilverEffect returns the QuicksilverEffect component for an entity, type-safe.
-func (w *World) GetQuicksilverEffect(e Entity) (*items.QuicksilverEffect, bool) {
+// GetQuicksilverEffect returns the QuicksilverEffect component for an entity.Entity, type-safe.
+func (w *World) GetQuicksilverEffect(e entity.Entity) (*items.QuicksilverEffect, bool) {
 	comp, ok := w.QuicksilverEffects[e]
 	return comp, ok
 }
 
-// GetTitansResolveEffect returns the TitansResolveEffect component for an entity, type-safe.
-func (w *World) GetTitansResolveEffect(e Entity) (*items.TitansResolveEffect, bool) {
+// GetTitansResolveEffect returns the TitansResolveEffect component for an entity.Entity, type-safe.
+func (w *World) GetTitansResolveEffect(e entity.Entity) (*items.TitansResolveEffect, bool) {
 	comp, ok := w.TitansResolveEffects[e]
 	return comp, ok
 }
 
-// GetGuinsoosRagebladeEffect returns the GuinsoosRagebladeEffect component for an entity, type-safe.
-func (w *World) GetGuinsoosRagebladeEffect(e Entity) (*items.GuinsoosRagebladeEffect, bool) {
+// GetGuinsoosRagebladeEffect returns the GuinsoosRagebladeEffect component for an entity.Entity, type-safe.
+func (w *World) GetGuinsoosRagebladeEffect(e entity.Entity) (*items.GuinsoosRagebladeEffect, bool) {
 	comp, ok := w.GuinsoosRagebladeEffects[e]
 	return comp, ok
 }
 
-// GetSpiritVisageEffect returns the SpiritVisageEffect component for an entity, type-safe.
-func (w *World) GetSpiritVisageEffect(e Entity) (*items.SpiritVisageEffect, bool) {
+// GetSpiritVisageEffect returns the SpiritVisageEffect component for an entity.Entity, type-safe.
+func (w *World) GetSpiritVisageEffect(e entity.Entity) (*items.SpiritVisageEffect, bool) {
 	comp, ok := w.SpiritVisageEffects[e]
 	return comp, ok
 }
 
-// GetKrakensFuryEffect returns the KrakensFuryEffect component for an entity, type-safe.
-func (w *World) GetKrakensFuryEffect(e Entity) (*items.
+// GetKrakensFuryEffect returns the KrakensFuryEffect component for an entity.Entity, type-safe.
+func (w *World) GetKrakensFuryEffect(e entity.Entity) (*items.
 	KrakensFuryEffect, bool) {
 	comp, ok := w.KrakensFuryEffects[e]
 	return comp, ok
 }
 
-// GetSpearOfShojinEffect returns the SpearOfShojinEffect component for an entity, type-safe.
-func (w *World) GetSpearOfShojinEffect(e Entity) (*items.SpearOfShojinEffect, bool) {
+// GetSpearOfShojinEffect returns the SpearOfShojinEffect component for an entity.Entity, type-safe.
+func (w *World) GetSpearOfShojinEffect(e entity.Entity) (*items.SpearOfShojinEffect, bool) {
 	comp, exists := w.SpearOfShojinEffects[e]
 	return comp, exists
 }
 
-// GetBlueBuffEffect returns the BlueBuffEffect component for an entity, type-safe.
-func (w *World) GetBlueBuffEffect(e Entity) (*items.BlueBuffEffect, bool) {
+// GetBlueBuffEffect returns the BlueBuffEffect component for an entity.Entity, type-safe.
+func (w *World) GetBlueBuffEffect(e entity.Entity) (*items.BlueBuffEffect, bool) {
 	comp, ok := w.BlueBuffEffects[e]
 	return comp, ok
 }
 
-// GetFlickerbladeEffect returns the FlickerbladeEffect component for an entity, type-safe.
-func (w *World) GetFlickerbladeEffect(e Entity) (*items.FlickerbladeEffect, bool) {
+// GetFlickerbladeEffect returns the FlickerbladeEffect component for an entity.Entity, type-safe.
+func (w *World) GetFlickerbladeEffect(e entity.Entity) (*items.FlickerbladeEffect, bool) {
 	comp, ok := w.FlickerbladeEffects[e]
 	return comp, ok
 }
 
-// GetRapidfireEffect returns the RapidfireEffect component for an entity, type-safe.
-func (w *World) GetRapidfireEffect(e Entity) (*traits.RapidfireEffect, bool) {
+// GetNashorsToothEffect returns the NashorsToothEffect component for an entity, type-safe.
+func (w *World) GetNashorsToothEffect(e entity.Entity) (*items.NashorsToothEffect, bool) {
+	effect, ok := w.NashorsToothEffects[e]
+	return effect, ok
+}
+
+// Traits
+// GetRapidfireEffect returns the RapidfireEffect component for an entity.Entity, type-safe.
+func (w *World) GetRapidfireEffect(e entity.Entity) (*traits.RapidfireEffect, bool) {
 	comp, ok := w.RapidfireEffects[e]
 	return comp, ok
 }
 
-// GetNashorsToothEffect returns the NashorsToothEffect component for an entity, type-safe.
-func (w *World) GetNashorsToothEffect(entity Entity) (*items.NashorsToothEffect, bool) {
-    effect, ok := w.NashorsToothEffects[entity]
-    return effect, ok
+// Debuffs
+// GetShredEffect returns the ShredEffect component for an entity, type-safe.
+func (w *World) GetShredEffect(e entity.Entity) (*debuffs.ShredEffect, bool) {
+	comp, ok := w.ShredEffects[e]
+	return comp, ok
+}
+
+// GetSunderEffect returns the SunderEffect component for an entity, type-safe.
+func (w *World) GetSunderEffect(e entity.Entity) (*debuffs.SunderEffect, bool) {
+	comp, ok := w.SunderEffects[e]
+	return comp, ok
+}
+
+// GetWoundEffect returns the WoundEffect component for an entity, type-safe.
+func (w *World) GetWoundEffect(e entity.Entity) (*debuffs.WoundEffect, bool) {
+	comp, ok := w.WoundEffects[e]
+	return comp, ok
+}
+
+// GetBurnEffect returns the BurnEffect component for an entity, type-safe.
+func (w *World) GetBurnEffect(e entity.Entity) (*debuffs.BurnEffect, bool) {
+	comp, ok := w.BurnEffects[e]
+	return comp, ok
 }

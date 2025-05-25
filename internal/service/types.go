@@ -2,7 +2,7 @@ package service
 
 import (
 	"tft-dps-simulator/internal/core/components"
-	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 )
 
@@ -39,7 +39,7 @@ type RunSimulationRequest struct {
 // ChampionSimulationResult holds the results for a single champion
 type ChampionSimulationResult struct {
 	ChampionApiName  string      `json:"championApiName"` // Match the ApiName sent in the request
-	ChampionEntityID ecs.Entity `json:"championEntityId"` // Entity ID in ECS world
+	ChampionEntityID entity.Entity `json:"championEntityId"` // Entity ID in ECS world
 	DamageStats components.DamageStats `json:"damageStats"`
 }
 

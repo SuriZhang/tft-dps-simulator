@@ -7,10 +7,11 @@ import (
 	"tft-dps-simulator/internal/core/components"
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 )
 
 // PrintChampionStats prints detailed information about a champion entity using type-safe getters.
-func PrintChampionStats(world *ecs.World, entity ecs.Entity) {
+func PrintChampionStats(world *ecs.World, entity entity.Entity) {
 	// Use type-safe getters and check the 'ok' value
 	info, okInfo := world.GetChampionInfo(entity)
 	health, okHealth := world.GetHealth(entity)

@@ -17,8 +17,8 @@ package systems_test
 //         eventBus        *MockEventBus
 //         championFactory *factory.ChampionFactory
 //         spellCastSystem *systems.SpellCastSystem
-//         player          ecs.Entity // Blue Golem
-//         target          ecs.Entity // Training Dummy
+//         player          entity.Entity // Blue Golem
+//         target          entity.Entity // Training Dummy
 //         playerMana      *components.Mana
 //         playerSpell     *components.Spell
 //         targetHealth    *components.Health

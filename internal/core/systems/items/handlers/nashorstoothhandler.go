@@ -5,6 +5,7 @@ import (
 
 	"tft-dps-simulator/internal/core/data"
 	"tft-dps-simulator/internal/core/ecs"
+	"tft-dps-simulator/internal/core/entity"
 	eventsys "tft-dps-simulator/internal/core/systems/events"
 	itemsys "tft-dps-simulator/internal/core/systems/items"
 )
@@ -16,7 +17,7 @@ func init() {
 }
 
 // OnEquip implements itemsys.ItemHandler.
-func (h *NashorsToothHandler) OnEquip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *NashorsToothHandler) OnEquip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     log.Printf("NashorsToothHandler: OnEquip for entity %d", entity)
     
     effect, exists := world.GetNashorsToothEffect(entity)
@@ -29,7 +30,7 @@ func (h *NashorsToothHandler) OnEquip(entity ecs.Entity, world *ecs.World, event
 }
 
 // // OnUnequip implements itemsys.ItemHandler.
-// func (h *NashorsToothHandler) OnUnequip(entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+// func (h *NashorsToothHandler) OnUnequip(entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
 //     log.Printf("NashorsToothHandler: OnUnequip for entity %d", entity)
     
 //     // Remove any active buff when item is unequipped
@@ -48,7 +49,7 @@ func (h *NashorsToothHandler) OnEquip(entity ecs.Entity, world *ecs.World, event
 // }
 
 // ProcessEvent implements itemsys.ItemHandler.
-func (h *NashorsToothHandler) ProcessEvent(event interface{}, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *NashorsToothHandler) ProcessEvent(event interface{}, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     switch evt := event.(type) {
     case eventsys.SpellLandedEvent:
         if evt.Source == entity {
@@ -62,7 +63,7 @@ func (h *NashorsToothHandler) ProcessEvent(event interface{}, entity ecs.Entity,
 }
 
 // handleSpellLanded activates the attack speed buff when a spell is cast
-func (h *NashorsToothHandler) handleSpellLanded(evt eventsys.SpellLandedEvent, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *NashorsToothHandler) handleSpellLanded(evt eventsys.SpellLandedEvent, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     // Verify entity still has Nashor's Tooth
     equipment, okEq := world.GetEquipment(entity)
     if !okEq || equipment.GetItemCount(data.TFT_Item_NashorsTooth) == 0 {
@@ -119,7 +120,7 @@ func (h *NashorsToothHandler) handleSpellLanded(evt eventsys.SpellLandedEvent, e
 }
 
 // handleBuffDeactivation removes the attack speed buff when it expires
-func (h *NashorsToothHandler) handleBuffDeactivation(evt eventsys.NashorsToothDeactivateEvent, entity ecs.Entity, world *ecs.World, eventBus eventsys.EventBus) {
+func (h *NashorsToothHandler) handleBuffDeactivation(evt eventsys.NashorsToothDeactivateEvent, entity entity.Entity, world *ecs.World, eventBus eventsys.EventBus) {
     effect, exists := world.GetNashorsToothEffect(entity)
     if !exists {
         log.Printf("NashorsToothHandler (handleBuffDeactivation): Entity %d missing NashorsToothEffect component at %.3fs.", entity, evt.Timestamp)
