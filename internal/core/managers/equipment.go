@@ -206,6 +206,21 @@ func (em *EquipmentManager) AddItemToChampion(champion ecs.Entity, itemApiName s
             log.Printf("Added FlickerbladeEffect to champion %s (AS/stack: %.2f%%, AD/bonus: %.2f%%, AP/bonus: %.1f, Stacks/bonus: %.0f)",
                 championName, asPerStackVal*100, adPerBonusVal*100, apPerBonusVal, stacksPerBonusVal)
         }
+	case data.TFT_Item_NashorsTooth:
+        if _, exists := em.world.GetNashorsToothEffect(champion); !exists {
+            // Fetch values from item data
+            attackSpeedToGive := item.Effects["AttackSpeedToGive"] / 100.0 // Convert percentage to decimal
+            duration := item.Effects["ASDuration"]
+            
+            nashorsEffect := items.NewNashorsToothEffect(attackSpeedToGive, duration)
+            err := em.world.AddComponent(champion, nashorsEffect)
+            if err != nil {
+                log.Printf("Warning: Failed to add NashorsToothEffect component for champion %s: %v", championName, err)
+            } else {
+                log.Printf("Added NashorsToothEffect component to champion %s (AS Gain: %.1f%%, Duration: %.1fs)",
+                    championName, attackSpeedToGive*100, duration)
+            }
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)

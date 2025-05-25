@@ -41,6 +41,7 @@ type World struct {
 	SpearOfShojinEffects map[Entity]*items.SpearOfShojinEffect
 	BlueBuffEffects map[Entity]*items.BlueBuffEffect 
 	FlickerbladeEffects map[Entity]*items.FlickerbladeEffect
+	NashorsToothEffects map[Entity]*items.NashorsToothEffect // Add this line
 
 	// --- Trait Effect Components ---
 	RapidfireEffects  map[Entity]*traits.RapidfireEffect
@@ -79,6 +80,7 @@ func NewWorld() *World {
 		SpearOfShojinEffects: make(map[Entity]*items.SpearOfShojinEffect),
 		BlueBuffEffects: make(map[Entity]*items.BlueBuffEffect),
 		FlickerbladeEffects: make(map[Entity]*items.FlickerbladeEffect),
+		NashorsToothEffects: make(map[Entity]*items.NashorsToothEffect), // Add this line
 
 		// --- Traits ---
 		RapidfireEffects: make(map[Entity]*traits.RapidfireEffect),
@@ -121,6 +123,7 @@ func (w *World) RemoveEntity(e Entity) {
 	delete(w.SpearOfShojinEffects, e)
 	delete(w.BlueBuffEffects, e)
 	delete(w.FlickerbladeEffects, e)
+	delete(w.NashorsToothEffects, e) // Add this line
 	// Traits
 	delete(w.RapidfireEffects, e)
 	// Delete from other maps here...
@@ -234,6 +237,10 @@ func (w *World) AddComponent(e Entity, component interface{}) error {
 		w.FlickerbladeEffects[e] = &c
 	case *items.FlickerbladeEffect:
 		w.FlickerbladeEffects[e] = c
+	case items.NashorsToothEffect:
+		w.NashorsToothEffects[e] = &c // Add this line
+	case *items.NashorsToothEffect:
+		w.NashorsToothEffects[e] = c // Add this line
 	// Traits
 	case traits.RapidfireEffect:
 		w.RapidfireEffects[e] = &c
@@ -325,6 +332,9 @@ func (w *World) GetComponent(e Entity, componentType reflect.Type) (interface{},
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
 		comp, ok := w.FlickerbladeEffects[e]
 		return comp, ok
+	case reflect.TypeOf(items.NashorsToothEffect{}):
+		comp, ok := w.NashorsToothEffects[e] // Add this line
+		return comp, ok
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		comp, ok := w.RapidfireEffects[e]
@@ -393,6 +403,8 @@ func (w *World) RemoveComponent(e Entity, componentType reflect.Type) {
 		delete(w.BlueBuffEffects, e)
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
 		delete(w.FlickerbladeEffects, e)
+	case reflect.TypeOf(items.NashorsToothEffect{}):
+		delete(w.NashorsToothEffects, e) // Add this line
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		delete(w.RapidfireEffects, e)
@@ -515,6 +527,8 @@ func (w *World) getMapSizeForType(componentType reflect.Type) int {
 		return len(w.BlueBuffEffects)
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
 		return len(w.FlickerbladeEffects)
+	case reflect.TypeOf(items.NashorsToothEffect{}):
+		return len(w.NashorsToothEffects) // Add this line
 	// Traits
 	case reflect.TypeOf(traits.RapidfireEffect{}):
 		return len(w.RapidfireEffects)
@@ -647,6 +661,11 @@ func (w *World) getEntitiesForType(componentType reflect.Type) []Entity {
 	case reflect.TypeOf(items.FlickerbladeEffect{}):
 		entities = make([]Entity, 0, len(w.FlickerbladeEffects))
 		for e := range w.FlickerbladeEffects {
+			entities = append(entities, e)
+		}
+	case reflect.TypeOf(items.NashorsToothEffect{}):
+		entities = make([]Entity, 0, len(w.NashorsToothEffects)) // Add this line
+		for e := range w.NashorsToothEffects {
 			entities = append(entities, e)
 		}
 	// Traits
@@ -823,4 +842,10 @@ func (w *World) GetFlickerbladeEffect(e Entity) (*items.FlickerbladeEffect, bool
 func (w *World) GetRapidfireEffect(e Entity) (*traits.RapidfireEffect, bool) {
 	comp, ok := w.RapidfireEffects[e]
 	return comp, ok
+}
+
+// GetNashorsToothEffect returns the NashorsToothEffect component for an entity, type-safe.
+func (w *World) GetNashorsToothEffect(entity Entity) (*items.NashorsToothEffect, bool) {
+    effect, ok := w.NashorsToothEffects[entity]
+    return effect, ok
 }

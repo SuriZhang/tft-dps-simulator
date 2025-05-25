@@ -34,6 +34,7 @@ const (
 	TFT_Item_SpearOfShojin      = "TFT_Item_SpearOfShojin"
 	TFT_Item_BlueBuff          = "TFT_Item_BlueBuff"
 	 TFT_Item_Artifact_NavoriFlickerblades = "TFT_Item_Artifact_NavoriFlickerblades"
+	 TFT_Item_NashorsTooth = "TFT_Item_Leviathan"
 )
 
 // GetItemByApiName returns an item by its API name or nil if not found

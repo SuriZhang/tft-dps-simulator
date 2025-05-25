@@ -164,6 +164,13 @@ type BlueBuffDamageAmpDeactivateEvent struct {
     ActivationSequence uint64
 }
 
+// NashorsToothDeactivateEvent is fired when Nashor's Tooth buff should expire
+type NashorsToothDeactivateEvent struct {
+    Entity    ecs.Entity
+    Timestamp float64
+    Sequence  uint64 // To handle overlapping activations
+}
+
 // RecalculateStatsEvent signals that an entity's stats need recalculation due to a change.
 type RecalculateStatsEvent struct {
     Entity    ecs.Entity
