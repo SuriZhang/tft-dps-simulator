@@ -119,7 +119,7 @@ const TraitTracker: React.FC = () => {
             </div>
           ) : sortedTraits.some((trait) => trait.active > 0) ? (
             <ScrollArea className="w-full">
-              <div className="flex gap-3 pb-2 min-w-max">
+              <div className="flex flex-wrap gap-2">
                 {sortedTraits.map((trait) => {
                   // const activeEffect = getActiveEffect(trait); // Not directly used in new render
                   const currentEffect = getCurrentActiveEffect(trait); // For title attribute
@@ -133,7 +133,7 @@ const TraitTracker: React.FC = () => {
                     <div
                       key={trait.apiName}
                       className={cn(
-                        "flex items-center gap-2 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer",
+                        "flex items-center gap-2 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer w-40", 
                         "transition-all hover:bg-neutral-700/90",
                         localHoveredTrait === trait.name &&
                           "ring-1 ring-primary ring-opacity-70",
