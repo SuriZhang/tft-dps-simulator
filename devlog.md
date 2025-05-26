@@ -645,3 +645,6 @@ TODO:
     - Wound: Reduces healing received
     - Sunder: Reduce Armor
 - [x] move Entity to a separate package to avoid import cycles
+
+## 20250526
+- [x] Frontend layout update

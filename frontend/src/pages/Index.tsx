@@ -18,7 +18,7 @@ const Index = () => {
             <MainBoard />
 
             <div className="mt-4 p-1 rounded-lg bg-muted text-center text-xs text-muted-foreground shrink-0">
-              <span className="mr-3">
+              {/* <span className="mr-3">
                 Press{" "}
                 <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-foreground bg-background rounded border">
                   Shift
@@ -38,7 +38,7 @@ const Index = () => {
                   Alt
                 </kbd>{" "}
                 + Click to swap units
-              </span>
+              </span> */}
             </div>
           </div>
         </ScrollArea>

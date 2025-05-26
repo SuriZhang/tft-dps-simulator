@@ -9,21 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import { ScrollArea } from "./ui/scroll-area";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./ui/accordion";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 
-// Define colors for trait tiers
+// Define SVG backgrounds for trait tiers
 const traitTierColors = {
-  inactive: "border-gray-700 bg-gray-900/50", // Darker background for better contrast
-  bronze: "border-amber-600 bg-amber-800/60", // More coppery/brownish
-  silver: "border-gray-400 bg-gray-700/60", // Lighter border, darker background
-  gold: "border-yellow-400 bg-yellow-700/60", // Bright gold border, richer gold background
-  prismatic: "border-teal-400 bg-sky-950/70", // Vibrant teal border, dark contrasting background (inspired by high-tier TFT visuals)
+  inactive: "./trait-inactive.svg", 
+  bronze: "./trait-bronze.svg", 
+  silver: "./trait-silver.svg", 
+  gold: "./trait-gold.svg", 
+  prismatic: "./trait-prismatic.svg", 
 };
 
 // Find the activated bonus for a trait
@@ -109,189 +103,98 @@ const TraitTracker: React.FC = () => {
       return a.name.localeCompare(b.name);
     });
 
-  // Find the next trait tier to achieve
-  const getNextEffect = (trait: Trait): TraitEffect | undefined => {
-    if (trait.active === 0) {
-      // If no units for this trait, next effect is the first one
-      const sortedEffects = [...trait.effects].sort(
-        (a, b) => a.minUnits - b.minUnits,
-      );
-      return sortedEffects[0];
-    }
-
-    // Find the next effect tier that hasn't been reached
-    const sortedEffects = [...trait.effects].sort(
-      (a, b) => a.minUnits - b.minUnits,
-    );
-    return sortedEffects.find((effect) => trait.active < effect.minUnits);
+  // Find current active effect
+  const getCurrentActiveEffect = (trait: Trait): TraitEffect | undefined => {
+    if (trait.active === 0) return undefined;
+    return trait.effects.find((effect) => trait.active >= effect.minUnits && trait.active <= effect.maxUnits);
   };
 
   return (
-    <Card className="bg-card rounded-lg shadow-lg p-0 h-full flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-start space-y-0 pb-0">
-        <CardTitle className="text-xl font-bold mb-4 text-white">
-          Traits
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-hidden flex flex-col pr-0 p-4 pt-0">
-        <div className="flex-1 min-h-0 overflow-x-auto">
+    <Card className="bg-card rounded-lg shadow-lg p-0 h-full w-full flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col p-2">
+        <div className="flex-1 overflow-x-auto">
           {!hasChampions ? (
             <div className="text-gray-400 text-center py-4">
               Add champions to activate traits
             </div>
           ) : sortedTraits.some((trait) => trait.active > 0) ? (
-            <ScrollArea className="flex-1 h-full mt-0 mb-0 focus-visible:ring-0 focus-visible:ring-offset-0 mr-0">
-              <div className="space-y-3 pr-2">
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-2 min-w-max">
                 {sortedTraits.map((trait) => {
-                  const activeEffect = getActiveEffect(trait);
-                  const nextEffect = getNextEffect(trait);
-                  const isActive = trait.active > 0;
+                  // const activeEffect = getActiveEffect(trait); // Not directly used in new render
+                  const currentEffect = getCurrentActiveEffect(trait); // For title attribute
+                  // const isActive = trait.active > 0; // Redundant if filtering by tier or active count
+                  const currentTier = getHighestActiveTier(trait);
+                  const tierSvg = traitTierColors[currentTier];
 
                   // Only show active traits
-                  if (trait.active === 0) return null;
-
+                  if (trait.active === 0) return null; 
                   return (
-                    <Accordion
+                    <div
                       key={trait.apiName}
-                      type="single"
-                      collapsible
-                      disabled={!isActive}
-                      className="w-full mr-2"
+                      className={cn(
+                        "flex items-center gap-2 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer",
+                        "transition-all hover:bg-neutral-700/90",
+                        localHoveredTrait === trait.name &&
+                          "ring-1 ring-primary ring-opacity-70",
+                      )}
+                      onMouseEnter={() => handleTraitMouseEnter(trait.name)}
+                      onMouseLeave={handleTraitMouseLeave}
+                      title={`${trait.name} (${trait.active}${currentEffect ? `/${currentEffect.minUnits}` : ''})`}
                     >
-                      <AccordionItem
-                        value={trait.apiName}
-                        className={cn(
-                          "border-0 mb-0",
-                          isActive
-                            ? "bg-gray-800/60 border-2 rounded-md " +
-                                traitTierColors[getHighestActiveTier(trait)]
-                            : "bg-gray-800/30 rounded-md",
-                          localHoveredTrait === trait.name &&
-                            "ring-2 ring-primary ring-opacity-70",
+                      {/* 1. Hexagon Icon */}
+                      <div className="relative flex-shrink-0 w-7 h-7">
+                        <img
+                          src={tierSvg}
+                          alt={`${currentTier} tier`}
+                          className="absolute inset-0 w-full h-full object-cover" // SVG fills the container
+                        />
+                        {trait.icon && (
+                          <img
+                            src={`/tft-trait/${trait.icon}`}
+                            alt={trait.name}
+                            className={cn(
+                              "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
+                              currentTier === 'inactive' ? "brightness-0 invert" : "brightness-0" 
+                            )}
+                            style={{ width: '16px', height: '16px' }} // Trait icon size: 16x16px
+                          />
                         )}
-                        onMouseEnter={() =>
-                          handleTraitMouseEnter(trait.name)
-                        }
-                        onMouseLeave={handleTraitMouseLeave}
+                      </div>
+
+                      {/* 2. Active Count Box */}
+                      <div 
+                        className="flex items-center justify-center rounded px-1.5 py-0.5 text-xs" // Smaller text for count
+                        style={{ backgroundColor: 'rgba(10,10,20,0.5)', minWidth: '24px' }} // Darker, slightly transparent
                       >
-                        <AccordionTrigger
-                          className={cn(
-                            "px-3 py-2 hover:no-underline",
-                            !isActive && "cursor-default",
-                          )}
-                        >
-                          <div className="flex flex-col w-full">
-                            <div className="flex items-center justify-between w-full">
-                              {/* Trait name and count */}
-                              <div className="flex items-center space-x-2">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden">
-                                  {trait.icon ? (
-                                    <img
-                                      src={`/tft-trait/${trait.icon}`}
-                                      alt={trait.name}
-                                      className={cn(
-                                        "w-full h-full object-cover",
-                                        !isActive && "opacity-40",
-                                      )}
-                                    />
-                                  ) : (
-                                    // Fallback if icon is missing
-                                    <div
-                                      className={cn(
-                                        "w-full h-full rounded-full flex items-center justify-center text-xs font-bold",
-                                        isActive
-                                          ? "bg-primary text-black"
-                                          : "bg-gray-700 text-gray-300",
-                                      )}
-                                    >
-                                      {trait.active}
-                                    </div>
-                                  )}
-                                </div>
-                                <span
-                                  className={cn(
-                                    "font-semibold",
-                                    isActive ? "text-white" : "text-gray-400",
-                                  )}
-                                >
-                                  {trait.name}
-                                </span>
-                              </div>
+                        <span className="font-bold text-white">{trait.active}</span>
+                      </div>
 
-                              {/* Progress to next bonus */}
-                              {nextEffect && (
-                                <div className="text-sm text-gray-400">
-                                  {trait.active}/{nextEffect.minUnits}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Progress bar to next bonus */}
-                            {nextEffect && (
-                              <div className="mt-2 h-1 bg-gray-700 rounded-full overflow-hidden w-full">
-                                <div
-                                  className="h-full bg-primary"
-                                  style={{
-                                    width: `${Math.min(
-                                      100,
-                                      (trait.active / nextEffect.minUnits) *
-                                        100,
-                                    )}%`,
-                                  }}
-                                ></div>
-                              </div>
-                            )}
-                          </div>
-                        </AccordionTrigger>
-
-                        <AccordionContent className="px-3 pb-3">
-                          {/* Description and active bonus effect */}
-                          <div className="text-xs text-primary overflow-hidden">
-                            {trait.desc && (
-                              <div className="mb-2 text-gray-300 break-all whitespace-pre-wrap overflow-hidden max-w-full">
-                                {trait.desc
-                                  .replace(/&nbsp;/g, " ")
-                                  .replace(/<br\s*\/?>/g, "\n")
-                                  .replace(/@/g, "@ ")}
-                              </div>
-                            )}
-
-                            {activeEffect && (
-                              <div className="text-primary">
-                                <div className="font-semibold mb-1">
-                                  Active Effect:
-                                </div>
-                                {activeEffect.variables ? (
-                                  <div className="flex flex-wrap gap-1">
-                                    {Object.entries(activeEffect.variables).map(
-                                      ([key, value], idx) => (
-                                        <div
-                                          key={idx}
-                                          className="text-primary break-all"
-                                        >
-                                          {`${key.replace(/([A-Z])/g, " $1").trim()}: ${value}`}
-                                          {idx <
-                                          Object.entries(activeEffect.variables)
-                                            .length -
-                                            1
-                                            ? ", "
-                                            : ""}
-                                        </div>
-                                      ),
-                                    )}
-                                  </div>
-                                ) : (
-                                  "Active effect"
+                      {/* 3. Text Info (Name + Thresholds) */}
+                      <div className="flex flex-col items-start leading-tight whitespace-nowrap">
+                        <span className="text-xs font-semibold text-white">{trait.name}</span>
+                        <div className="text-[10px]"> {/* Smaller text for thresholds */}
+                          {trait.effects
+                            .sort((a, b) => a.minUnits - b.minUnits)
+                            .map((effect, index, arr) => (
+                              <span
+                                key={effect.minUnits}
+                                className={cn(
+                                  "font-medium",
+                                  trait.active >= effect.minUnits && trait.active <= effect.maxUnits ? "text-white" : "text-neutral-500",
                                 )}
-                              </div>
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                              >
+                                {effect.minUnits}
+                                {index < arr.length - 1 ? <span className="text-neutral-600 mx-0.5">{">"}</span> : ""}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-              </div>
+                </div>
+                <ScrollBar orientation="horizontal" />
             </ScrollArea>
           ) : (
             <div className="text-gray-400 text-center py-4">
@@ -299,27 +202,7 @@ const TraitTracker: React.FC = () => {
             </div>
           )}
         </div>
-      </CardContent>
-      <CardFooter>
-        {/* Gold counter */}
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
-              <span className="text-black font-bold">{state.gold}</span>
-            </div>
-            <span className="text-amber-400 font-semibold">Gold</span>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-black font-bold">
-                {state.boardChampions.length}
-              </span>
-            </div>
-            <span className="text-primary font-semibold">Champions</span>
-          </div>
-        </div>
-      </CardFooter>
+      </div>
     </Card>
   );
 };
