@@ -127,10 +127,10 @@ const HexBoard = () => {
       )}
 
       {/* Combat button */}
-      <div className="absolute bottom-1 right-4">
+      <div className="absolute bottom-0 right-0">
         <Button
           variant="outline"
-          className="bg-primary/20 text-primary hover:bg-primary/30"
+          className="bg-primary/20 text-primary hover:bg-primary/30 p-2"
           onClick={handleStartCombat}
           disabled={isLoading || boardChampions.length === 0}
         >
@@ -142,7 +142,7 @@ const HexBoard = () => {
           ) : (
             <>
               <div
-                className="h-6 w-6 mr-2 bg-primary"
+                className="h-4 w-4 bg-primary"
                 style={{
                   WebkitMaskImage: "url(./TFTM_ModeIcon_Normal.png)",
                   maskImage: "url(./TFTM_ModeIcon_Normal.png)",

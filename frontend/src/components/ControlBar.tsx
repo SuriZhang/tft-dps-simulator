@@ -98,20 +98,6 @@ const ControlBar: React.FC = () => {
           {/* Use Switch and Label components */}
           <div className="flex items-center space-x-2">
             <Switch
-              id="use-skins-switch"
-              checked={useSkins}
-              onCheckedChange={handleUseSkinsChange}
-              aria-label="Use champion skins"
-            />
-            <Label
-              htmlFor="use-skins-switch"
-              className="text-sm text-gray-300 cursor-pointer"
-            >
-              Use Skins
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
               id="mouse-hover-switch"
               checked={mouseHoverInfo}
               onCheckedChange={handleMouseHoverInfoChange}
