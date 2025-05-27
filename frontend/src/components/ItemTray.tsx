@@ -89,15 +89,15 @@ const ItemTray: React.FC = () => {
         onValueChange={(value) => setActiveTab(value as ItemCategory)}
         className="flex flex-col flex-1"
       >
-        <CardHeader className="flex flex-col items-center justify-between space-y-0 pb-2 px-4 pt-4">
-          <CardTitle className="text-base font-semibold">Items</CardTitle>
-
-          <TabsList className="bg-muted">
+        <CardHeader className="flex flex-col justify-between space-y-0 pb-2 px-0 pt-4">
+          <CardTitle className="text-base font-semibold items-start ">Items</CardTitle>
+          <div>
+          <TabsList className="bg-muted items-stretch w-full">
             {availableCategories.map((category) => (
               <TabsTrigger
                 key={category}
                 value={category}
-                className="capitalize text-xs px-3 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground"
+                className="capitalize text-xs px-1 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground"
               >
                 {category === "all"
                   ? "All"
@@ -114,18 +114,10 @@ const ItemTray: React.FC = () => {
                               : category}
               </TabsTrigger>
             ))}
-          </TabsList>
+            </TabsList>
+            </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden flex flex-col p-4 pt-0">
-          <Input
-            type="text"
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mb-2 h-8 bg-muted border-none"
-          />
-
-          {/* Fixed height container with explicit overflow handling */}
+        <CardContent className="flex-1 overflow-hidden flex flex-col p-2 pt-0">
           <ScrollArea className="flex-1 h-40 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
             {availableCategories.map((category) => (
               <TabsContent
@@ -147,7 +139,6 @@ const ItemTray: React.FC = () => {
               </TabsContent>
             ))}
           </ScrollArea>
-          {/* </div> */}
         </CardContent>
       </Tabs>
     </Card>
