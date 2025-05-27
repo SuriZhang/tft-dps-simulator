@@ -107,10 +107,10 @@ const TraitTracker: React.FC = () => {
 
   return (
     <div className="bg-card rounded-lg shadow-lg p-2 w-full ">
-      <div className="flex-1 overflow-hidden flex flex-col max-h-24">
+      <div className="flex-1 overflow-hidden flex flex-col h-[89px]">
         <div className="flex-1 overflow-x-auto">
           {!hasChampions ? (
-            <div className="text-gray-400 text-center py-4">
+            <div className="text-gray-400 text-center py-4 items-center">
               Add champions to activate traits
             </div>
           ) : sortedTraits.some((trait) => trait.active > 0) ? (

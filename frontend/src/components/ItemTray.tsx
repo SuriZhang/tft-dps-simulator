@@ -89,7 +89,7 @@ const ItemTray: React.FC = () => {
         onValueChange={(value) => setActiveTab(value as ItemCategory)}
         className="flex flex-col flex-1"
       >
-        <CardHeader className="flex flex-col justify-between space-y-0 pb-2 px-0 pt-4">
+        <CardHeader className="flex flex-col justify-between space-y-0 pb-2 px-1 pt-4">
           <CardTitle className="text-base font-semibold items-start ">Items</CardTitle>
           <div>
           <TabsList className="bg-muted items-stretch w-full">
@@ -97,7 +97,7 @@ const ItemTray: React.FC = () => {
               <TabsTrigger
                 key={category}
                 value={category}
-                className="capitalize text-xs px-1 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground"
+                className="capitalize text-xs px-1.5 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground"
               >
                 {category === "all"
                   ? "All"

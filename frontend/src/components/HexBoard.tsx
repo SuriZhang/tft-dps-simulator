@@ -80,7 +80,7 @@ const HexBoard = () => {
   const hexHeight = hexWidth * (Math.sqrt(3) / 2); // Calculate height for point-topped hex
 
   // Add spacing between cells (adjust this value to control spacing)
-  const spacing = 5; // Spacing in pixels
+  const spacing = 8; // Spacing in pixels
 
   // Adjust spacing calculations
   const horizontalSpacing = hexWidth + spacing;

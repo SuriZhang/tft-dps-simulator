@@ -142,7 +142,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   return (
     <div
       className={cn(
-        "relative aspect-[1/1]",
+        "relative aspect-[1/1] cursor-pointer",
         `col-start-${col} rows-start-${row}`,
         // Move the ring styling here to the OUTER container instead
         hasHoveredTrait && "z-10",
@@ -190,77 +190,82 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         ></div>
       )}
 
-      <TooltipProvider>
+      <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div
-              className={cn(
-                "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
-                getHexBackground(),
-                !champion && selectedChampion
-                  ? "border-primary border-3 hover:border-opacity-100"
-                  : "",
-                champion && selectedItem
-                  ? "border-accent border-3 hover:border-opacity-100"
-                  : "",
-                hoveredTrait && champion && !hasHoveredTrait && "opacity-40",
-              )}
-              onClick={handleCellClick}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              data-position={`${position.row}-${position.col}`}
-            >
-              {/* If champion has the hovered trait, add a glow effect */}
-              {hasHoveredTrait && (
-                <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
-              )}
+<div className={cn(
+  "hexagon-border", 
+  champion ? `cost-${champion.cost}-border` : "empty-hex-border"
+)}>
+              <div
+                className={cn(
+                  "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
+                  getHexBackground(),
+                  !champion && selectedChampion
+                    ? "border-primary border-3 hover:border-opacity-100"
+                    : "",
+                  champion && selectedItem
+                    ? "border-accent border-3 hover:border-opacity-100"
+                    : "",
+                  hoveredTrait && champion && !hasHoveredTrait && "opacity-40",
+                )}
+                onClick={handleCellClick}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                data-position={`${position.row}-${position.col}`}
+                style={{ aspectRatio: "1" }}
+              >
+                {/* If champion has the hovered trait, add a glow effect */}
+                {hasHoveredTrait && (
+                  <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
+                )}
 
-              {champion && (
-                <ContextMenu>
-                  <ContextMenuTrigger asChild>
-                    <div
-                      className="absolute w-full h-full"
-                      draggable
-                      onDragStart={handleDragStart}
-                    >
-                      {/* Background champion image/name */}
-                      {champion.icon && (
-                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                          <img
-                            src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
-                            alt={champion.name}
-                            className="w-full h-full object-cover rotate-[-90deg]"
-                            // title={champion.name} // Removed: Replaced by Tooltip
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </ContextMenuTrigger>
+                {champion && (
+                  <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                      <div
+                        className="absolute w-full h-full"
+                        draggable
+                        onDragStart={handleDragStart}
+                      >
+                        {/* Background champion image/name */}
+                        {champion.icon && (
+                          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                            <img
+                              src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
+                              alt={champion.name}
+                              className="w-full h-full object-cover rotate-[-90deg]"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </ContextMenuTrigger>
 
-                  <ContextMenuContent>
-                    <ContextMenuItem onClick={handleSetStarLevel(1)}>
-                      <Star className="mr-2 h-4 w-4" />
-                      1-Star
-                    </ContextMenuItem>
-                    <ContextMenuItem onClick={handleSetStarLevel(2)}>
-                      <Star className="mr-2 h-4 w-4" />
-                      2-Star
-                    </ContextMenuItem>
-                    <ContextMenuItem onClick={handleSetStarLevel(3)}>
-                      <Star className="mr-2 h-4 w-4" />
-                      3-Star
-                    </ContextMenuItem>
-                    <ContextMenuSeparator />
-                    <ContextMenuItem
-                      onClick={handleRemove}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Remove
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
-              )}
+                    <ContextMenuContent>
+                      <ContextMenuItem onClick={handleSetStarLevel(1)}>
+                        <Star className="mr-2 h-4 w-4" />
+                        1-Star
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={handleSetStarLevel(2)}>
+                        <Star className="mr-2 h-4 w-4" />
+                        2-Star
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={handleSetStarLevel(3)}>
+                        <Star className="mr-2 h-4 w-4" />
+                        3-Star
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem
+                        onClick={handleRemove}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remove
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
+                )}
+              </div>
             </div>
           </TooltipTrigger>
           <TooltipContent>
