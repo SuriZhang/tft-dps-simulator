@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import { Button } from "./ui/button"; 
 import {
@@ -7,21 +7,91 @@ import {
   Share2,
   Copy,
   UploadCloud,
+  Loader2,
 } from "lucide-react"; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
-const ControlBar: React.FC = () => {
-  const { dispatch } = useSimulator();
+const ControlBar = () => {
+ const { state, dispatch } = useSimulator();
 
   // Toggle states for UI controls - Assuming these might come from context later
-  const [showNames, setShowNames] = React.useState(true);
-  const [useSkins, setUseSkins] = React.useState(true);
-  const [mouseHoverInfo, setMouseHoverInfo] = React.useState(true);
-  const [positioningMode, setPositioningMode] = React.useState(false);
+  const [showNames, setShowNames] = useState(true);
+  const [useSkins, setUseSkins] = useState(true);
+  const [mouseHoverInfo, setMouseHoverInfo] = useState(true);
+  const [positioningMode, setPositioningMode] = useState(false);
+  
+  const { boardChampions } = state;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Handle clear board action
   const handleClearBoard = () => {
     dispatch({ type: "CLEAR_BOARD" });
+  };
+
+   // Function to handle the combat simulation
+  const handleStartCombat = async () => {
+    // Reset state
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Call the mock endpoint
+      const response = await fetch(`/api/v1/simulation/run`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            boardChampions: boardChampions.map((champion) => ({
+              apiName: champion.apiName,
+              stars: champion.stars,
+              position: champion.position,
+              items: champion.items || [],
+            })),
+          }),
+        },
+      );
+
+      // console request body
+      console.log("Request body:", {
+        boardChampions: boardChampions.map((champion) => ({
+          apiName: champion.apiName,
+          stars: champion.stars,
+          position: champion.position,
+          items: champion.items || [],
+        })),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Update context with simulation results and events
+      dispatch({
+        type: "SET_SIMULATION_DATA",
+        payload: {
+          results: data.results,
+          events: data.archieveEvents || [], // Note: keeping the same spelling as backend
+        },
+      });
+
+      // Optionally: Show a success message or navigate to results view
+      console.log("Simulation completed successfully:", {
+        results: data.results,
+        events: data.archieveEvents,
+      });
+    } catch (err) {
+      console.error("Error running simulation:", err);
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Placeholder handlers
@@ -63,10 +133,8 @@ const ControlBar: React.FC = () => {
           <div className="text-gray-400 text-sm">
             SET 13 {/* Potentially a Button or Link */}
           </div>
-          <div className="text-sm text-gray-300">
-            Right click a unit on board to mark it as 3-star.
-          </div>
-
+        </div>
+    <div className="space-x-2">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -109,63 +177,46 @@ const ControlBar: React.FC = () => {
           <Button variant="destructive" size="sm" onClick={handleClearBoard}>
             <Trash2 className="h-4 w-4 mr-1" /> CLEAR BOARD
           </Button>
-        </div>
 
-        {/* Toggle controls */}
-        {/* <div className="flex items-center space-x-4 ml-auto">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="mouse-hover-switch"
-              checked={mouseHoverInfo}
-              onCheckedChange={handleMouseHoverInfoChange}
-              aria-label="Enable mouse hover information"
-            />
-            <Label
-              htmlFor="mouse-hover-switch"
-              className="text-sm text-gray-300 cursor-pointer"
-            >
-              Hover Info
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-names-switch"
-              checked={showNames}
-              onCheckedChange={handleShowNamesChange}
-              aria-label="Show champion names"
-            />
-            <Label
-              htmlFor="show-names-switch"
-              className="text-sm text-gray-300 cursor-pointer"
-            >
-              Show Names
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="positioning-mode-switch"
-              checked={positioningMode}
-              onCheckedChange={handlePositioningModeChange}
-              aria-label="Enable positioning mode"
-            />
-            <Label
-              htmlFor="positioning-mode-switch"
-              className="text-sm text-gray-300 cursor-pointer"
-            >
-              Positioning Mode
-            </Label>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSettings}
-            title="Settings"
-          >
-            <Settings className="h-5 w-5 text-gray-400" />
-          </Button>
-        </div> */}
+          {error && (
+        <div className="absolute bottom-12 right-4 text-red-500 bg-red-100 p-2 rounded">
+          {error}
+        </div>
+      )}
+        <Button
+          variant="outline"
+          className="bg-emerald-700 text-white hover:bg-emerald-600 p-2"
+          onClick={handleStartCombat}
+          disabled={isLoading || boardChampions.length === 0}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Simulating...
+            </>
+          ) : (
+            <>
+              <div
+                className="h-4 w-4 bg-white"
+                style={{
+                  WebkitMaskImage: "url(./TFTM_ModeIcon_Normal.png)",
+                  maskImage: "url(./TFTM_ModeIcon_Normal.png)",
+                  WebkitMaskSize: "contain",
+                  maskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  maskPosition: "center",
+                }}
+              ></div>
+              START COMBAT
+            </>
+          )}
+            </Button>
+            </div>
+      
+        </div>
       </div>
-    </div>
   );
 };
 

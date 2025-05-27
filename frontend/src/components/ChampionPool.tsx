@@ -45,6 +45,14 @@ const ChampionPool: React.FC = () => {
     <Card className="h-full flex flex-col border-none bg-transparent shadow-none">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
         <CardTitle className="text-base font-semibold">Champions</CardTitle>
+        <div className="flex flex-row">
+        <Input
+          type="text"
+          placeholder="Search by name/trait..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="mb-2 h-8 w-300 bg-muted border-none"
+        />
         <div className="flex items-center space-x-1">
           {[1, 2, 3, 4, 5].map((cost) => (
             <Button
@@ -66,21 +74,13 @@ const ChampionPool: React.FC = () => {
             // onClick={() => {/* TODO: Open trait filter dropdown */}}
           >
             <SlidersHorizontal className="h-3 w-3" />
-            <span className="sr-only">Filters</span>
-          </Button>
+            </Button>
+            </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden flex flex-col p-4 pt-0">
-        <Input
-          type="text"
-          placeholder="Search by name/trait..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mb-2 h-8 bg-muted border-none"
-        />
-
         <ScrollArea className="flex-1 h-40 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
-          <div className="grid grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 overflow-hidden ">
+          <div className="grid sm:grid-cols-6 md:grid-cols-10 lg:grid-cols-10 gap-2 overflow-hidden ">
             {filteredChampions.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm mt-4">
                 No champions found.

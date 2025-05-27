@@ -9,83 +9,83 @@ const HexBoard = () => {
   const { state, dispatch } = useSimulator();
   const { boardChampions } = state;
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
 
-  // Function to handle the combat simulation
-  const handleStartCombat = async () => {
-    // Reset state
-    setIsLoading(true);
-    setError(null);
+  // // Function to handle the combat simulation
+  // const handleStartCombat = async () => {
+  //   // Reset state
+  //   setIsLoading(true);
+  //   setError(null);
 
-    try {
-      // Call the mock endpoint
-      const response = await fetch(`/api/v1/simulation/run`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            boardChampions: boardChampions.map((champion) => ({
-              apiName: champion.apiName,
-              stars: champion.stars,
-              position: champion.position,
-              items: champion.items || [],
-            })),
-          }),
-        },
-      );
+  //   try {
+  //     // Call the mock endpoint
+  //     const response = await fetch(`/api/v1/simulation/run`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           boardChampions: boardChampions.map((champion) => ({
+  //             apiName: champion.apiName,
+  //             stars: champion.stars,
+  //             position: champion.position,
+  //             items: champion.items || [],
+  //           })),
+  //         }),
+  //       },
+  //     );
 
-      // console request body
-      console.log("Request body:", {
-        boardChampions: boardChampions.map((champion) => ({
-          apiName: champion.apiName,
-          stars: champion.stars,
-          position: champion.position,
-          items: champion.items || [],
-        })),
-      });
+  //     // console request body
+  //     console.log("Request body:", {
+  //       boardChampions: boardChampions.map((champion) => ({
+  //         apiName: champion.apiName,
+  //         stars: champion.stars,
+  //         position: champion.position,
+  //         items: champion.items || [],
+  //       })),
+  //     });
 
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
+  //     if (!response.ok) {
+  //       throw new Error(`Server responded with status: ${response.status}`);
+  //     }
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      // Update context with simulation results and events
-      dispatch({
-        type: "SET_SIMULATION_DATA",
-        payload: {
-          results: data.results,
-          events: data.archieveEvents || [], // Note: keeping the same spelling as backend
-        },
-      });
+  //     // Update context with simulation results and events
+  //     dispatch({
+  //       type: "SET_SIMULATION_DATA",
+  //       payload: {
+  //         results: data.results,
+  //         events: data.archieveEvents || [], // Note: keeping the same spelling as backend
+  //       },
+  //     });
 
-      // Optionally: Show a success message or navigate to results view
-      console.log("Simulation completed successfully:", {
-        results: data.results,
-        events: data.archieveEvents,
-      });
-    } catch (err) {
-      console.error("Error running simulation:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     // Optionally: Show a success message or navigate to results view
+  //     console.log("Simulation completed successfully:", {
+  //       results: data.results,
+  //       events: data.archieveEvents,
+  //     });
+  //   } catch (err) {
+  //     console.error("Error running simulation:", err);
+  //     setError(
+  //       err instanceof Error ? err.message : "An unknown error occurred",
+  //     );
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-const hexWidth = 80;
-const hexHeight = 1.155 * hexWidth; // Since we're using a square with clip-path
-const spacing = 8;
+  const hexWidth = 60;
+  const hexHeight = hexWidth * 1.155; // Make it square (60x60)
+  const spacing = 10;
 
-// Adjust spacing calculations for perfect honeycomb
-const horizontalSpacing = hexWidth + spacing;
-const verticalSpacing = hexHeight * 0.75 + spacing/5;
+  // Adjust spacing calculations for perfect honeycomb
+  const horizontalSpacing = hexWidth + spacing;
+  const verticalSpacing = (hexWidth + spacing) * 1.732 / 2;
 
   return (
-    <div className="relative w-full h-full p-4 bg-indigo-950/20 shadow-inner">
+    <div className="relative w-full h-full p-4 bg-indigo-950/20 shadow-inner mt-4">
       <div
         className="relative mx-auto"
         style={{
@@ -117,14 +117,9 @@ const verticalSpacing = hexHeight * 0.75 + spacing/5;
         )}
       </div>
 
-      {/* Error message display */}
-      {error && (
-        <div className="absolute bottom-12 right-4 text-red-500 bg-red-100 p-2 rounded">
-          {error}
-        </div>
-      )}
+      
 
-      {/* Combat button */}
+      {/* Combat button
       <div className="absolute bottom-0 right-0">
         <Button
           variant="outline"
@@ -156,7 +151,7 @@ const verticalSpacing = hexHeight * 0.75 + spacing/5;
             </>
           )}
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

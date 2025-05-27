@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import ItemIcon from "./ItemIcon";
-import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"; // Removed CardHeader, CardTitle
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -65,14 +64,12 @@ const ItemTray: React.FC = () => {
       "radiant",
       "ornn",
       "support",
-      // "component",
       "emblem"
-      // "other", // "other" category is removed from here
     ];
     const presentCats = new Set(items.map(getItemCategory));
     // Filter other categories based on presence, but always keep 'all'
     // Categories not in allCats (like "other") will be ignored here.
-    return allCats.filter((cat) => cat === "all" || presentCats.has(cat));
+    return allCats.filter((cat) => cat === "craftable" || presentCats.has(cat));
   }, [items]);
 
   // Adjust active tab if the current one becomes unavailable
@@ -87,9 +84,9 @@ const ItemTray: React.FC = () => {
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ItemCategory)}
-        className="flex flex-col flex-1"
+        className="flex flex-col"
       >
-        <CardHeader className="flex flex-col justify-between space-y-0 pb-2 px-1 pt-4">
+        <CardHeader className="flex flex-row justify-between space-y-2 pb-2 px-1 pt-4">
           <CardTitle className="text-base font-semibold items-start ">Items</CardTitle>
           <div>
           <TabsList className="bg-muted items-stretch w-full">
@@ -118,12 +115,12 @@ const ItemTray: React.FC = () => {
             </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden flex flex-col p-2 pt-0">
-          <ScrollArea className="flex-1 h-40 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
+          <ScrollArea className="flex h-full mt-2 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
             {availableCategories.map((category) => (
               <TabsContent
                 key={category}
                 value={category}
-                className="mt-0 pt-0 h-40 data-[state=inactive]:hidden"
+                className="mt-0 pt-0 data-[state=inactive]:hidden"
               >
                 <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-2">
                   {filteredItems.length === 0 ? (

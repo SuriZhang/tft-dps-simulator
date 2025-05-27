@@ -5,43 +5,47 @@ import ItemTray from "./ItemTray";
 import AugmentPanel from "./AugmentPanel";
 import ControlBar from "./ControlBar";
 import DamageStatsPanel from "./DamageStatsPanel";
-import SimulationTimelineChart from "./SimulationTimelineChart";
+import AugmentTray from "./AugmentTray";
 
 const MainBoard = () => {
   return (
     <>
-      <div className="flex h-[90%]">
-        <div className="flex flex-col h-screen w-[65%] p-4 gap-4 bg-card rounded-l-lg">
-          <div className="flex flex-col h-[60%]">
-              <ControlBar />
-            <div className="w-full h-full flex flex-col items-center px-4">
-              <TraitTracker />
-              <HexBoard />
+      <div className="flex flex-col h-[90%]">
+        <div className="flex flex-row h-[55%]">
+          <div className="flex flex-col w-[55%] p-2 gap-4 bg-card rounded-l-lg">
+            <ControlBar />
+            <div className="w-full h-full flex flex-row items-start">
+                <div className="flex w-[20%] h-full">
+                  <TraitTracker />
+                </div> 
+              <div className="flex-1 w-[80%]">
+                <AugmentPanel />
+                <HexBoard />
+                </div>
             </div>
           </div>
-
-          <div className="h-[40%] flex flex-row gap-4 bg-panel-bg p-2">
-            <div className="h-full w-[60%]">
-              <ChampionPool />
-            </div>
-            <div className="h-full w-[40%]">
-              <ItemTray />
-            </div>
-          </div>
-        </div>
-
-        <div className="w-[35%] flex flex-col p-4 gap-4 bg-card rounded-r-lg">
-          <div className="flex-2">
+          <div className="flex-1 w-[45%] p-2 bg-card rounded-r-lg">
             <DamageStatsPanel />
+            </div>
+
           </div>
-          <div className="flex-1">
-            <AugmentPanel />
+
+        <div className="h-[45%] w-full flex flex-row gap-4 bg-panel-bg p-2">
+          <div className="w-[45%] h-full">
+            <ChampionPool />
+          </div>
+          <div className="w-[30%] h-full">
+            <ItemTray />
+          </div>
+          <div className="w-[25%] f-ull">
+            <AugmentTray />
+            </div>
           </div>
         </div>
-      </div>
-      <div className="bg-background/50 p-6 rounded-lg shadow">
+      
+      {/* <div className="bg-background/50 p-6 rounded-lg shadow">
         <SimulationTimelineChart />
-      </div>
+      </div> */}
     </>
   );
 };

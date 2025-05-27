@@ -146,7 +146,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
               src={`/tft-item/${item.icon}`}
               alt={item.name}
               className="w-5 h-5 object-cover rounded-sm border border-gray-800 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
-              // title={item.name} // Item tooltips can be handled separately if needed, or removed if champion tooltip covers it
+            // title={item.name} // Item tooltips can be handled separately if needed, or removed if champion tooltip covers it
             />
           ))}
         </div>
@@ -169,35 +169,33 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
-<div className={cn(
-  "hexagon-border", 
-  champion ? `cost-${champion.cost}-border` : "empty-hex-border"
-)}>
+            <div className={cn(
+              "hexagon-border",
+              champion ? `cost-${champion.cost}-border` : "empty-hex-border"
+            )}>
               <div
-  className={cn(
-    "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
-    !champion && selectedChampion
-      ? "border-primary border-3 hover:border-opacity-100"
-      : "",
-    champion && selectedItem
-      ? "border-accent border-3 hover:border-opacity-100"
-      : ""
-    // Remove the opacity-40 class from here
-  )}
-  onClick={handleCellClick}
-  onDragOver={handleDragOver}
-  onDrop={handleDrop}
-  data-position={`${position.row}-${position.col}`}
-  style={{ 
-    aspectRatio: "1",
-    // Apply opacity directly to the container when needed
-    opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1 
-  }}
->
+                className={cn(
+                  "w-[60px] h-[69.3px] inset-0 clip-hexagon shadow-md transition-all",
+                  !champion && selectedChampion
+                    ? "border-primary border-3 hover:border-opacity-100"
+                    : "",
+                  champion && selectedItem
+                    ? "border-accent border-3 hover:border-opacity-100"
+                    : ""
+                )}
+                onClick={handleCellClick}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                data-position={`${position.row}-${position.col}`}
+                style={{
+                  // aspectRatio: "1.155", // Enforce 1:1 aspect ratio
+                  opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
+                }}
+              >
                 {/* If champion has the hovered trait, add a glow effect */}
                 {hasHoveredTrait && (
-    <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
-  )}
+                  <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
+                )}
 
                 {champion && (
                   <ContextMenu>
@@ -213,7 +211,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                             <img
                               src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
                               alt={champion.name}
-                              className="w-full h-full object-cover rotate-[-90deg]"
+                              className="w-full h-full object-cover"
                             />
                           </div>
                         )}

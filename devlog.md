@@ -648,3 +648,10 @@ TODO:
 
 ## 20250526
 - [x] Frontend layout update
+
+## 20250527
+- [x] major UI layout revamp
+
+TODO:
+- [ ] turn Available augments into a tab with Champions & Icons
+- [ ] add total value on board & total champions count 

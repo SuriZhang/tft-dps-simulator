@@ -106,15 +106,15 @@ const TraitTracker: React.FC = () => {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-lg p-2 w-full ">
-      <div className="flex-1 overflow-hidden flex flex-col h-[89px]">
+    <div className="bg-card rounded-lg shadow-lg">
+      <div className="flex overflow-hidden flex-col h-full">
         <div className="flex-1 overflow-x-auto">
           {!hasChampions ? (
             <div className="text-gray-400 text-center py-4 items-center">
               Add champions to activate traits
             </div>
           ) : sortedTraits.some((trait) => trait.active > 0) ? (
-            <ScrollArea className="w-full">
+            <ScrollArea className="h-[427px]">
               <div className="flex flex-wrap gap-2">
                 {sortedTraits.map((trait) => {
                   const currentEffect = getCurrentActiveEffect(trait); 
@@ -127,7 +127,7 @@ const TraitTracker: React.FC = () => {
                     <div
                       key={trait.apiName}
                       className={cn(
-                        "flex items-center gap-2 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer w-40", 
+                        "flex items-center gap-1 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer w-40", 
                         "transition-all hover:bg-neutral-700/90",
                         localHoveredTrait === trait.name &&
                           "ring-1 ring-primary ring-opacity-70",
@@ -158,7 +158,7 @@ const TraitTracker: React.FC = () => {
 
                       {/* 2. Active Count Box */}
                       <div 
-                        className="flex items-center justify-center rounded px-1.5 py-0.5 text-xs" // Smaller text for count
+                        className="flex items-center justify-center rounded px-1 py-0.5 text-xs" // Smaller text for count
                         style={{ backgroundColor: 'rgba(10,10,20,0.5)', minWidth: '24px' }} // Darker, slightly transparent
                       >
                         <span className="font-bold text-white">{trait.active}</span>
@@ -188,7 +188,6 @@ const TraitTracker: React.FC = () => {
                   );
                 })}
                 </div>
-                <ScrollBar orientation="horizontal" />
             </ScrollArea>
           ) : (
             <div className="text-gray-400 text-center py-4">

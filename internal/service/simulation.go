@@ -82,7 +82,7 @@ func (s *SimulationService) RunSimulation(requestChampions []BoardChampion) (*Ru
 		log.Printf("Error getting health component for target dummy: %v", err)
 		return nil, fmt.Errorf("error getting health component for target dummy: %w", err)
 	}
-	dummyHealth.SetBaseMaxHP(10000) // Set dummy health to 1000 for testing
+	dummyHealth.SetBaseMaxHP(1000000) // Set dummy health to 1000 for testing
 	dummyHealth.SetBaseMR(0.0)      // Set dummy MR to 0 for testing
 	dummyHealth.SetBaseArmor(0.0)   // Set dummy Armor to 0 for testing
 	dummyAttack, ok := world.GetAttack(targetDummy)

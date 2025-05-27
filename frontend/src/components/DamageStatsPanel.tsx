@@ -10,6 +10,7 @@ import {
 } from "./ui/tooltip";
 import { Info } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
+import SimulationTimelineChart from "./SimulationTimelineChart";
 
 const DamageStatsPanel = () => {
   const { state } = useSimulator();
@@ -68,12 +69,10 @@ const DamageStatsPanel = () => {
           </Tooltip>
         </TooltipProvider>
       </CardHeader>
-
-      {/* Add separator between header and content */}
       <Separator className="bg-gray-700 border" />
 
-      <CardContent className="p-3">
-        <ScrollArea className="h-[400px]">
+      <CardContent className="p-4">
+        <ScrollArea className="h-[420px]">
           {!simulationResults || simulationResults.length === 0 ? (
             <div className="text-center text-muted-foreground italic py-8">
               {boardChampions.length === 0
@@ -239,7 +238,9 @@ const DamageStatsPanel = () => {
               ))}
             </div>
           )}
+          <SimulationTimelineChart />
         </ScrollArea>
+       
       </CardContent>
     </Card>
   );
