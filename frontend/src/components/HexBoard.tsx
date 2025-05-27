@@ -76,15 +76,13 @@ const HexBoard = () => {
     }
   };
 
-  const hexWidth = 80; // Match the width in HexCell.tsx
-  const hexHeight = hexWidth * (Math.sqrt(3) / 2); // Calculate height for point-topped hex
+const hexWidth = 80;
+const hexHeight = 1.155 * hexWidth; // Since we're using a square with clip-path
+const spacing = 8;
 
-  // Add spacing between cells (adjust this value to control spacing)
-  const spacing = 8; // Spacing in pixels
-
-  // Adjust spacing calculations
-  const horizontalSpacing = hexWidth + spacing;
-  const verticalSpacing = 0.95* hexHeight;
+// Adjust spacing calculations for perfect honeycomb
+const horizontalSpacing = hexWidth + spacing;
+const verticalSpacing = hexHeight * 0.75 + spacing/5;
 
   return (
     <div className="relative w-full h-full p-4 bg-indigo-950/20 shadow-inner">

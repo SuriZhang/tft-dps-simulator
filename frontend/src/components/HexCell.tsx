@@ -38,30 +38,6 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
       return trait.toLowerCase() === hoveredTrait.toLowerCase();
     });
 
-  const getHexBackground = () => {
-    let base = "bg-gray-900/40 border border-gray-700/30";
-    if (champion) {
-      switch (champion.cost) {
-        case 1:
-          base = "bg-gray-800/60 border border-gray-600/80";
-          break;
-        case 2:
-          base = "bg-green-900/60 border border-green-600/50";
-          break;
-        case 3:
-          base = "bg-blue-900/60 border border-blue-500/50";
-          break;
-        case 4:
-          base = "bg-purple-900/60 border border-purple-500/50";
-          break;
-        case 5:
-          base = "bg-amber-900/60 border border-amber-500/50";
-          break;
-      }
-    }
-    return base;
-  };
-
   // Click / drag handlers
   const handleCellClick = () => {
     if (selectedChampion && !champion) {
@@ -198,27 +174,30 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   champion ? `cost-${champion.cost}-border` : "empty-hex-border"
 )}>
               <div
-                className={cn(
-                  "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
-                  getHexBackground(),
-                  !champion && selectedChampion
-                    ? "border-primary border-3 hover:border-opacity-100"
-                    : "",
-                  champion && selectedItem
-                    ? "border-accent border-3 hover:border-opacity-100"
-                    : "",
-                  hoveredTrait && champion && !hasHoveredTrait && "opacity-40",
-                )}
-                onClick={handleCellClick}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                data-position={`${position.row}-${position.col}`}
-                style={{ aspectRatio: "1" }}
-              >
+  className={cn(
+    "w-[80px] h-[80px] inset-0 clip-hexagon shadow-md transition-all",
+    !champion && selectedChampion
+      ? "border-primary border-3 hover:border-opacity-100"
+      : "",
+    champion && selectedItem
+      ? "border-accent border-3 hover:border-opacity-100"
+      : ""
+    // Remove the opacity-40 class from here
+  )}
+  onClick={handleCellClick}
+  onDragOver={handleDragOver}
+  onDrop={handleDrop}
+  data-position={`${position.row}-${position.col}`}
+  style={{ 
+    aspectRatio: "1",
+    // Apply opacity directly to the container when needed
+    opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1 
+  }}
+>
                 {/* If champion has the hovered trait, add a glow effect */}
                 {hasHoveredTrait && (
-                  <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
-                )}
+    <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
+  )}
 
                 {champion && (
                   <ContextMenu>
