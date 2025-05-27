@@ -3,11 +3,7 @@ import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
 import { Trait, TraitEffect } from "../utils/types";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+  Card
 } from "./ui/card";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 
@@ -110,8 +106,8 @@ const TraitTracker: React.FC = () => {
   };
 
   return (
-    <Card className="bg-card rounded-lg shadow-lg p-0 h-full w-full flex flex-col">
-      <div className="flex-1 overflow-hidden flex flex-col p-2">
+    <div className="bg-card rounded-lg shadow-lg p-2 w-full ">
+      <div className="flex-1 overflow-hidden flex flex-col max-h-24">
         <div className="flex-1 overflow-x-auto">
           {!hasChampions ? (
             <div className="text-gray-400 text-center py-4">
@@ -121,9 +117,7 @@ const TraitTracker: React.FC = () => {
             <ScrollArea className="w-full">
               <div className="flex flex-wrap gap-2">
                 {sortedTraits.map((trait) => {
-                  // const activeEffect = getActiveEffect(trait); // Not directly used in new render
-                  const currentEffect = getCurrentActiveEffect(trait); // For title attribute
-                  // const isActive = trait.active > 0; // Redundant if filtering by tier or active count
+                  const currentEffect = getCurrentActiveEffect(trait); 
                   const currentTier = getHighestActiveTier(trait);
                   const tierSvg = traitTierColors[currentTier];
 
@@ -203,7 +197,7 @@ const TraitTracker: React.FC = () => {
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

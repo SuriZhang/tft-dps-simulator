@@ -80,11 +80,11 @@ const HexBoard = () => {
   const hexHeight = hexWidth * (Math.sqrt(3) / 2); // Calculate height for point-topped hex
 
   // Add spacing between cells (adjust this value to control spacing)
-  const spacing = 7; // Spacing in pixels
+  const spacing = 5; // Spacing in pixels
 
   // Adjust spacing calculations
   const horizontalSpacing = hexWidth + spacing;
-  const verticalSpacing = hexHeight + 0.5 * spacing;
+  const verticalSpacing = 0.95* hexHeight;
 
   return (
     <div className="relative w-full h-full p-4 bg-indigo-950/20 shadow-inner">

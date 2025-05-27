@@ -1,15 +1,14 @@
 import React from "react";
 import { useSimulator } from "../context/SimulatorContext";
-import { Button } from "./ui/button"; // Import Button
-import { Switch } from "./ui/switch";
-import { Label } from "./ui/label";
+import { Button } from "./ui/button"; 
 import {
   Trash2,
   Settings,
   Share2,
   Copy,
   UploadCloud,
-} from "lucide-react"; // Import necessary icons
+} from "lucide-react"; 
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 const ControlBar: React.FC = () => {
   const { dispatch } = useSimulator();
@@ -67,35 +66,53 @@ const ControlBar: React.FC = () => {
           <div className="text-sm text-gray-300">
             Right click a unit on board to mark it as 3-star.
           </div>
-        </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center space-x-2">
-          {/* Use Button component */}
-          <Button variant="outline" size="sm" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-1" /> SHARE
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleCopyCode}>
+                  <Copy className="h-4 w-4 mr-1" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Copy Code
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleImportCode}>
+            <UploadCloud className="h-4 w-4 mr-1" /> 
           </Button>
-          {/* Use Button component */}
+              </TooltipTrigger>
+              <TooltipContent>
+                Import Code
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                 <Button variant="outline" size="sm" onClick={handleShare}>
+            <Share2 className="h-4 w-4 mr-1" />
+          </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Share Code
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Button variant="destructive" size="sm" onClick={handleClearBoard}>
             <Trash2 className="h-4 w-4 mr-1" /> CLEAR BOARD
           </Button>
         </div>
 
-        {/* Copy/Import buttons */}
-        <div className="flex items-center space-x-4">
-          {/* Use Button component */}
-          <Button variant="outline" size="sm" onClick={handleCopyCode}>
-            <Copy className="h-4 w-4 mr-1" /> COPY CODE
-          </Button>
-          {/* Use Button component */}
-          <Button variant="outline" size="sm" onClick={handleImportCode}>
-            <UploadCloud className="h-4 w-4 mr-1" /> IMPORT CODE
-          </Button>
-        </div>
-
         {/* Toggle controls */}
-        <div className="flex items-center space-x-4 ml-auto">
-          {/* Use Switch and Label components */}
+        {/* <div className="flex items-center space-x-4 ml-auto">
           <div className="flex items-center space-x-2">
             <Switch
               id="mouse-hover-switch"
@@ -138,7 +155,6 @@ const ControlBar: React.FC = () => {
               Positioning Mode
             </Label>
           </div>
-          {/* Use Button for Settings */}
           <Button
             variant="ghost"
             size="icon"
@@ -147,7 +163,7 @@ const ControlBar: React.FC = () => {
           >
             <Settings className="h-5 w-5 text-gray-400" />
           </Button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

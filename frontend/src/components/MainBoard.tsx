@@ -11,12 +11,8 @@ const MainBoard = () => {
   return (
     <>
       <div className="flex h-[90%]">
-        <div className="flex flex-col h-screen w-[80%] p-4 gap-4 bg-card rounded-l-lg">
+        <div className="flex flex-col h-screen w-[65%] p-4 gap-4 bg-card rounded-l-lg">
           <div className="flex flex-col h-[60%]">
-            {/* <div className="w-[30%] flex h-full flex-col p-2 gap-2 bg-card rounded-l-lg">
-              <TraitTracker />
-            </div> */}
-
               <ControlBar />
             <div className="w-full h-full flex flex-col items-center px-4">
               <TraitTracker />
@@ -34,7 +30,7 @@ const MainBoard = () => {
           </div>
         </div>
 
-        <div className="w-[20%] flex flex-col p-4 gap-4 bg-card rounded-r-lg">
+        <div className="w-[35%] flex flex-col p-4 gap-4 bg-card rounded-r-lg">
           <div className="flex-2">
             <DamageStatsPanel />
           </div>
