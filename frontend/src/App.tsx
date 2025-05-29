@@ -3,7 +3,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 function App() {
-
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-background text-foreground">

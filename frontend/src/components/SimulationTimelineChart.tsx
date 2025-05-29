@@ -12,15 +12,15 @@ import {
 } from "recharts";
 
 // Flatten the map into a single array for the chart
-    interface ChartDataPoint {
-      timestamp: number;
-      cumulativeDamage: number;
-      championName: string;
-      championId: number;
-      eventType?: string;
-      eventData?: any; // Consider using a more specific type if the structure of eventData is known
+interface ChartDataPoint {
+  timestamp: number;
+  cumulativeDamage: number;
+  championName: string;
+  championId: number;
+  eventType?: string;
+  eventData?: any; // Consider using a more specific type if the structure of eventData is known
 }
-    
+
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {

@@ -35,12 +35,15 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
     const handleChampionDragStart = () => setIsChampionBeingDragged(true);
     const handleChampionDragEnd = () => setIsChampionBeingDragged(false);
 
-    document.addEventListener('championDragStart', handleChampionDragStart);
-    document.addEventListener('championDragEnd', handleChampionDragEnd);
+    document.addEventListener("championDragStart", handleChampionDragStart);
+    document.addEventListener("championDragEnd", handleChampionDragEnd);
 
     return () => {
-      document.removeEventListener('championDragStart', handleChampionDragStart);
-      document.removeEventListener('championDragEnd', handleChampionDragEnd);
+      document.removeEventListener(
+        "championDragStart",
+        handleChampionDragStart,
+      );
+      document.removeEventListener("championDragEnd", handleChampionDragEnd);
     };
   }, []);
 
@@ -111,16 +114,16 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         JSON.stringify({ type: "boardChampion", position }),
       );
       e.dataTransfer.effectAllowed = "move";
-      
-      document.dispatchEvent(new CustomEvent('championDragStart'));
+
+      document.dispatchEvent(new CustomEvent("championDragStart"));
     }
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    document.dispatchEvent(new CustomEvent('championDragEnd'));
-    
+    document.dispatchEvent(new CustomEvent("championDragEnd"));
+
     setIsDragOver(false);
-    
+
     const boardElement = document.querySelector('[data-board-area="true"]');
     if (boardElement && champion) {
       const rect = boardElement.getBoundingClientRect();
@@ -133,7 +136,11 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         clientY > rect.bottom
       ) {
         dispatch({ type: "REMOVE_CHAMPION_FROM_BOARD", position });
-        console.log("Removing champion dragged outside board", champion, position);
+        console.log(
+          "Removing champion dragged outside board",
+          champion,
+          position,
+        );
       }
     }
   };
@@ -141,7 +148,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"));
       if (data.type === "champion" && !champion) {
@@ -183,7 +190,8 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   };
 
   // Show highlight when a champion is being dragged over an empty cell
-  const shouldShowDragHighlight = isChampionBeingDragged && !champion && isDragOver;
+  const shouldShowDragHighlight =
+    isChampionBeingDragged && !champion && isDragOver;
 
   return (
     <div
@@ -191,7 +199,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         "relative aspect-[1/1]",
         `col-start-${col} rows-start-${row}`,
         hasHoveredTrait && "z-10",
-        champion ? "cursor-pointer" : "cursor-default"
+        champion ? "cursor-pointer" : "cursor-default",
       )}
     >
       {/* Stars positioned outside the hexagon but visually on top */}
@@ -241,10 +249,14 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         <TooltipProvider delayDuration={100}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className={cn(
-                "hexagon-border",
-                champion ? `cost-${champion.cost}-border` : "empty-hex-border"
-              )}>
+              <div
+                className={cn(
+                  "hexagon-border",
+                  champion
+                    ? `cost-${champion.cost}-border`
+                    : "empty-hex-border",
+                )}
+              >
                 <div
                   className={cn(
                     "w-[60px] h-[69.3px] inset-0 clip-hexagon shadow-md transition-all bg-secondary",
@@ -255,7 +267,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                       ? "border-accent border-3 hover:border-opacity-100"
                       : "",
                     // Add bright background when dragging champion over empty cell
-                    shouldShowDragHighlight && "!bg-gray-400/60"
+                    shouldShowDragHighlight && "!bg-gray-400/60",
                   )}
                   onClick={handleCellClick}
                   onDragOver={handleDragOver}
@@ -264,7 +276,8 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                   onDrop={handleDrop}
                   data-position={`${position.row}-${position.col}`}
                   style={{
-                    opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
+                    opacity:
+                      hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1,
                   }}
                 >
                   {/* If champion has the hovered trait, add a glow effect */}
@@ -335,9 +348,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
           </Tooltip>
         </TooltipProvider>
       ) : (
-        <div className={cn(
-          "hexagon-border empty-hex-border"
-        )}>
+        <div className={cn("hexagon-border empty-hex-border")}>
           <div
             className={cn(
               "w-[60px] h-[69.3px] inset-0 clip-hexagon shadow-md transition-all bg-secondary",
@@ -348,7 +359,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                 ? "border-accent border-3 hover:border-opacity-100"
                 : "",
               // Add bright background when dragging champion over empty cell
-              shouldShowDragHighlight && "!bg-gray-400/60"
+              shouldShowDragHighlight && "!bg-gray-400/60",
             )}
             onClick={handleCellClick}
             onDragOver={handleDragOver}
@@ -357,10 +368,9 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
             onDrop={handleDrop}
             data-position={`${position.row}-${position.col}`}
             style={{
-              opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
+              opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1,
             }}
-          >
-          </div>
+          ></div>
         </div>
       )}
     </div>

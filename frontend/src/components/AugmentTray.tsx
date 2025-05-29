@@ -41,15 +41,10 @@ const AugmentTray = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="mb-2 h-8 w-300 bg-muted border-none"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-6 h-6 ml-2"
-          >
+          <Button variant="ghost" size="icon" className="w-6 h-6 ml-2">
             <SlidersHorizontal className="h-3 w-3" />
           </Button>
         </div>
-
       </CardHeader>
       <CardContent>
         <ScrollArea className="flex-1 h-40 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
@@ -81,7 +76,7 @@ const AugmentTray = () => {
                   <span>{augment.name}</span>
                 </div>
                 {augment.desc && (
-                  <span 
+                  <span
                     className="text-xs text-muted-foreground leading-tight text-wrap"
                     dangerouslySetInnerHTML={{
                       __html: formatDescription(augment.desc, augment.effects),
@@ -89,7 +84,6 @@ const AugmentTray = () => {
                   />
                 )}
               </div>
-              
             ))}
           </div>
         </ScrollArea>

@@ -23,26 +23,30 @@ export const formatDescription = (
     while ((match = placeholderRegex.exec(formattedDesc)) !== null) {
       resultString += formattedDesc.substring(lastIndex, match.index); // Append text before placeholder
 
-      const placeholderContent = match[1]; 
+      const placeholderContent = match[1];
       if (placeholderContent.startsWith("TFTUnitProperty")) {
         // Skip this placeholder entirely - don't add anything to resultString
         lastIndex = placeholderRegex.lastIndex;
         continue;
       }
-      
+
       let replacementValue = match[0]; // Default to original placeholder if not processed
 
       if (placeholderContent.endsWith("*100")) {
         const key = placeholderContent.slice(0, -4); // Remove '*100'
         // Case insensitive lookup
-        const effectKey = Object.keys(effects).find(k => k.toLowerCase() === key.toLowerCase());
+        const effectKey = Object.keys(effects).find(
+          (k) => k.toLowerCase() === key.toLowerCase(),
+        );
         if (effectKey !== undefined && typeof effects[effectKey] === "number") {
           replacementValue = (effects[effectKey] * 100).toFixed(0);
         }
       } else {
         const key = placeholderContent;
         // Case insensitive lookup
-        const effectKey = Object.keys(effects).find(k => k.toLowerCase() === key.toLowerCase());
+        const effectKey = Object.keys(effects).find(
+          (k) => k.toLowerCase() === key.toLowerCase(),
+        );
         if (effectKey !== undefined) {
           replacementValue = formatEffectValueHelper(effects[effectKey]);
         }
@@ -79,12 +83,12 @@ export const formatDescription = (
   );
   formattedDesc = formattedDesc.replace(
     /<TFTBonus>(.*?)<\/TFTBonus>/gi,
-      // '<span class="text-green-400">$1</span>',
-      ""
+    // '<span class="text-green-400">$1</span>',
+    "",
   );
   formattedDesc = formattedDesc.replace(
     /<TFTShadowItemPenalty>(.*?)<\/TFTShadowItemPenalty>/gi,
-    '<span class="text-red-400 italic">$1</span>', 
+    '<span class="text-red-400 italic">$1</span>',
   );
   formattedDesc = formattedDesc.replace(
     /<healing>(.*?)<\/healing>/gi,
@@ -96,7 +100,7 @@ export const formatDescription = (
   );
 
   // Basic handling for <li> items (convert to bullet points on new lines)
-  formattedDesc = formattedDesc.replace(/<li>(.*?)<\/li>/gi, "<br />&bull; $1"); 
+  formattedDesc = formattedDesc.replace(/<li>(.*?)<\/li>/gi, "<br />&bull; $1");
 
   // Tags to strip while keeping their content.
   const tagsToStripKeepContent = [
@@ -130,12 +134,12 @@ export const formatDescription = (
 
   // Consolidate multiple <br> tags (and variants) into one
   formattedDesc = formattedDesc.replace(/(<br\s*\/?>\s*)+/gi, "<br />");
-  
+
   // Replace &nbsp; with regular space
   formattedDesc = formattedDesc.replace(/&nbsp;/g, " ");
-  
+
   // Clean up any remaining problematic HTML entities or malformed tags
-//   formattedDesc = formattedDesc.replace("<br />", "\n");
+  //   formattedDesc = formattedDesc.replace("<br />", "\n");
   formattedDesc = formattedDesc.replace(/&lt;\/br&gt;/gi, "");
 
   return formattedDesc;

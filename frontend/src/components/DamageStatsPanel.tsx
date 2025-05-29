@@ -17,7 +17,7 @@ const DamageStatsPanel = () => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xl font-bold">Damage Analysis</CardTitle>
         <TooltipProvider>
-          <Tooltip >
+          <Tooltip>
             <TooltipTrigger asChild>
               <Info className="h-4 w-4 text-muted-foreground cursor-help" />
             </TooltipTrigger>

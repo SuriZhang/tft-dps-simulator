@@ -1,18 +1,17 @@
 import { useState } from "react";
 import { useSimulator } from "../context/SimulatorContext";
-import { Button } from "./ui/button"; 
+import { Button } from "./ui/button";
+import { Trash2, Share2, Copy, UploadCloud, Loader2 } from "lucide-react";
 import {
-  Trash2,
-  Share2,
-  Copy,
-  UploadCloud,
-  Loader2,
-} from "lucide-react"; 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 const ControlBar = () => {
- const { state, dispatch } = useSimulator();
-  
+  const { state, dispatch } = useSimulator();
+
   const { boardChampions } = state;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +21,7 @@ const ControlBar = () => {
     dispatch({ type: "CLEAR_BOARD" });
   };
 
-   // Function to handle the combat simulation
+  // Function to handle the combat simulation
   const handleStartCombat = async () => {
     // Reset state
     setIsLoading(true);
@@ -30,22 +29,20 @@ const ControlBar = () => {
 
     try {
       // Call the mock endpoint
-      const response = await fetch(`/api/v1/simulation/run`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            boardChampions: boardChampions.map((champion) => ({
-              apiName: champion.apiName,
-              stars: champion.stars,
-              position: champion.position,
-              items: champion.items || [],
-            })),
-          }),
+      const response = await fetch(`/api/v1/simulation/run`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          boardChampions: boardChampions.map((champion) => ({
+            apiName: champion.apiName,
+            stars: champion.stars,
+            position: champion.position,
+            items: champion.items || [],
+          })),
+        }),
+      });
 
       // console request body
       console.log("Request body:", {
@@ -105,7 +102,7 @@ const ControlBar = () => {
             SET 13 {/* Potentially a Button or Link */}
           </div>
         </div>
-    <div className="space-x-2">
+        <div className="space-x-2">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -113,9 +110,7 @@ const ControlBar = () => {
                   <Copy className="h-4 w-4 mr-1" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                Copy Code
-              </TooltipContent>
+              <TooltipContent>Copy Code</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -123,25 +118,21 @@ const ControlBar = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="sm" onClick={handleImportCode}>
-            <UploadCloud className="h-4 w-4 mr-1" /> 
-          </Button>
+                  <UploadCloud className="h-4 w-4 mr-1" />
+                </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                Import Code
-              </TooltipContent>
+              <TooltipContent>Import Code</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
-                 <Button variant="outline" size="sm" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-1" />
-          </Button>
+                <Button variant="outline" size="sm" onClick={handleShare}>
+                  <Share2 className="h-4 w-4 mr-1" />
+                </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                Share Code
-              </TooltipContent>
+              <TooltipContent>Share Code</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -150,44 +141,43 @@ const ControlBar = () => {
           </Button>
 
           {error && (
-        <div className="absolute bottom-12 right-4 text-red-500 bg-red-100 p-2 rounded">
-          {error}
-        </div>
-      )}
-        <Button
-          variant="outline"
-          className="bg-emerald-700 text-white hover:bg-emerald-600 p-2"
-          onClick={handleStartCombat}
-          disabled={isLoading || boardChampions.length === 0}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Simulating...
-            </>
-          ) : (
-            <>
-              <div
-                className="h-4 w-4 bg-white"
-                style={{
-                  WebkitMaskImage: "url(./TFTM_ModeIcon_Normal.png)",
-                  maskImage: "url(./TFTM_ModeIcon_Normal.png)",
-                  WebkitMaskSize: "contain",
-                  maskSize: "contain",
-                  WebkitMaskRepeat: "no-repeat",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskPosition: "center",
-                  maskPosition: "center",
-                }}
-              ></div>
-              START COMBAT
-            </>
-          )}
-            </Button>
+            <div className="absolute bottom-12 right-4 text-red-500 bg-red-100 p-2 rounded">
+              {error}
             </div>
-      
+          )}
+          <Button
+            variant="outline"
+            className="bg-emerald-700 text-white hover:bg-emerald-600 p-2"
+            onClick={handleStartCombat}
+            disabled={isLoading || boardChampions.length === 0}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Simulating...
+              </>
+            ) : (
+              <>
+                <div
+                  className="h-4 w-4 bg-white"
+                  style={{
+                    WebkitMaskImage: "url(./TFTM_ModeIcon_Normal.png)",
+                    maskImage: "url(./TFTM_ModeIcon_Normal.png)",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                  }}
+                ></div>
+                START COMBAT
+              </>
+            )}
+          </Button>
         </div>
       </div>
+    </div>
   );
 };
 

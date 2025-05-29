@@ -16,7 +16,7 @@ const HexBoard = () => {
 
   // Adjust spacing calculations for perfect honeycomb
   const horizontalSpacing = hexWidth + spacing;
-  const verticalSpacing = (hexWidth + spacing) * 1.732 / 2;
+  const verticalSpacing = ((hexWidth + spacing) * 1.732) / 2;
 
   // Listen for custom events from HexCell
   useEffect(() => {
@@ -29,12 +29,15 @@ const HexBoard = () => {
       setIsMouseOutsideBoard(false);
     };
 
-    document.addEventListener('championDragStart', handleChampionDragStart);
-    document.addEventListener('championDragEnd', handleChampionDragEnd);
+    document.addEventListener("championDragStart", handleChampionDragStart);
+    document.addEventListener("championDragEnd", handleChampionDragEnd);
 
     return () => {
-      document.removeEventListener('championDragStart', handleChampionDragStart);
-      document.removeEventListener('championDragEnd', handleChampionDragEnd);
+      document.removeEventListener(
+        "championDragStart",
+        handleChampionDragStart,
+      );
+      document.removeEventListener("championDragEnd", handleChampionDragEnd);
     };
   }, []);
 
@@ -50,7 +53,7 @@ const HexBoard = () => {
     // The actual removal logic is handled in HexCell's handleDragEnd
   };
 
-  const handleBoardDragEnter = (e: React.DragEvent) => {
+  const handleBoardDragEnter = () => {
     if (isDraggingChampion) {
       setIsMouseOutsideBoard(false);
     }
@@ -61,7 +64,7 @@ const HexBoard = () => {
       // Check if we're actually leaving the board area (not just moving between child elements)
       const rect = e.currentTarget.getBoundingClientRect();
       const { clientX, clientY } = e;
-      
+
       if (
         clientX < rect.left ||
         clientX > rect.right ||
@@ -74,7 +77,7 @@ const HexBoard = () => {
   };
 
   return (
-    <div 
+    <div
       className="relative w-full h-full mt-4 ml-4 bg-indigo-950/20 shadow-inner px-2 py-4"
       onDragOver={handleDragOver}
       onDrop={handleDrop}

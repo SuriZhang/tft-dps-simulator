@@ -4,7 +4,7 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { SlidersHorizontal, Check, CircleX } from "lucide-react";
+import { SlidersHorizontal, CircleX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,21 +48,24 @@ const ChampionPool: React.FC = () => {
 
         // Apply trait filter dropdown (separate from search)
         const traitFilterMatch =
-          selectedTraits.length === 0 || 
+          selectedTraits.length === 0 ||
           champion.traits.some((trait) => selectedTraits.includes(trait));
 
         // Show champions that match by name OR trait AND match the filters
-        return (nameMatch || traitMatch) && costMatch && traitFilterMatch &&
-          champion.cost <= 6 && !champion.apiName.includes("Summon"); // exclude trait spawns
+        return (
+          (nameMatch || traitMatch) &&
+          costMatch &&
+          traitFilterMatch &&
+          champion.cost <= 6 &&
+          !champion.apiName.includes("Summon")
+        ); // exclude trait spawns
       })
       .sort((a, b) => a.cost - b.cost); // Sort by cost (ascending)
   }, [champions, searchTerm, filterCost, selectedTraits]);
 
   const handleTraitToggle = (trait: string) => {
     setSelectedTraits((prev) =>
-      prev.includes(trait)
-        ? prev.filter((t) => t !== trait)
-        : [...prev, trait]
+      prev.includes(trait) ? prev.filter((t) => t !== trait) : [...prev, trait],
     );
   };
 
@@ -75,69 +78,69 @@ const ChampionPool: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 h-18">
         <CardTitle className="text-base font-semibold">Champions</CardTitle>
         <div className="flex flex-row">
-        <Input
-          type="text"
-          placeholder="Search by name/trait..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mb-2 h-8 w-300 bg-muted border-none"
-        />
-        <div className="flex items-center space-x-1">
-          {[1, 2, 3, 4, 5].map((cost) => (
-            <Button
-              key={cost}
-              variant={filterCost === cost ? "secondary" : "ghost"}
-              size="sm"
-              className="w-6 h-6 p-0 text-xs"
-              onClick={() =>
-                setFilterCost((prev) => (prev === cost ? null : cost))
-              }
-            >
-              {cost}
-            </Button>
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Input
+            type="text"
+            placeholder="Search by name/trait..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mb-2 h-8 w-300 bg-muted border-none"
+          />
+          <div className="flex items-center space-x-1">
+            {[1, 2, 3, 4, 5].map((cost) => (
               <Button
-                variant={selectedTraits.length > 0 ? "secondary" : "ghost"}
-                size="icon"
-                className="w-6 h-6 ml-2"
+                key={cost}
+                variant={filterCost === cost ? "secondary" : "ghost"}
+                size="sm"
+                className="w-6 h-6 p-0 text-xs"
+                onClick={() =>
+                  setFilterCost((prev) => (prev === cost ? null : cost))
+                }
               >
-                <SlidersHorizontal className="h-3 w-3" />
+                {cost}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 max-h-96 overflow-y-auto">
-              {allTraits.map((trait) => (
-                <DropdownMenuCheckboxItem
-                  key={trait}
-                  checked={selectedTraits.includes(trait)}
-                  onCheckedChange={() => handleTraitToggle(trait)}
+            ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={selectedTraits.length > 0 ? "secondary" : "ghost"}
+                  size="icon"
+                  className="w-6 h-6 ml-2"
                 >
-                  {trait}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <SlidersHorizontal className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 max-h-96 overflow-y-auto">
+                {allTraits.map((trait) => (
+                  <DropdownMenuCheckboxItem
+                    key={trait}
+                    checked={selectedTraits.includes(trait)}
+                    onCheckedChange={() => handleTraitToggle(trait)}
+                  >
+                    {trait}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             {selectedTraits.length > 0 && (
               <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-6 h-6 ml-1"
-                  onClick={clearTraitFilters}
-                >
-                  <CircleX className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Reset trait filters</p>
-              </TooltipContent>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6 ml-1"
+                      onClick={clearTraitFilters}
+                    >
+                      <CircleX className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Reset trait filters</p>
+                  </TooltipContent>
                 </Tooltip>
-                </TooltipProvider>
-          )}
-            </div>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden flex flex-col p-4 pt-0">

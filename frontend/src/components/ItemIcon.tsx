@@ -190,7 +190,7 @@ const primaryStatsConfig: Record<
   },
   CritDamage: {
     name: "Crit Damage",
-    colorClass: "text-orange-500", 
+    colorClass: "text-orange-500",
     isPercentage: true,
     icon: "/icon_critmult.png",
   },

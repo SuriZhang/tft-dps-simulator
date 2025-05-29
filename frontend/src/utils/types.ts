@@ -139,9 +139,12 @@ export type SimulatorAction =
         items: Item[];
         augments: Item[];
       };
-  }
+    }
   | { type: "SET_CHAMPION_STAR_LEVEL"; position: BoardPosition; level: number }
   | { type: "SET_LOADING_ERROR"; error: string }
   | { type: "SET_SIMULATION_RESULTS"; payload: ChampionSimulationResult[] } // New action type
   | { type: "SET_SIMULATION_EVENTS"; payload: ArchivedEvent[] } // Add new action type
-  | { type: "SET_SIMULATION_DATA"; payload: { results: ChampionSimulationResult[], events: ArchivedEvent[] } }; // Combined action type
+  | {
+      type: "SET_SIMULATION_DATA";
+      payload: { results: ChampionSimulationResult[]; events: ArchivedEvent[] };
+    }; // Combined action type

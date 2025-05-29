@@ -2,19 +2,16 @@ import React, { useState } from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
 import { Trait, TraitEffect } from "../utils/types";
-import {
-  Card
-} from "./ui/card";
-import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import { ScrollArea } from "./ui/scroll-area";
 
 // Define SVG backgrounds for trait tiers
 const traitTierColors = {
-  inactive: "./trait-inactive.svg", 
-  bronze: "./trait-bronze.svg", 
-  silver: "./trait-silver.svg", 
-  gold: "./trait-gold.svg", 
-  prismatic: "./trait-prismatic.svg", 
-  unique: "./trait-unique.svg", 
+  inactive: "./trait-inactive.svg",
+  bronze: "./trait-bronze.svg",
+  silver: "./trait-silver.svg",
+  gold: "./trait-gold.svg",
+  prismatic: "./trait-prismatic.svg",
+  unique: "./trait-unique.svg",
 };
 
 // Find the activated bonus for a trait
@@ -55,7 +52,7 @@ const getHighestActiveTier = (trait: Trait): keyof typeof traitTierColors => {
 const TraitTracker: React.FC = () => {
   const { state, setHoveredTrait } = useSimulator();
   const { traits, boardChampions } = state;
-  const [localHoveredTrait, setLocalHoveredTrait] = useState<string>("");
+  const [_, setLocalHoveredTrait] = useState<string>("");
 
   // Only show traits when there are champions on board
   const hasChampions = boardChampions.length > 0;
@@ -103,7 +100,10 @@ const TraitTracker: React.FC = () => {
   // Find current active effect
   const getCurrentActiveEffect = (trait: Trait): TraitEffect | undefined => {
     if (trait.active === 0) return undefined;
-    return trait.effects.find((effect) => trait.active >= effect.minUnits && trait.active <= effect.maxUnits);
+    return trait.effects.find(
+      (effect) =>
+        trait.active >= effect.minUnits && trait.active <= effect.maxUnits,
+    );
   };
 
   return (
@@ -118,22 +118,22 @@ const TraitTracker: React.FC = () => {
             <ScrollArea className="h-[427px]">
               <div className="flex flex-wrap gap-2">
                 {sortedTraits.map((trait) => {
-                  const currentEffect = getCurrentActiveEffect(trait); 
+                  const currentEffect = getCurrentActiveEffect(trait);
                   const currentTier = getHighestActiveTier(trait);
                   const tierSvg = traitTierColors[currentTier];
 
                   // Only show active traits
-                  if (trait.active === 0) return null; 
+                  if (trait.active === 0) return null;
                   return (
                     <div
                       key={trait.apiName}
                       className={cn(
-                        "flex items-center gap-1 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer w-40", 
+                        "flex items-center gap-1 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer w-40",
                         "transition-all hover:bg-neutral-700/90",
                       )}
                       onMouseEnter={() => handleTraitMouseEnter(trait.name)}
                       onMouseLeave={handleTraitMouseLeave}
-                      title={`${trait.name} (${trait.active}${currentEffect ? `/${currentEffect.minUnits}` : ''})`}
+                      title={`${trait.name} (${trait.active}${currentEffect ? `/${currentEffect.minUnits}` : ""})`}
                     >
                       {/* 1. Hexagon Icon */}
                       <div className="relative flex-shrink-0 w-7 h-7">
@@ -148,25 +148,36 @@ const TraitTracker: React.FC = () => {
                             alt={trait.name}
                             className={cn(
                               "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
-                              currentTier === 'inactive' ? "brightness-0 invert" : "brightness-0" 
+                              currentTier === "inactive"
+                                ? "brightness-0 invert"
+                                : "brightness-0",
                             )}
-                            style={{ width: '16px', height: '16px' }} // Trait icon size: 16x16px
+                            style={{ width: "16px", height: "16px" }} // Trait icon size: 16x16px
                           />
                         )}
                       </div>
 
                       {/* 2. Active Count Box */}
-                      <div 
+                      <div
                         className="flex items-center justify-center rounded px-1 py-0.5 text-xs" // Smaller text for count
-                        style={{ backgroundColor: 'rgba(10,10,20,0.5)', minWidth: '24px' }} // Darker, slightly transparent
+                        style={{
+                          backgroundColor: "rgba(10,10,20,0.5)",
+                          minWidth: "24px",
+                        }} // Darker, slightly transparent
                       >
-                        <span className="font-bold text-white">{trait.active}</span>
+                        <span className="font-bold text-white">
+                          {trait.active}
+                        </span>
                       </div>
 
                       {/* 3. Text Info (Name + Thresholds) */}
                       <div className="flex flex-col items-start leading-tight whitespace-nowrap">
-                        <span className="text-xs font-semibold text-white">{trait.name}</span>
-                        <div className="text-[10px]"> {/* Smaller text for thresholds */}
+                        <span className="text-xs font-semibold text-white">
+                          {trait.name}
+                        </span>
+                        <div className="text-[10px]">
+                          {" "}
+                          {/* Smaller text for thresholds */}
                           {trait.effects
                             .sort((a, b) => a.minUnits - b.minUnits)
                             .map((effect, index, arr) => (
@@ -174,11 +185,20 @@ const TraitTracker: React.FC = () => {
                                 key={effect.minUnits}
                                 className={cn(
                                   "font-medium",
-                                  trait.active >= effect.minUnits && trait.active <= effect.maxUnits ? "text-white" : "text-neutral-500",
+                                  trait.active >= effect.minUnits &&
+                                    trait.active <= effect.maxUnits
+                                    ? "text-white"
+                                    : "text-neutral-500",
                                 )}
                               >
                                 {effect.minUnits}
-                                {index < arr.length - 1 ? <span className="text-neutral-600 mx-0.5">{">"}</span> : ""}
+                                {index < arr.length - 1 ? (
+                                  <span className="text-neutral-600 mx-0.5">
+                                    {">"}
+                                  </span>
+                                ) : (
+                                  ""
+                                )}
                               </span>
                             ))}
                         </div>
@@ -186,7 +206,7 @@ const TraitTracker: React.FC = () => {
                     </div>
                   );
                 })}
-                </div>
+              </div>
             </ScrollArea>
           ) : (
             <div className="text-gray-400 text-center py-4">

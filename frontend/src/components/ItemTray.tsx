@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import ItemIcon from "./ItemIcon";
 import { ScrollArea } from "./ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"; // Removed CardHeader, CardTitle
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Item } from "../utils/types";
 
@@ -19,7 +19,7 @@ type ItemCategory =
 
 const getItemCategory = (item: Item): ItemCategory => {
   // Use the existing 'type' field first
-  
+
   // Note: this might change if the item tags changes in json file
   if (item.name?.includes("Emblem")) return "emblem"; // emblem
   if (item.tags?.includes("component")) return "component";
@@ -36,7 +36,7 @@ const getItemCategory = (item: Item): ItemCategory => {
 const ItemTray: React.FC = () => {
   const { state } = useSimulator();
   const { items } = state;
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, _] = useState("");
   const [activeTab, setActiveTab] = useState<ItemCategory>("all");
 
   const filteredItems = useMemo(() => {
@@ -64,7 +64,7 @@ const ItemTray: React.FC = () => {
       "radiant",
       "ornn",
       "support",
-      "emblem"
+      "emblem",
     ];
     const presentCats = new Set(items.map(getItemCategory));
     // Filter other categories based on presence, but always keep 'all'
@@ -87,32 +87,34 @@ const ItemTray: React.FC = () => {
         className="flex flex-col"
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 h-18">
-          <CardTitle className="text-base font-semibold items-start ">Items</CardTitle>
+          <CardTitle className="text-base font-semibold items-start ">
+            Items
+          </CardTitle>
           <div>
-          <TabsList className="bg-muted items-stretch w-full">
-            {availableCategories.map((category) => (
-              <TabsTrigger
-                key={category}
-                value={category}
-                className="capitalize text-xs px-1.5 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground"
-              >
-                {category === "all"
-                  ? "All"
-                  : category === "craftable"
-                    ? "Craftable"
-                    : category === "ornn"
-                      ? "Ornn"
-                      : category === "support"
-                        ? "Support"
-                        : category === "radiant"
-                          ? "Radiant"
-                          : category === "emblem"
+            <TabsList className="bg-muted items-stretch w-full">
+              {availableCategories.map((category) => (
+                <TabsTrigger
+                  key={category}
+                  value={category}
+                  className="capitalize text-xs px-1.5 py-1 h-auto data-[state=active]:bg-background data-[state=active]:text-foreground"
+                >
+                  {category === "all"
+                    ? "All"
+                    : category === "craftable"
+                      ? "Craftable"
+                      : category === "ornn"
+                        ? "Ornn"
+                        : category === "support"
+                          ? "Support"
+                          : category === "radiant"
+                            ? "Radiant"
+                            : category === "emblem"
                               ? "Emblems"
                               : category}
-              </TabsTrigger>
-            ))}
+                </TabsTrigger>
+              ))}
             </TabsList>
-            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden flex flex-col p-2 pt-0">
           <ScrollArea className="flex h-full mt-2 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
