@@ -14,6 +14,7 @@ const traitTierColors = {
   silver: "./trait-silver.svg", 
   gold: "./trait-gold.svg", 
   prismatic: "./trait-prismatic.svg", 
+  unique: "./trait-unique.svg", 
 };
 
 // Find the activated bonus for a trait
@@ -41,7 +42,7 @@ const getHighestActiveTier = (trait: Trait): keyof typeof traitTierColors => {
     case 3:
       return "silver";
     case 4:
-      return "gold";
+      return "unique";
     case 5:
       return "gold";
     case 6:
