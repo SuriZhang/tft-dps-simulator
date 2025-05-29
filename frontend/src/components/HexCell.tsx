@@ -83,10 +83,16 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
       );
       // Set drag effect to allow moving
       e.dataTransfer.effectAllowed = "move";
+      
+      // Dispatch custom event to notify board
+      document.dispatchEvent(new CustomEvent('championDragStart'));
     }
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
+    // Dispatch custom event to notify board
+    document.dispatchEvent(new CustomEvent('championDragEnd'));
+    
     // Check if the drag ended outside the board area
     const boardElement = document.querySelector('[data-board-area="true"]');
     if (boardElement && champion) {

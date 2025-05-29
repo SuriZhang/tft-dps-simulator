@@ -20,7 +20,7 @@ const MainBoard = () => {
                 </div> 
               <div className="flex-1 w-[80%]">
                 <AugmentPanel />
-                <HexBoard />
+                  <HexBoard />
                 </div>
             </div>
           </div>
