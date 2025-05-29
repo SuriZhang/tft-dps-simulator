@@ -81,8 +81,31 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         "application/json",
         JSON.stringify({ type: "boardChampion", position }),
       );
+      // Set drag effect to allow moving
+      e.dataTransfer.effectAllowed = "move";
     }
   };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Check if the drag ended outside the board area
+    const boardElement = document.querySelector('[data-board-area="true"]');
+    if (boardElement && champion) {
+      const rect = boardElement.getBoundingClientRect();
+      const { clientX, clientY } = e;
+
+      // If the drop position is outside the board bounds, remove the champion
+      if (
+        clientX < rect.left ||
+        clientX > rect.right ||
+        clientY < rect.top ||
+        clientY > rect.bottom
+      ) {
+        dispatch({ type: "REMOVE_CHAMPION_FROM_BOARD", position });
+        console.log("Removing champion dragged outside board", champion, position);
+      }
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     try {
@@ -204,6 +227,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                         className="absolute w-full h-full"
                         draggable
                         onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
                       >
                         {/* Background champion image/name */}
                         {champion.icon && (

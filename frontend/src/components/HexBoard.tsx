@@ -1,80 +1,10 @@
-import { useState } from "react";
 import HexCell from "./HexCell";
 import { BOARD_ROWS, BOARD_COLS } from "../utils/constants";
 import { useSimulator } from "../context/SimulatorContext";
-import { Button } from "./ui/button";
-import { Loader2 } from "lucide-react"; // Import a loading icon
 
 const HexBoard = () => {
-  const { state, dispatch } = useSimulator();
+  const { state } = useSimulator();
   const { boardChampions } = state;
-  const [isLoading, setIsLoading] = useState(false);
-  // const [error, setError] = useState<string | null>(null);
-
-  // // Function to handle the combat simulation
-  // const handleStartCombat = async () => {
-  //   // Reset state
-  //   setIsLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     // Call the mock endpoint
-  //     const response = await fetch(`/api/v1/simulation/run`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           boardChampions: boardChampions.map((champion) => ({
-  //             apiName: champion.apiName,
-  //             stars: champion.stars,
-  //             position: champion.position,
-  //             items: champion.items || [],
-  //           })),
-  //         }),
-  //       },
-  //     );
-
-  //     // console request body
-  //     console.log("Request body:", {
-  //       boardChampions: boardChampions.map((champion) => ({
-  //         apiName: champion.apiName,
-  //         stars: champion.stars,
-  //         position: champion.position,
-  //         items: champion.items || [],
-  //       })),
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error(`Server responded with status: ${response.status}`);
-  //     }
-
-  //     const data = await response.json();
-
-  //     // Update context with simulation results and events
-  //     dispatch({
-  //       type: "SET_SIMULATION_DATA",
-  //       payload: {
-  //         results: data.results,
-  //         events: data.archieveEvents || [], // Note: keeping the same spelling as backend
-  //       },
-  //     });
-
-  //     // Optionally: Show a success message or navigate to results view
-  //     console.log("Simulation completed successfully:", {
-  //       results: data.results,
-  //       events: data.archieveEvents,
-  //     });
-  //   } catch (err) {
-  //     console.error("Error running simulation:", err);
-  //     setError(
-  //       err instanceof Error ? err.message : "An unknown error occurred",
-  //     );
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const hexWidth = 60;
   const hexHeight = hexWidth * 1.155; // Make it square (60x60)
@@ -107,8 +37,9 @@ const HexBoard = () => {
             return (
               <div
                 key={`${row}-${col}`}
-                className="absolute transition-all duration-200"
+                className="absolute transition-all duration-200 board-container"
                 style={{ left: `${left}px`, top: `${top}px` }}
+                data-board-area="true"
               >
                 <HexCell row={row} col={col} champion={champion} />
               </div>
