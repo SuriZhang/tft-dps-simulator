@@ -172,6 +172,16 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
     }
   };
 
+  const handleItemClick = (e: React.MouseEvent, item: Item) => {
+    e.stopPropagation(); // Prevent cell click from triggering
+    dispatch({
+      type: "REMOVE_ITEM_FROM_CHAMPION",
+      position,
+      itemApiName: item.apiName,
+    });
+    console.log("Removing item by click", item, position);
+  };
+
   // Show highlight when a champion is being dragged over an empty cell
   const shouldShowDragHighlight = isChampionBeingDragged && !champion && isDragOver;
 
@@ -190,7 +200,7 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
             <Star
               key={i}
               fill="yellow"
-              className="h-4 w-4 text-yellow-400 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
+              className="h-3 w-3 text-yellow-400 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
             />
           ))}
         </div>
@@ -204,7 +214,9 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
               key={i}
               src={`/tft-item/${item.icon}`}
               alt={item.name}
-              className="w-5 h-5 object-cover rounded-sm border border-gray-800 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
+              className="w-5 h-5 object-cover rounded-sm border border-gray-800 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] cursor-pointer hover:brightness-110 transition-all"
+              onClick={(e) => handleItemClick(e, item)}
+              title={`Click to remove ${item.name}`}
             />
           ))}
         </div>
