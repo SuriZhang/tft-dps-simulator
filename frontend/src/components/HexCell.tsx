@@ -188,9 +188,10 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   return (
     <div
       className={cn(
-        "relative aspect-[1/1] cursor-pointer",
+        "relative aspect-[1/1]",
         `col-start-${col} rows-start-${row}`,
         hasHoveredTrait && "z-10",
+        champion ? "cursor-pointer" : "cursor-default"
       )}
     >
       {/* Stars positioned outside the hexagon but visually on top */}
@@ -236,108 +237,132 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         ></div>
       )}
 
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className={cn(
-              "hexagon-border",
-              champion ? `cost-${champion.cost}-border` : "empty-hex-border"
-            )}>
-              <div
-                className={cn(
-                  "w-[60px] h-[69.3px] inset-0 clip-hexagon shadow-md transition-all",
-                  !champion && selectedChampion
-                    ? "border-primary border-3 hover:border-opacity-100"
-                    : "",
-                  champion && selectedItem
-                    ? "border-accent border-3 hover:border-opacity-100"
-                    : "",
-                  // Add bright background when dragging champion over empty cell
-                  shouldShowDragHighlight && "!bg-gray-400/60"
-                )}
-                onClick={handleCellClick}
-                onDragOver={handleDragOver}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                data-position={`${position.row}-${position.col}`}
-                style={{
-                  opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
-                }}
-              >
-                {/* If champion has the hovered trait, add a glow effect */}
-                {hasHoveredTrait && (
-                  <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
-                )}
+      {champion ? (
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={cn(
+                "hexagon-border",
+                champion ? `cost-${champion.cost}-border` : "empty-hex-border"
+              )}>
+                <div
+                  className={cn(
+                    "w-[60px] h-[69.3px] inset-0 clip-hexagon shadow-md transition-all bg-secondary",
+                    !champion && selectedChampion
+                      ? "border-primary border-3 hover:border-opacity-100"
+                      : "",
+                    champion && selectedItem
+                      ? "border-accent border-3 hover:border-opacity-100"
+                      : "",
+                    // Add bright background when dragging champion over empty cell
+                    shouldShowDragHighlight && "!bg-gray-400/60"
+                  )}
+                  onClick={handleCellClick}
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  data-position={`${position.row}-${position.col}`}
+                  style={{
+                    opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
+                  }}
+                >
+                  {/* If champion has the hovered trait, add a glow effect */}
+                  {hasHoveredTrait && (
+                    <div className="absolute inset-0 bg-primary/20 clip-hexagon animate-pulse z-10"></div>
+                  )}
 
-                {champion && (
-                  <ContextMenu>
-                    <ContextMenuTrigger asChild>
-                      <div
-                        className="absolute w-full h-full"
-                        draggable
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                      >
-                        {/* Background champion image/name */}
-                        {champion.icon && (
-                          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                            <img
-                              src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
-                              alt={champion.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </ContextMenuTrigger>
+                  {champion && (
+                    <ContextMenu>
+                      <ContextMenuTrigger asChild>
+                        <div
+                          className="absolute w-full h-full"
+                          draggable
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                        >
+                          {/* Background champion image/name */}
+                          {champion.icon && (
+                            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                              <img
+                                src={`/tft-champion-icons/${champion.icon.toLowerCase()}`}
+                                alt={champion.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </ContextMenuTrigger>
 
-                    <ContextMenuContent>
-                      <ContextMenuItem onClick={handleSetStarLevel(1)}>
-                        <Star className="mr-2 h-4 w-4" />
-                        1-Star
-                      </ContextMenuItem>
-                      <ContextMenuItem onClick={handleSetStarLevel(2)}>
-                        <Star className="mr-2 h-4 w-4" />
-                        2-Star
-                      </ContextMenuItem>
-                      <ContextMenuItem onClick={handleSetStarLevel(3)}>
-                        <Star className="mr-2 h-4 w-4" />
-                        3-Star
-                      </ContextMenuItem>
-                      <ContextMenuSeparator />
-                      <ContextMenuItem
-                        onClick={handleRemove}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Remove
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                )}
+                      <ContextMenuContent>
+                        <ContextMenuItem onClick={handleSetStarLevel(1)}>
+                          <Star className="mr-2 h-4 w-4" />
+                          1-Star
+                        </ContextMenuItem>
+                        <ContextMenuItem onClick={handleSetStarLevel(2)}>
+                          <Star className="mr-2 h-4 w-4" />
+                          2-Star
+                        </ContextMenuItem>
+                        <ContextMenuItem onClick={handleSetStarLevel(3)}>
+                          <Star className="mr-2 h-4 w-4" />
+                          3-Star
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem
+                          onClick={handleRemove}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  )}
+                </div>
               </div>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            {champion ? (
-              <>
-                <p className="font-bold">{champion.name}</p>
-                {champion.traits && champion.traits.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {champion.traits.join(", ")}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground italic">
-                  Click to view champion details
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-bold">{champion.name}</p>
+              {champion.traits && champion.traits.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {champion.traits.join(", ")}
                 </p>
-              </>
-            ) : (
-              <p>{`Row ${row}, Col ${col}`}</p>
+              )}
+              <p className="text-xs text-muted-foreground italic">
+                Click to view champion details
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <div className={cn(
+          "hexagon-border empty-hex-border"
+        )}>
+          <div
+            className={cn(
+              "w-[60px] h-[69.3px] inset-0 clip-hexagon shadow-md transition-all bg-secondary",
+              !champion && selectedChampion
+                ? "border-primary border-3 hover:border-opacity-100"
+                : "",
+              champion && selectedItem
+                ? "border-accent border-3 hover:border-opacity-100"
+                : "",
+              // Add bright background when dragging champion over empty cell
+              shouldShowDragHighlight && "!bg-gray-400/60"
             )}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+            onClick={handleCellClick}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            data-position={`${position.row}-${position.col}`}
+            style={{
+              opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
+            }}
+          >
+          </div>
+        </div>
+      )}
     </div>
   );
 };
