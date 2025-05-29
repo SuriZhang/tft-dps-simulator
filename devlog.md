@@ -659,3 +659,4 @@ TODO:
 ## 20250529
 - [x] champion/item add and remove UI enhancement
 - [x] refactor damage stats panel into tabs
+- [x] add UI for unique trait

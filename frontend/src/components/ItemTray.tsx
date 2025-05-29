@@ -86,7 +86,7 @@ const ItemTray: React.FC = () => {
         onValueChange={(value) => setActiveTab(value as ItemCategory)}
         className="flex flex-col"
       >
-        <CardHeader className="flex flex-row justify-between space-y-2 pb-2 px-1 pt-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 h-18">
           <CardTitle className="text-base font-semibold items-start ">Items</CardTitle>
           <div>
           <TabsList className="bg-muted items-stretch w-full">

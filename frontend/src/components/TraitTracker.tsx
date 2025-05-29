@@ -107,11 +107,11 @@ const TraitTracker: React.FC = () => {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-lg">
+    <div className="bg-card rounded-lg">
       <div className="flex overflow-hidden flex-col h-full">
         <div className="flex-1 overflow-x-auto">
           {!hasChampions ? (
-            <div className="text-gray-400 text-center py-4 items-center">
+            <div className="items-center text-center text-muted-foreground italic py-8">
               Add champions to activate traits
             </div>
           ) : sortedTraits.some((trait) => trait.active > 0) ? (
@@ -130,8 +130,6 @@ const TraitTracker: React.FC = () => {
                       className={cn(
                         "flex items-center gap-1 p-1.5 rounded-md bg-neutral-800/80 cursor-pointer w-40", 
                         "transition-all hover:bg-neutral-700/90",
-                        localHoveredTrait === trait.name &&
-                          "ring-1 ring-primary ring-opacity-70",
                       )}
                       onMouseEnter={() => handleTraitMouseEnter(trait.name)}
                       onMouseLeave={handleTraitMouseLeave}
@@ -142,7 +140,7 @@ const TraitTracker: React.FC = () => {
                         <img
                           src={tierSvg}
                           alt={`${currentTier} tier`}
-                          className="absolute inset-0 w-full h-full object-cover" // SVG fills the container
+                          className="absolute inset-0 w-full h-full object-cover"
                         />
                         {trait.icon && (
                           <img

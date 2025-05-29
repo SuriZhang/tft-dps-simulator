@@ -1,17 +1,16 @@
-import React from "react";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
 
-const AugmentPanel: React.FC = () => {
+const SelectedAugments = () => {
   const { state} = useSimulator();
   const { selectedAugments } = state;
 
   return (
-    <div className="ml-6 p-2">
+    <div className="ml-6 p-2 border rounded-lg bg-card flex flex-col gap-2">
       <span>Selected Augments</span>
        <div className="flex flex-row items-center gap-2">
             {/* Selected augments */}
-            {[0, 1, 2].map((slot) => {
+            {[0, 1, 2, 3, 4].map((slot) => {
               const augment = selectedAugments[slot];
 
               return (
@@ -44,4 +43,4 @@ const AugmentPanel: React.FC = () => {
   );
 };
 
-export default AugmentPanel;
+export default SelectedAugments;

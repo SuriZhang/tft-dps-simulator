@@ -43,7 +43,7 @@ const ChampionPool: React.FC = () => {
 
   return (
     <Card className="h-full flex flex-col border-none bg-transparent shadow-none">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4 h-18">
         <CardTitle className="text-base font-semibold">Champions</CardTitle>
         <div className="flex flex-row">
         <Input

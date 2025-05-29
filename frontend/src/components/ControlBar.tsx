@@ -3,7 +3,6 @@ import { useSimulator } from "../context/SimulatorContext";
 import { Button } from "./ui/button"; 
 import {
   Trash2,
-  Settings,
   Share2,
   Copy,
   UploadCloud,
@@ -13,12 +12,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 
 const ControlBar = () => {
  const { state, dispatch } = useSimulator();
-
-  // Toggle states for UI controls - Assuming these might come from context later
-  const [showNames, setShowNames] = useState(true);
-  const [useSkins, setUseSkins] = useState(true);
-  const [mouseHoverInfo, setMouseHoverInfo] = useState(true);
-  const [positioningMode, setPositioningMode] = useState(false);
   
   const { boardChampions } = state;
   const [isLoading, setIsLoading] = useState(false);
@@ -98,31 +91,9 @@ const ControlBar = () => {
   const handleShare = () => console.log("Share TBD");
   const handleCopyCode = () => console.log("Copy Code TBD");
   const handleImportCode = () => console.log("Import Code TBD");
-  const handleSettings = () => console.log("Settings TBD");
-
-  // Update global state when switch changes (if applicable)
-  const handleUseSkinsChange = (checked: boolean) => {
-    setUseSkins(checked);
-    // dispatch({ type: 'SET_USE_SKINS', payload: checked });
-  };
-
-  const handleMouseHoverInfoChange = (checked: boolean) => {
-    setMouseHoverInfo(checked);
-    // dispatch({ type: 'SET_MOUSE_HOVER_INFO', payload: checked });
-  };
-
-  const handleShowNamesChange = (checked: boolean) => {
-    setShowNames(checked);
-    // dispatch({ type: 'SET_SHOW_NAMES', payload: checked });
-  };
-
-  const handlePositioningModeChange = (checked: boolean) => {
-    setPositioningMode(checked);
-    // dispatch({ type: 'SET_POSITIONING_MODE', payload: checked });
-  };
 
   return (
-    <div className="bg-card rounded-lg shadow-lg p-4 mb-4">
+    <div className="bg-card shadow-none rounded-lg  p-4 mb-4">
       <div className="flex flex-wrap justify-between items-center gap-4">
         {/* Set info */}
         <div className="flex items-center space-x-4">
