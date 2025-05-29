@@ -208,16 +208,6 @@ const SimulationTimelineChart = () => {
       championDamageData.set(relevantEntityId, championEvents);
     });
 
-    // // Flatten the map into a single array for the chart
-    // interface ChartDataPoint {
-    //   timestamp: number;
-    //   cumulativeDamage: number;
-    //   championName: string;
-    //   championId: number;
-    //   eventType?: string;
-    //   eventData?: any; // Consider using a more specific type if the structure of eventData is known
-    // }
-
     let chartDataPoints: ChartDataPoint[] = [];
     championDamageData.forEach((events) => {
       chartDataPoints = [...chartDataPoints, ...events];
@@ -303,8 +293,8 @@ const SimulationTimelineChart = () => {
 
   if (!simulationResults || !simulationEvents || chartData.length === 0) {
     return (
-      <div className="p-4 text-center">
-        Run a simulation to see damage timeline
+      <div className="text-center text-muted-foreground italic py-8">
+        Run a simulation to see culmulative damage over time.
       </div>
     );
   }
@@ -351,8 +341,7 @@ const SimulationTimelineChart = () => {
 
   return (
     <div className="w-full h-[400px] mt-4 mb-2">
-      <h2 className="text-lg font-medium mb-0">Damage Timeline</h2>
-      <p>
+      <p className="text-sm text-gray-500 mb-2">
         assumption: attack windup/wind-down takes 0s, cast windup/wind-down
         takes 1s each. used expected critically strike damage values for
         simulation.
