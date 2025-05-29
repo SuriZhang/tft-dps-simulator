@@ -75,7 +75,7 @@ const HexBoard = () => {
 
   return (
     <div 
-      className="relative w-full h-full p-4 bg-indigo-950/20 shadow-inner mt-4"
+      className="relative w-full h-full mt-4 ml-4 bg-indigo-950/20 shadow-inner px-2 py-4"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
