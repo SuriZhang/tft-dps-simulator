@@ -1,6 +1,7 @@
 import { SimulatorProvider } from "../context/SimulatorContext";
 import MainBoard from "../components/MainBoard";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
+import { Button } from "../components/ui/button";
 
 const Index = () => {
   // TODO: Implement search functionality
@@ -18,27 +19,29 @@ const Index = () => {
             <MainBoard />
 
             <div className="mt-4 p-1 rounded-lg bg-muted text-center text-xs text-muted-foreground shrink-0">
-              {/* <span className="mr-3">
-                Press{" "}
-                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-foreground bg-background rounded border">
-                  Shift
-                </kbd>{" "}
-                + Click to place 2-star units
-              </span>
-              <span className="mr-3">
-                Press{" "}
-                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-foreground bg-background rounded border">
-                  Ctrl
-                </kbd>{" "}
-                + Click to place 3-star units
-              </span>
-              <span>
-                Press{" "}
-                <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-foreground bg-background rounded border">
-                  Alt
-                </kbd>{" "}
-                + Click to swap units
-              </span> */}
+              <Button variant="ghost" size="sm" asChild>
+                <a
+                  href="https://discord.gg/your-server"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-foreground transition-colors"
+                >
+                  <img src="/discord.png" alt="Discord" className="w-4 h-4" />
+                  Discord
+                </a>
+              </Button>
+              {" • "}
+              <Button variant="ghost" size="sm" asChild>
+                <a
+                  href="https://github.com/SuriZhang/tft-dps-simulator/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:text-foreground transition-colors"
+                >
+                  <img src="/github.png" alt="GitHub" className="w-4 h-4" />
+                  GitHub
+                </a>
+              </Button>
             </div>
           </div>
         </ScrollArea>

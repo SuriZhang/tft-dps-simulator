@@ -42,10 +42,6 @@ const MainBoard = () => {
             </div>
           </div>
         </div>
-      
-      {/* <div className="bg-background/50 p-6 rounded-lg shadow">
-        <SimulationTimelineChart />
-      </div> */}
     </>
   );
 };

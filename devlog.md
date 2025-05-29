@@ -655,3 +655,6 @@ TODO:
 TODO:
 - [ ] turn Available augments into a tab with Champions & Icons
 - [ ] add total value on board & total champions count 
+
+## 20250529
+- [x] champion/item add and remove UI enhancement
