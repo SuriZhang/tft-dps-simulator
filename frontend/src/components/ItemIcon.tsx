@@ -9,139 +9,140 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { formatDescription } from "../utils/helpers";
 
-// Helper function to format item description
-const formatEffectValueHelper = (value: any): string => {
-  if (typeof value === "number") {
-    // Display whole numbers without decimal, others as is (or to a fixed precision if needed)
-    return value % 1 === 0 ? value.toFixed(0) : value.toString();
-  }
-  return String(value);
-};
+// // Helper function to format item description
+// const formatEffectValueHelper = (value: any): string => {
+//   if (typeof value === "number") {
+//     // Display whole numbers without decimal, others as is (or to a fixed precision if needed)
+//     return value % 1 === 0 ? value.toFixed(0) : value.toString();
+//   }
+//   return String(value);
+// };
 
-const formatDescription = (
-  desc: string | undefined,
-  effects: Record<string, any> | undefined,
-): string => {
-  if (!desc) return "";
-  let formattedDesc = desc;
+// const formatDescription = (
+//   desc: string | undefined,
+//   effects: Record<string, any> | undefined,
+// ): string => {
+//   if (!desc) return "";
+//   let formattedDesc = desc;
 
-  // 1. Replace placeholders like @EffectName@ or @EffectName*100@
-  if (effects) {
-    const placeholderRegex = /@([^@]+)@/g;
-    let resultString = "";
-    let lastIndex = 0;
-    let match;
+//   // 1. Replace placeholders like @EffectName@ or @EffectName*100@
+//   if (effects) {
+//     const placeholderRegex = /@([^@]+)@/g;
+//     let resultString = "";
+//     let lastIndex = 0;
+//     let match;
 
-    while ((match = placeholderRegex.exec(formattedDesc)) !== null) {
-      resultString += formattedDesc.substring(lastIndex, match.index); // Append text before placeholder
+//     while ((match = placeholderRegex.exec(formattedDesc)) !== null) {
+//       resultString += formattedDesc.substring(lastIndex, match.index); // Append text before placeholder
 
-      const placeholderContent = match[1]; // e.g., "CritDamageToGive*100" or "HexRange"
-      let replacementValue = match[0]; // Default to original placeholder if not processed
+//       const placeholderContent = match[1]; // e.g., "CritDamageToGive*100" or "HexRange"
+//       let replacementValue = match[0]; // Default to original placeholder if not processed
 
-      if (placeholderContent.endsWith("*100")) {
-        const key = placeholderContent.slice(0, -4); // Remove '*100'
-        if (effects[key] !== undefined && typeof effects[key] === "number") {
-          replacementValue = (effects[key] * 100).toFixed(0);
-        }
-      } else {
-        const key = placeholderContent;
-        if (effects[key] !== undefined) {
-          replacementValue = formatEffectValueHelper(effects[key]);
-        }
-      }
-      resultString += replacementValue;
-      lastIndex = placeholderRegex.lastIndex;
-    }
-    resultString += formattedDesc.substring(lastIndex); // Append remaining text
-    formattedDesc = resultString;
-  }
+//       if (placeholderContent.endsWith("*100")) {
+//         const key = placeholderContent.slice(0, -4); // Remove '*100'
+//         if (effects[key] !== undefined && typeof effects[key] === "number") {
+//           replacementValue = (effects[key] * 100).toFixed(0);
+//         }
+//       } else {
+//         const key = placeholderContent;
+//         if (effects[key] !== undefined) {
+//           replacementValue = formatEffectValueHelper(effects[key]);
+//         }
+//       }
+//       resultString += replacementValue;
+//       lastIndex = placeholderRegex.lastIndex;
+//     }
+//     resultString += formattedDesc.substring(lastIndex); // Append remaining text
+//     formattedDesc = resultString;
+//   }
 
-  // 2. Handle specific TFT tags and other HTML-like tags
+//   // 2. Handle specific TFT tags and other HTML-like tags
 
-  // Styling for specific keywords/concepts
-  formattedDesc = formattedDesc.replace(
-    /<TFTKeyword>(.*?)<\/TFTKeyword>/gi,
-    '<span class="text-yellow-500 font-medium">$1</span>',
-  );
-  formattedDesc = formattedDesc.replace(
-    /<tftbold>(.*?)<\/tftbold>/gi,
-    '<em class="font-semibold">$1</em>', // Italic + Semi-bold
-  );
-  formattedDesc = formattedDesc.replace(
-    /<magicDamage>(.*?)<\/magicDamage>/gi,
-    '<span class="text-purple-400">$1</span>',
-  );
-  formattedDesc = formattedDesc.replace(
-    /<physicalDamage>(.*?)<\/physicalDamage>/gi,
-    '<span class="text-red-500">$1</span>',
-  );
-  formattedDesc = formattedDesc.replace(
-    /<trueDamage>(.*?)<\/trueDamage>/gi,
-    '<span class="text-white font-semibold">$1</span>',
-  );
-  formattedDesc = formattedDesc.replace(
-    /<TFTBonus>(.*?)<\/TFTBonus>/gi,
-    '<span class="text-green-400">$1</span>',
-  );
-  formattedDesc = formattedDesc.replace(
-    /<TFTShadowItemPenalty>(.*?)<\/TFTShadowItemPenalty>/gi,
-    '<span class="text-red-400 italic">$1</span>', // Example: Red and italic for penalty
-  );
-  formattedDesc = formattedDesc.replace(
-    /<healing>(.*?)<\/healing>/gi,
-    '<span class="text-green-300">$1</span>',
-  );
-  formattedDesc = formattedDesc.replace(
-    /<TFTHighlight>(.*?)<\/TFTHighlight>/gi,
-    '<span class="text-blue-300 font-medium">$1</span>',
-  );
+//   // Styling for specific keywords/concepts
+//   formattedDesc = formattedDesc.replace(
+//     /<TFTKeyword>(.*?)<\/TFTKeyword>/gi,
+//     '<span class="text-yellow-500 font-medium">$1</span>',
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<tftbold>(.*?)<\/tftbold>/gi,
+//     '<em class="font-semibold">$1</em>', // Italic + Semi-bold
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<magicDamage>(.*?)<\/magicDamage>/gi,
+//     '<span class="text-purple-400">$1</span>',
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<physicalDamage>(.*?)<\/physicalDamage>/gi,
+//     '<span class="text-red-500">$1</span>',
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<trueDamage>(.*?)<\/trueDamage>/gi,
+//     '<span class="text-white font-semibold">$1</span>',
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<TFTBonus>(.*?)<\/TFTBonus>/gi,
+//     '<span class="text-green-400">$1</span>',
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<TFTShadowItemPenalty>(.*?)<\/TFTShadowItemPenalty>/gi,
+//     '<span class="text-red-400 italic">$1</span>', // Example: Red and italic for penalty
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<healing>(.*?)<\/healing>/gi,
+//     '<span class="text-green-300">$1</span>',
+//   );
+//   formattedDesc = formattedDesc.replace(
+//     /<TFTHighlight>(.*?)<\/TFTHighlight>/gi,
+//     '<span class="text-blue-300 font-medium">$1</span>',
+//   );
 
-  // Basic handling for <li> items (convert to bullet points on new lines)
-  // Ensuring <ul> or <ol> wrappers would require more complex parsing.
-  formattedDesc = formattedDesc.replace(/<li>(.*?)<\/li>/gi, "<br />&bull; $1");
+//   // Basic handling for <li> items (convert to bullet points on new lines)
+//   // Ensuring <ul> or <ol> wrappers would require more complex parsing.
+//   formattedDesc = formattedDesc.replace(/<li>(.*?)<\/li>/gi, "<br />&bull; $1");
 
-  // Tags to strip while keeping their content.
-  // This will also strip attributes within these tags.
-  // Order might matter if tags are nested.
-  const tagsToStripKeepContent = [
-    "tftitemrules",
-    "rules",
-    "TFTRadiantItemBonus",
-    "TFTShadowItemBonus",
-    "TFTPassive",
-    "scaleLevel", // Handles <scaleLevel> and <scaleLevel enabled=...> by stripping tag, keeping content
-    "scaleShimmer",
-    "TFTTrackerLabel",
-    "spellPassive",
-    "spellActive", // Handles <spellActive> and <spellActive enabled=...> by stripping tag, keeping content
-    "scaleHealth",
-    "keyword", // If different from styled TFTKeyword
-    "tftrules",
-    "active",
-    // Complex conditional tags - content is kept as a fallback
-    "ShowIfNot\\.TFT14_Mob_IsActive_T3", // Escaped dot for regex
-    "ShowIf\\.TFT14_Mob_IsActive_T3", // Escaped dot for regex
-    "ShowIfNot\\.TFTUnitProperty\\.Item:TFT10_BlingActive",
-    "ShowIf\\.TFTUnitProperty\\.Item:TFT10_BlingActive",
-    "ShowIfCustom\\.Set=TFTSetEventCT",
-  ];
+//   // Tags to strip while keeping their content.
+//   // This will also strip attributes within these tags.
+//   // Order might matter if tags are nested.
+//   const tagsToStripKeepContent = [
+//     "tftitemrules",
+//     "rules",
+//     "TFTRadiantItemBonus",
+//     "TFTShadowItemBonus",
+//     "TFTPassive",
+//     "scaleLevel", // Handles <scaleLevel> and <scaleLevel enabled=...> by stripping tag, keeping content
+//     "scaleShimmer",
+//     "TFTTrackerLabel",
+//     "spellPassive",
+//     "spellActive", // Handles <spellActive> and <spellActive enabled=...> by stripping tag, keeping content
+//     "scaleHealth",
+//     "keyword", // If different from styled TFTKeyword
+//     "tftrules",
+//     "active",
+//     // Complex conditional tags - content is kept as a fallback
+//     "ShowIfNot\\.TFT14_Mob_IsActive_T3", // Escaped dot for regex
+//     "ShowIf\\.TFT14_Mob_IsActive_T3", // Escaped dot for regex
+//     "ShowIfNot\\.TFTUnitProperty\\.Item:TFT10_BlingActive",
+//     "ShowIf\\.TFTUnitProperty\\.Item:TFT10_BlingActive",
+//     "ShowIfCustom\\.Set=TFTSetEventCT",
+//   ];
 
-  tagsToStripKeepContent.forEach((tag) => {
-    // Regex to match <tag ...attributes...>content</tag> and replace with content
-    const contentKeepingRegex = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "gi");
-    formattedDesc = formattedDesc.replace(contentKeepingRegex, "$1");
-    // Regex to match opening/closing tags like <tag ...attributes...> or </tag> and remove them
-    // This helps clean up tags that might not have been caught by the above or are self-closing/empty
-    const stripTagOnlyRegex = new RegExp(`</?${tag}[^>]*>`, "gi");
-    formattedDesc = formattedDesc.replace(stripTagOnlyRegex, "");
-  });
+//   tagsToStripKeepContent.forEach((tag) => {
+//     // Regex to match <tag ...attributes...>content</tag> and replace with content
+//     const contentKeepingRegex = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "gi");
+//     formattedDesc = formattedDesc.replace(contentKeepingRegex, "$1");
+//     // Regex to match opening/closing tags like <tag ...attributes...> or </tag> and remove them
+//     // This helps clean up tags that might not have been caught by the above or are self-closing/empty
+//     const stripTagOnlyRegex = new RegExp(`</?${tag}[^>]*>`, "gi");
+//     formattedDesc = formattedDesc.replace(stripTagOnlyRegex, "");
+//   });
 
-  // Consolidate multiple <br> tags (and variants) into one
-  formattedDesc = formattedDesc.replace(/(<br\s*\/?>\s*)+/gi, "<br />");
+//   // Consolidate multiple <br> tags (and variants) into one
+//   formattedDesc = formattedDesc.replace(/(<br\s*\/?>\s*)+/gi, "<br />");
 
-  return formattedDesc;
-};
+//   return formattedDesc;
+// };
 
 const primaryStatsConfig: Record<
   string,

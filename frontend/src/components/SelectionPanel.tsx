@@ -34,7 +34,7 @@ const SelectionPanel = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="augments" className="flex-1 mt-0 p-4 pt-2">
+        <TabsContent value="augments" className="h-full flex-1 gap-4 bg-card rounded-lg p-2">
           <div className="h-full">
             <AugmentTray />
           </div>

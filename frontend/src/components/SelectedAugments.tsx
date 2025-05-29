@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
 
@@ -17,7 +18,7 @@ const SelectedAugments = () => {
                 <div
                   key={`slot-${slot}`}
                   className={cn(
-                    "p-2 rounded-lg border cursor-pointer w-16 h-16 flex items-center justify-center",
+                    "p-2 rounded-lg border border-dashed cursor-pointer w-16 h-16 flex items-center justify-center",
                   )}
                 >
                   {augment ? (
@@ -32,7 +33,7 @@ const SelectedAugments = () => {
                     </div>
                   ) : (
                     <div className="text-xs text-gray-500 text-center">
-                      Select augment
+                      <Plus className="w-6 h-6" />
                     </div>
                   )}
                 </div>

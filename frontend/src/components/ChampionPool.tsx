@@ -4,15 +4,32 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, Check, CircleX } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "./ui/dropdown-menu";
 import ChampionIcon from "./ChampionIcon";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 const ChampionPool: React.FC = () => {
   const { state } = useSimulator();
   const { champions } = state;
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCost, setFilterCost] = useState<number | null>(null);
-  const [filterTrait, _setFilterTrait] = useState<string | null>(null);
+  const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
+
+  // Get all unique traits from champions
+  const allTraits = useMemo(() => {
+    const traits = new Set<string>();
+    champions.forEach((champion) => {
+      champion.traits.forEach((trait) => traits.add(trait));
+    });
+    return Array.from(traits).sort();
+  }, [champions]);
 
   const filteredChampions = useMemo(() => {
     return champions
@@ -31,15 +48,27 @@ const ChampionPool: React.FC = () => {
 
         // Apply trait filter dropdown (separate from search)
         const traitFilterMatch =
-          filterTrait === null || champion.traits.includes(filterTrait);
-        
+          selectedTraits.length === 0 || 
+          champion.traits.some((trait) => selectedTraits.includes(trait));
 
         // Show champions that match by name OR trait AND match the filters
         return (nameMatch || traitMatch) && costMatch && traitFilterMatch &&
           champion.cost <= 6 && !champion.apiName.includes("Summon"); // exclude trait spawns
       })
       .sort((a, b) => a.cost - b.cost); // Sort by cost (ascending)
-  }, [champions, searchTerm, filterCost, filterTrait]);
+  }, [champions, searchTerm, filterCost, selectedTraits]);
+
+  const handleTraitToggle = (trait: string) => {
+    setSelectedTraits((prev) =>
+      prev.includes(trait)
+        ? prev.filter((t) => t !== trait)
+        : [...prev, trait]
+    );
+  };
+
+  const clearTraitFilters = () => {
+    setSelectedTraits([]);
+  };
 
   return (
     <Card className="h-full flex flex-col border-none bg-transparent shadow-none">
@@ -67,14 +96,47 @@ const ChampionPool: React.FC = () => {
               {cost}
             </Button>
           ))}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-6 h-6 ml-2"
-            // onClick={() => {/* TODO: Open trait filter dropdown */}}
-          >
-            <SlidersHorizontal className="h-3 w-3" />
-            </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={selectedTraits.length > 0 ? "secondary" : "ghost"}
+                size="icon"
+                className="w-6 h-6 ml-2"
+              >
+                <SlidersHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 max-h-96 overflow-y-auto">
+              {allTraits.map((trait) => (
+                <DropdownMenuCheckboxItem
+                  key={trait}
+                  checked={selectedTraits.includes(trait)}
+                  onCheckedChange={() => handleTraitToggle(trait)}
+                >
+                  {trait}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+            {selectedTraits.length > 0 && (
+              <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-6 h-6 ml-1"
+                  onClick={clearTraitFilters}
+                >
+                  <CircleX className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reset trait filters</p>
+              </TooltipContent>
+                </Tooltip>
+                </TooltipProvider>
+          )}
             </div>
         </div>
       </CardHeader>

@@ -86,13 +86,6 @@ const ChampionIcon: React.FC<ChampionIconProps> = ({
           <p className="text-xs text-muted-foreground">
             {champion.traits.join(", ")}
           </p>
-          {/* {item.stats && (
-            <div className="mt-1 text-xs">
-              {Object.entries(item.stats).map(([stat, value]) => (
-                <p key={stat}>{stat}: {value}</p>
-              ))}
-            </div>
-          )} */}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

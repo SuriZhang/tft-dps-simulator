@@ -7,6 +7,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Item } from "../utils/types";
 import { Input } from "./ui/input";
+import { formatDescription } from "../utils/helpers";
 
 const AugmentTray = () => {
   const { state, dispatch } = useSimulator();
@@ -52,32 +53,43 @@ const AugmentTray = () => {
       </CardHeader>
       <CardContent>
         <ScrollArea className="flex-1 h-40 mt-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {augments.map((augment) => (
               <div
                 key={augment.apiName}
                 className={cn(
-                  "p-2 rounded-md text-xs cursor-pointer flex items-center space-x-1",
+                  "p-2 rounded-md text-xs cursor-pointer flex flex-col items-start space-y-1",
                   tierColors.silver, // TODO: fix, Default to silver for all augments
                 )}
                 onClick={() => {
                   // Find first empty slot or overwrite last one
-                  const emptySlot = [0, 1, 2].find(
+                  const emptySlot = [0, 1, 2, 3, 4].find(
                     (i) => !selectedAugments[i],
                   );
                   const slotToUse = emptySlot !== undefined ? emptySlot : 2;
                   handleAugmentClick(augment, slotToUse);
                 }}
               >
-                {augment.icon && (
-                  <img
-                    src={`/tft-augment/${augment.icon}`}
-                    alt=""
-                    className="w-4 h-4 object-cover"
+                <div className="flex items-center space-x-1">
+                  {augment.icon && (
+                    <img
+                      src={`/tft-augment/${augment.icon}`}
+                      alt=""
+                      className="w-4 h-4 object-cover"
+                    />
+                  )}
+                  <span>{augment.name}</span>
+                </div>
+                {augment.desc && (
+                  <span 
+                    className="text-xs text-muted-foreground leading-tight text-wrap"
+                    dangerouslySetInnerHTML={{
+                      __html: formatDescription(augment.desc, augment.effects),
+                    }}
                   />
                 )}
-                <span>{augment.name}</span>
               </div>
+              
             ))}
           </div>
         </ScrollArea>
