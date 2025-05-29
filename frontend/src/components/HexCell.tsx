@@ -1,4 +1,4 @@
-// import React from "react";
+import React, { useState } from "react";
 import { BoardPosition, Champion, Item } from "../utils/types";
 import { useSimulator } from "../context/SimulatorContext";
 import { cn } from "../lib/utils";
@@ -27,14 +27,29 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   const position: BoardPosition = { row, col };
   const { state, dispatch } = useSimulator();
   const { selectedChampion, selectedItem, hoveredTrait } = state;
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isChampionBeingDragged, setIsChampionBeingDragged] = useState(false);
 
-  // Check if the champion has the hovered trait - add debugging to see values
+  // Listen for champion drag events from other cells
+  React.useEffect(() => {
+    const handleChampionDragStart = () => setIsChampionBeingDragged(true);
+    const handleChampionDragEnd = () => setIsChampionBeingDragged(false);
+
+    document.addEventListener('championDragStart', handleChampionDragStart);
+    document.addEventListener('championDragEnd', handleChampionDragEnd);
+
+    return () => {
+      document.removeEventListener('championDragStart', handleChampionDragStart);
+      document.removeEventListener('championDragEnd', handleChampionDragEnd);
+    };
+  }, []);
+
+  // Check if the champion has the hovered trait
   const hasHoveredTrait =
     champion &&
     hoveredTrait &&
     champion.traits &&
     champion.traits.some((trait) => {
-      // Case-insensitive comparison or normalized comparison
       return trait.toLowerCase() === hoveredTrait.toLowerCase();
     });
 
@@ -47,7 +62,6 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         position,
       });
       console.log("Adding champion to board", selectedChampion, position);
-      // Deselect the champion after placing it
       dispatch({ type: "SELECT_CHAMPION", champion: undefined });
       console.log("deselecting:", selectedChampion, position);
     } else if (champion && selectedItem) {
@@ -73,7 +87,22 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
   const handleRemove = () =>
     champion && dispatch({ type: "REMOVE_CHAMPION_FROM_BOARD", position });
 
-  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent) => {
     if (champion) {
@@ -81,25 +110,22 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
         "application/json",
         JSON.stringify({ type: "boardChampion", position }),
       );
-      // Set drag effect to allow moving
       e.dataTransfer.effectAllowed = "move";
       
-      // Dispatch custom event to notify board
       document.dispatchEvent(new CustomEvent('championDragStart'));
     }
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    // Dispatch custom event to notify board
     document.dispatchEvent(new CustomEvent('championDragEnd'));
     
-    // Check if the drag ended outside the board area
+    setIsDragOver(false);
+    
     const boardElement = document.querySelector('[data-board-area="true"]');
     if (boardElement && champion) {
       const rect = boardElement.getBoundingClientRect();
       const { clientX, clientY } = e;
 
-      // If the drop position is outside the board bounds, remove the champion
       if (
         clientX < rect.left ||
         clientX > rect.right ||
@@ -114,6 +140,8 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragOver(false);
+    
     try {
       const data = JSON.parse(e.dataTransfer.getData("application/json"));
       if (data.type === "champion" && !champion) {
@@ -144,12 +172,14 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
     }
   };
 
+  // Show highlight when a champion is being dragged over an empty cell
+  const shouldShowDragHighlight = isChampionBeingDragged && !champion && isDragOver;
+
   return (
     <div
       className={cn(
         "relative aspect-[1/1] cursor-pointer",
         `col-start-${col} rows-start-${row}`,
-        // Move the ring styling here to the OUTER container instead
         hasHoveredTrait && "z-10",
       )}
     >
@@ -175,7 +205,6 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
               src={`/tft-item/${item.icon}`}
               alt={item.name}
               className="w-5 h-5 object-cover rounded-sm border border-gray-800 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]"
-            // title={item.name} // Item tooltips can be handled separately if needed, or removed if champion tooltip covers it
             />
           ))}
         </div>
@@ -210,14 +239,17 @@ const HexCell: React.FC<HexCellProps> = ({ row, col, champion }) => {
                     : "",
                   champion && selectedItem
                     ? "border-accent border-3 hover:border-opacity-100"
-                    : ""
+                    : "",
+                  // Add bright background when dragging champion over empty cell
+                  shouldShowDragHighlight && "!bg-gray-400/60"
                 )}
                 onClick={handleCellClick}
                 onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 data-position={`${position.row}-${position.col}`}
                 style={{
-                  // aspectRatio: "1.155", // Enforce 1:1 aspect ratio
                   opacity: hoveredTrait && champion && !hasHoveredTrait ? 0.6 : 1
                 }}
               >
