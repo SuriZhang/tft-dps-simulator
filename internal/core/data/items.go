@@ -27,14 +27,15 @@ const (
 	TFT_Item_Quicksilver        = "TFT_Item_Quicksilver"
 	TFT_Item_TitansResolve      = "TFT_Item_TitansResolve"
 	TFT_Item_GuinsoosRageblade  = "TFT_Item_GuinsoosRageblade"
-	TFT_Item_SpiritVisage         = "TFT_Item_Redemption" // TODO: check when this item goes live
+	TFT_Item_SpiritVisage         = "TFT_Item_Redemption"
 	TFT_Item_InfinityEdge       = "TFT_Item_InfinityEdge"
 	TFT_Item_JeweledGauntlet    = "TFT_Item_JeweledGauntlet"
-	TFT_Item_KrakensFury = "TFT_Item_RunaansHurricane" // TODO: check when this item goes live
+	TFT_Item_KrakensFury = "TFT_Item_RunaansHurricane"
 	TFT_Item_SpearOfShojin      = "TFT_Item_SpearOfShojin"
 	TFT_Item_BlueBuff          = "TFT_Item_BlueBuff"
 	 TFT_Item_Artifact_NavoriFlickerblades = "TFT_Item_Artifact_NavoriFlickerblades"
 	 TFT_Item_NashorsTooth = "TFT_Item_Leviathan"
+	 TFT_Item_VoidStaff = "TFT_Item_StatikkShiv" 
 )
 
 // GetItemByApiName returns an item by its API name or nil if not found

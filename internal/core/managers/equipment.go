@@ -222,6 +222,21 @@ func (em *EquipmentManager) AddItemToChampion(champion entity.Entity, itemApiNam
                     championName, attackSpeedToGive*100, duration)
             }
         }
+	case data.TFT_Item_VoidStaff:
+		if _, exists := em.world.GetVoidStaffEffect(champion); !exists {
+            // Fetch values from item data
+            mrShred := item.Effects["MRShred"]         // 30.0
+            duration := item.Effects["MRShredDuration"] // 3.0
+
+            voidStaffEffect := items.NewVoidStaffEffect(mrShred, duration)
+            err := em.world.AddComponent(champion, voidStaffEffect)
+            if err != nil {
+                log.Printf("Warning: Failed to add VoidStaffEffect component for champion %s: %v", championName, err)
+            } else {
+                log.Printf("Added VoidStaffEffect component to champion %s (MR Shred: %.1f%%, Duration: %.1fs)",
+                    championName, mrShred, duration)
+            }
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)

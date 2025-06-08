@@ -49,7 +49,7 @@ func main() {
 	// 1. Load Game Data
 	log.Println("Loading game data...")
 	dataDir := "./assets"
-	fileName := "en_us_pbe.json"
+	fileName := "en_us_14.5.json"
 	filePath := filepath.Join(dataDir, fileName)
 	tftData, err := data.LoadSetDataFromFile(filePath, "TFTSet14")
 	if err != nil {
