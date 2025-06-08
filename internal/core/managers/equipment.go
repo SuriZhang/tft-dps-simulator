@@ -237,6 +237,22 @@ func (em *EquipmentManager) AddItemToChampion(champion entity.Entity, itemApiNam
                     championName, mrShred, duration)
             }
         }
+	case data.TFT_Item_RedBuff:
+		if _, exists := em.world.GetRedBuffEffect(champion); !exists {
+            // Fetch values from item data
+            burnPercent := item.Effects["BurnPercent"]             // 1.0
+            healingReductionPct := item.Effects["HealingReductionPct"] // 33.0
+            duration := item.Effects["Duration"]                  // 5.0
+
+            redBuffEffect := items.NewRedBuffEffect(burnPercent, healingReductionPct, duration)
+            err := em.world.AddComponent(champion, redBuffEffect)
+            if err != nil {
+                log.Printf("Warning: Failed to add RedBuffEffect component for champion %s: %v", championName, err)
+            } else {
+                log.Printf("Added RedBuffEffect component to champion %s (Burn: %.1f%%, Wound: %.1f%%, Duration: %.1fs)",
+                    championName, burnPercent, healingReductionPct, duration)
+            }
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)
