@@ -253,6 +253,23 @@ func (em *EquipmentManager) AddItemToChampion(champion entity.Entity, itemApiNam
                     championName, burnPercent, healingReductionPct, duration)
             }
         }
+	case data.TFT_Item_Evenshroud:
+		if _, exists := em.world.GetEvenshroudEffect(champion); !exists {
+            // Fetch values from item data
+            arReductionAmount := item.Effects["ARReductionAmount"]     // 30.0
+            hexRange := item.Effects["HexRange"]                      // 2.0
+            bonusResists := item.Effects["BonusResists"]              // 25.0
+            bonusResistDuration := item.Effects["BonusResistDuration"] // 15.0
+
+            evenshroudEffect := items.NewEvenshroudEffect(arReductionAmount, hexRange, bonusResists, bonusResistDuration)
+            err := em.world.AddComponent(champion, evenshroudEffect)
+            if err != nil {
+                log.Printf("Warning: Failed to add EvenshroudEffect component for champion %s: %v", championName, err)
+            } else {
+                log.Printf("Added EvenshroudEffect component to champion %s (Sunder: %.1f%%, Range: %.1f, Bonus Resists: %.1f, Duration: %.1fs)",
+                    championName, arReductionAmount, hexRange, bonusResists, bonusResistDuration)
+            }
+        }
 	}
 
     log.Printf("Updating static item effects for champion %s after adding %s.", championName, itemApiName)

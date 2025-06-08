@@ -61,7 +61,7 @@ func (im *ItemManager) CanHandle(event interface{}) bool {
 	// This is a broad catch-all; specific event types can be checked if performance is a concern.
 	switch event.(type) {
 	// Item-specific tick/proc events (examples)
-	case eventsys.ArchangelsTickEvent, eventsys.QuicksilverProcEvent, eventsys.QuicksilverEndEvent, eventsys.GuinsoosRagebladeTickEvent:
+	case eventsys.ArchangelsTickEvent, eventsys.QuicksilverProcEvent, eventsys.QuicksilverEndEvent, eventsys.GuinsoosRagebladeTickEvent, eventsys.EvenshroudResistActivateEvent, eventsys.EvenshroudResistDeactivateEvent:
 		return true
 		
 	// General game events that items might react to
@@ -89,6 +89,10 @@ func (im *ItemManager) HandleEvent(event any) { // Changed interface{} to any
     case eventsys.BlueBuffDamageAmpActivateEvent:
         uniqueInvolvedEntities[evt.Entity] = struct{}{}
     case eventsys.BlueBuffDamageAmpDeactivateEvent:
+        uniqueInvolvedEntities[evt.Entity] = struct{}{}
+    case eventsys.EvenshroudResistActivateEvent:
+        uniqueInvolvedEntities[evt.Entity] = struct{}{}
+    case eventsys.EvenshroudResistDeactivateEvent:
         uniqueInvolvedEntities[evt.Entity] = struct{}{}
     // General game events that items might react to
     case eventsys.AttackFiredEvent:

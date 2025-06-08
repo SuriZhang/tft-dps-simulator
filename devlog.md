@@ -660,3 +660,8 @@ TODO:
 - [x] champion/item add and remove UI enhancement
 - [x] refactor damage stats panel into tabs
 - [x] add UI for unique trait
+
+## 20250608
+- [x] implement Red Buff
+- [x] implement Void Staff
+- [x] implement evenshroud

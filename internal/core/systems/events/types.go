@@ -123,7 +123,7 @@ type SpellRecoveryEndEvent struct {
     Timestamp float64
 }
 
-// --- Item Specific Events (Examples) ---
+// --- Item Specific Events ---
 
 // ArchangelsTickEvent signals a time-based tick for Archangel's Staff.
 type ArchangelsTickEvent struct {
@@ -172,6 +172,18 @@ type NashorsToothDeactivateEvent struct {
     Entity    entity.Entity
     Timestamp float64
     Sequence  uint64 // To handle overlapping activations
+}
+
+// EvenshroudResistActivateEvent is triggered when Evenshroud's resistance bonus starts.
+type EvenshroudResistActivateEvent struct {
+    Entity    entity.Entity
+    Timestamp float64
+}
+
+// EvenshroudResistDeactivateEvent is triggered when Evenshroud's resistance bonus ends.
+type EvenshroudResistDeactivateEvent struct {
+    Entity    entity.Entity
+    Timestamp float64
 }
 
 // RecalculateStatsEvent signals that an entity's stats need recalculation due to a change.
